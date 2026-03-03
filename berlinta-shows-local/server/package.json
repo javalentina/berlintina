@@ -1,0 +1,19 @@
+{
+  "name": "berlintina-shows-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.38.0",
+    "@supabase/supabase-js": "^2.95.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.2.1",
+    "nodemailer": "^8.0.1",
+    "openai": "^4.76.0"
+  }
+}

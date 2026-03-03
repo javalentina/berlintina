@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Berlintina Shows – Find curated live performances in Berlin. Classical, bands, acrobatics, dance. AI-powered event matching for planners and artists." />
+    <meta property="og:title" content="Berlintina Shows" />
+    <meta property="og:description" content="Curated shows & events in Berlin. AI concierge connects event planners with artists." />
+    <meta property="og:type" content="website" />
+    <title>Berlintina Shows</title>
+    <style>
+      :root {
+        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      body {
+        font-family: var(--font-apple);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #ffffff;
+        min-height: 100vh;
+      }
+      #root { min-height: 100vh; }
+      h1, h2, h3 {
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        color: #1d1d1f;
+      }
+      .masonry-grid {
+        display: block;
+        column-count: 1;
+        column-gap: 1.5rem;
+      }
+      @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+      @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+      @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
+      .masonry-item {
+        break-inside: avoid;
+        margin-bottom: 1.5rem;
+      }
+      .notion-input {
+        transition: all 0.2s ease;
+      }
+      .notion-input:focus {
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+      }
+      .chat-bubble-ai {
+        background-color: #f1f1ef;
+        color: #37352f;
+      }
+      .chat-bubble-user {
+        background-color: #000;
+        color: #fff;
+      }
+    </style>
+    <link rel="stylesheet" href="/index.css">
+  </head>
+  <body class="text-gray-900">
+    <div id="root"><p style="padding: 2rem; color: #666;">Loading…</p></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
