@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, ArrowRight, X, Heart, ArrowUpRight, Star, CheckCircle2, Zap, Users, HeartHandshake } from 'lucide-react';
-import { BrowserRouter, Routes, Route, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
 import { Category, Show, CustomerBrief, ArtistStatus } from './types';
 import { VIBE_OPTIONS } from './constants';
 import { aiService } from './services/aiService';
@@ -2451,25 +2451,20 @@ const App: React.FC = () => {
             </Suspense>
           </AdminLayout>
         } />
-        <Route path="*" element={
-          <Layout locale={locale} setLocale={setLocale}>
-            <Routes>
-              <Route index element={<Landing locale={locale} />} />
-              <Route path="/" element={<Landing locale={locale} />} />
-              <Route path="/results/:briefId" element={<Results locale={locale} />} />
-              <Route path="/show/:slugShortId" element={<Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-32 text-center text-warm-muted font-medium">Lade Show…</div>}><ShowDetail locale={locale} /></Suspense>} />
-              <Route path="/catalog" element={<Catalog locale={locale} />} />
-              <Route path="/blog" element={<Blog locale={locale} />} />
-              <Route path="/blog/:slug" element={<BlogPostPage locale={locale} />} />
-              <Route path="/artist" element={<ArtistPortal locale={locale} />} />
-              <Route path="/join" element={<JoinLanding locale={locale} />} />
-              <Route path="/join/start" element={<Join locale={locale} />} />
-              <Route path="/about" element={<About locale={locale} />} />
-              <Route path="/impressum" element={<Impressum locale={locale} />} />
-              <Route path="/datenschutz" element={<Datenschutz locale={locale} />} />
-            </Routes>
-          </Layout>
-        } />
+        <Route element={<Layout locale={locale} setLocale={setLocale}><Outlet /></Layout>}>
+          <Route index element={<Landing locale={locale} />} />
+          <Route path="results/:briefId" element={<Results locale={locale} />} />
+          <Route path="show/:slugShortId" element={<Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-32 text-center text-warm-muted font-medium">Lade Show…</div>}><ShowDetail locale={locale} /></Suspense>} />
+          <Route path="catalog" element={<Catalog locale={locale} />} />
+          <Route path="blog" element={<Blog locale={locale} />} />
+          <Route path="blog/:slug" element={<BlogPostPage locale={locale} />} />
+          <Route path="artist" element={<ArtistPortal locale={locale} />} />
+          <Route path="join" element={<JoinLanding locale={locale} />} />
+          <Route path="join/start" element={<Join locale={locale} />} />
+          <Route path="about" element={<About locale={locale} />} />
+          <Route path="impressum" element={<Impressum locale={locale} />} />
+          <Route path="datenschutz" element={<Datenschutz locale={locale} />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

@@ -2130,6 +2130,13 @@ async function ensureStorageBucket() {
   }
 }
 
+// Serve React frontend (production build)
+const distPath = join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => {
+  res.sendFile(join(distPath, 'index.html'));
+});
+
 ensureStorageBucket().then(() => {
   app.listen(PORT, () => {
     console.log(`Berlintina backend running at http://localhost:${PORT}`);

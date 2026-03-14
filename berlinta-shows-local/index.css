@@ -1,7 +1,163 @@
 @import "tailwindcss";
 
-html { -webkit-tap-highlight-color: transparent; }
+@theme {
+  /* Showstopper-inspired clean white + purple palette */
+  --color-parchment: #f7f8fb;
+  --color-surface: #ffffff;
+  --color-surface-alt: #eceef3;
+  --color-card: #f7f8fb;
+  --color-charcoal: #141720;
+  --color-warm-muted: #6d7585;
+  --color-warm-faint: #9ba3b5;
+  --color-warm-border: #e8eaef;
+  --color-terracotta: #6366f1;
+  --color-terracotta-dark: #4f46e5;
+  --color-terracotta-light: #eef2ff;
+  --color-highlight: #6366f1;
+}
+
+html { -webkit-tap-highlight-color: transparent; background-color: #ffffff; }
+body { background-color: #ffffff; }
 button, a { touch-action: manipulation; }
+
+/* ── Showstopper design utilities ── */
+
+/* Glass morphism */
+.bg-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(232, 234, 239, 0.5);
+}
+
+/* Mesh gradient hero background */
+.bg-mesh {
+  background-image:
+    radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.04) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, rgba(96, 165, 250, 0.03) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(139, 92, 246, 0.02) 0px, transparent 50%);
+}
+
+/* SVG noise texture overlay */
+.bg-noise {
+  position: relative;
+}
+.bg-noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Static gradient text — no animation */
+.gradient-text-static {
+  background: linear-gradient(90deg, #ea580c 0%, #9333ea 60%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shimmer text animation — use --shimmer-accent to override color per element */
+.shimmer-text {
+  background: linear-gradient(90deg, #141720 0%, var(--shimmer-accent, #6366f1) 50%, #141720 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-anim 3s ease-in-out infinite;
+}
+
+@keyframes shimmer-anim {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Gradient text dark→purple */
+.text-gradient-dark {
+  background: linear-gradient(135deg, #141720, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle background gradient */
+.bg-gradient-subtle {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
+}
+
+/* Shadows */
+.shadow-soft {
+  box-shadow: 0 1px 2px rgba(20, 23, 32, 0.03), 0 4px 16px rgba(20, 23, 32, 0.04);
+}
+.shadow-search {
+  box-shadow: 0 2px 8px rgba(20, 23, 32, 0.03), 0 8px 32px rgba(20, 23, 32, 0.06);
+}
+.shadow-card-hover {
+  box-shadow: 0 8px 24px rgba(20, 23, 32, 0.06), 0 16px 48px rgba(20, 23, 32, 0.08);
+}
+.shadow-glow {
+  box-shadow: 0 0 60px -12px rgba(99, 102, 241, 0.2);
+}
+
+/* Hover lift */
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* Float animation */
+@keyframes float-anim {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float {
+  animation: float-anim 6s ease-in-out infinite;
+}
+
+/* Masonry column layout */
+.masonry-col {
+  column-count: 2;
+  column-gap: 1rem;
+}
+@media (min-width: 768px) { .masonry-col { column-count: 3; } }
+@media (min-width: 1024px) { .masonry-col { column-count: 4; } }
+.masonry-col-item {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+/* Larger masonry — 20% bigger cards (fewer columns) */
+.masonry-col-lg {
+  column-count: 1;
+  column-gap: 1.25rem;
+}
+@media (min-width: 640px) { .masonry-col-lg { column-count: 2; } }
+@media (min-width: 1024px) { .masonry-col-lg { column-count: 3; } }
+
+/* Typing indicator dots */
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+.typing-dot {
+  animation: typing-dot 1.3s ease-in-out infinite;
+}
+
+/* Marquee infinite scroll */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee-scroll 50s linear infinite;
+  width: max-content;
+}
+.marquee-track:hover { animation-play-state: paused; }
 
 /* Hide scrollbar for horizontal gallery */
 .scrollbar-hide {

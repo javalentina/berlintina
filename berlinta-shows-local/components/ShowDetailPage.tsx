@@ -1,116 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Show } from '../types';
+import { ArrowLeft, Star, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 
-/** F&F theme tokens */
-const THEME = {
-  text: '#0B0B0C',
-  muted: '#6B6B6B',
-  rule: '#D9D9D9',
-  surface: '#FFFFFF',
-  surface_alt: '#FAFAFA',
-  radius: '18px',
-};
+// Set your WhatsApp number here (international format, no +, no spaces: e.g. '4917612345678')
+const WHATSAPP_NUMBER = (typeof import.meta !== 'undefined' && (import.meta as Record<string, unknown>).env)
+  ? ((import.meta as Record<string, Record<string, string>>).env.VITE_WHATSAPP || '')
+  : '';
+const waLink = (title: string, locale: 'de' | 'en') =>
+  WHATSAPP_NUMBER
+    ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(locale === 'de' ? `Hallo! Ich interessiere mich für die Show: ${title}` : `Hi! I'm interested in the show: ${title}`)}`
+    : '';
 
-/** Category fallback accent colors for near-monochrome images */
-const CATEGORY_COLORS: Record<string, string> = {
-  CLASSICAL: '#7C3AED',
-  BAND: '#1D4ED8',
-  ACROBATICS: '#EA580C',
-  DANCE: '#BE185D',
-};
-
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
-    }
-  }
-  return [h * 360, s * 100, l * 100];
-}
-
-function hslToHex(h: number, s: number, l: number): string {
-  h /= 360; s /= 100; l /= 100;
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1; if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  return '#' + [hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)]
-    .map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
-}
-
-function hexLuminance(hex: string): number {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const toL = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  return 0.2126 * toL(r) + 0.7152 * toL(g) + 0.0722 * toL(b);
-}
-
-/** Finds the most saturated pixel in the image and returns a vivid, normalized accent color */
-function useDominantColor(imageUrl: string | null, category?: string): string {
-  const fallback = CATEGORY_COLORS[category ?? ''] ?? '#1a1a1a';
-  const [color, setColor] = useState(fallback);
-  useEffect(() => {
-    if (!imageUrl) { setColor(fallback); return; }
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const size = 120;
-        canvas.width = size; canvas.height = size;
-        ctx.drawImage(img, 0, 0, size, size);
-        const data = ctx.getImageData(0, 0, size, size).data;
-        let bestH = 0, bestS = 0, bestL = 50;
-        for (let i = 0; i < data.length; i += 16) {
-          const [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
-          if (s > bestS && l > 12 && l < 88) {
-            bestH = h; bestS = s; bestL = l;
-          }
-        }
-        if (bestS > 15) {
-          setColor(hslToHex(bestH, Math.min(100, Math.max(bestS, 72)), Math.max(32, Math.min(52, bestL))));
-        } else {
-          setColor(fallback);
-        }
-      } catch { setColor(fallback); }
-    };
-    img.onerror = () => setColor(fallback);
-    img.src = imageUrl;
-  }, [imageUrl, fallback]);
-  return color;
-}
-
-function FAQAccordionItem({ question, answer, accent }: { question: string; answer: string; accent: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="overflow-hidden" style={{ borderRadius: THEME.radius, border: `1px solid ${THEME.rule}` }}>
-      <button type="button" onClick={() => setOpen(!open)} className="w-full px-5 py-4 flex items-center justify-between text-left font-semibold hover:bg-black/[0.02] transition" style={{ color: THEME.text }}>
-        {question}
-        <span className={`transition-transform flex-shrink-0 ml-3 ${open ? 'rotate-180' : ''}`}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: accent }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-        </span>
-      </button>
-      {open && <div className="px-5 pb-4 text-sm whitespace-pre-line border-t pt-3" style={{ color: THEME.muted, borderColor: THEME.rule }}>{answer}</div>}
-    </div>
-  );
-}
+const WhatsAppIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 function getVideoEmbedUrl(url: string, preview15s = false): string | null {
   try {
@@ -125,9 +31,46 @@ function getVideoEmbedUrl(url: string, preview15s = false): string | null {
   } catch { return null; }
 }
 
-function Rule() {
-  return <hr className="border-0 h-px w-full my-0" style={{ backgroundColor: THEME.rule }} />;
+function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-warm-border overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center justify-between text-left font-medium text-sm text-charcoal hover:bg-surface-alt transition-colors"
+      >
+        <span>{question}</span>
+        {open
+          ? <ChevronUp className="w-4 h-4 text-warm-muted flex-shrink-0 ml-3" />
+          : <ChevronDown className="w-4 h-4 text-warm-muted flex-shrink-0 ml-3" />}
+      </button>
+      {open && (
+        <div className="px-5 pb-4 pt-3 text-sm text-warm-muted whitespace-pre-line border-t border-warm-border bg-surface-alt">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
 }
+
+/** Per-category shimmer accent color for the show title */
+const CATEGORY_SHIMMER: Record<string, string> = {
+  CLASSICAL: '#9333ea',   // violet — elegant
+  BAND:      '#6366f1',   // indigo — electric
+  ACROBATICS:'#16a34a',   // green  — energetic
+  DANCE:     '#db2777',   // pink   — expressive
+};
+
+const priceRangeFromShow = (show: Show): string => {
+  if (show.priceType === 'POA') return '€€€';
+  if (show.priceMin != null) {
+    if (show.priceMin < 800) return '€€';
+    if (show.priceMin < 2000) return '€€€';
+    return '€€€€';
+  }
+  return '€€€';
+};
 
 interface Props {
   show: Show;
@@ -144,20 +87,21 @@ interface Props {
 
 export const ShowDetailPage: React.FC<Props> = ({
   show, locale, contactMode, contactForm, contactSubmitting, contactError,
-  onContactModeChange, onContactFormChange, onContactSubmit, children,
+  onContactModeChange, onContactFormChange, onContactSubmit,
 }) => {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const photos = show.photoUrls || [];
-  const heroImage = show.photoUrls?.[0] || 'https://placehold.co/1920x1080/f5f5f0/999?text=No+image';
+  const heroImage = show.photoUrls?.[0] || '';
   const videos = show.videoUrls || [];
   const videoEmbeds = videos.map(u => getVideoEmbedUrl(u, false)).filter((u): u is string => !!u);
   const videoPreviewUrl = videoEmbeds[0] ? getVideoEmbedUrl(videos[0], true) : null;
 
-  const accent = useDominantColor(heroImage, show.category);
-  const accentText = hexLuminance(accent) > 0.35 ? '#0B0B0C' : '#FFFFFF';
-
-  const shortPromise = (show.salesPitchText || show.shortDescriptionFacts || '').slice(0, 120);
-  const promisePullquote = (show.salesPitchText || show.shortDescriptionFacts || '').split('\n')[0]?.trim().slice(0, 220) || '';
+  const priceRange = priceRangeFromShow(show);
+  const priceLabel = show.priceType === 'POA'
+    ? (locale === 'de' ? 'Auf Anfrage' : 'On request')
+    : show.priceMin != null
+      ? `${locale === 'de' ? 'ab' : 'from'} ${show.priceMin}€`
+      : show.priceMax != null ? `≤ ${show.priceMax}€` : null;
 
   React.useEffect(() => {
     if (lightboxIndex !== null) document.body.style.overflow = 'hidden';
@@ -178,538 +122,451 @@ export const ShowDetailPage: React.FC<Props> = ({
   }, [lightboxIndex, photos.length]);
 
   React.useEffect(() => {
-    document.title = `${show.title} — SHOW | berlintina.de`;
+    document.title = `${show.title} — berlintina.de`;
     const meta = document.querySelector('meta[name="description"]');
-    const metaDesc = `${show.title}: ${shortPromise} Highlights, Galerie, Video-Preview, FAQ und Booking.`;
-    if (meta) meta.setAttribute('content', metaDesc.slice(0, 160));
+    if (meta) meta.setAttribute('content', `${show.title} — ${show.shortDescriptionFacts?.slice(0, 120) || 'Show booking Berlin'}`.slice(0, 160));
     return () => {
       document.title = 'Berlintina Shows';
       if (meta) meta.setAttribute('content', 'Berlintina Shows – Find curated live performances in Berlin.');
     };
-  }, [show.title, shortPromise]);
-
-  const t = locale === 'de'
-    ? {
-        back: 'Zurück', ctaPrimary: 'Jetzt anfragen →', ctaSecondary: 'Video ansehen',
-        duration: 'Dauer', cast: 'Besetzung', idealFor: 'Ideal für',
-        placement: 'Platzierung im Ablauf', audience: 'Publikum', languages: 'Sprache',
-        outdoor: 'Outdoor', travel: 'Reise',
-        highlights: 'Highlights', video: 'Video', gallery: 'Gallery',
-        gallerySub: 'Weniger Bilder. Stärkere Wirkung.',
-        onRequest: 'Auf Anfrage.',
-        faq: 'FAQ',
-        booking: 'Booking',
-        contactAufnehmen: 'Kontakt aufnehmen', name: 'Dein Name', email: 'E-Mail',
-        eventDate: 'Event-Datum (optional)', message: 'Nachricht', sendRequest: 'Anfrage senden',
-        sending: 'Wird gesendet…', cancel: 'Abbrechen', thanks: 'Vielen Dank! Wir melden uns bei dir.',
-        another: 'Weitere Anfrage', formPlaceholder: 'z. B. Outdoor möglich? Bühne 6×4m?',
-        faqOutdoor: 'Outdoor möglich?', faqStage: 'Wie groß muss die Bühne sein?',
-        faqTiming: 'Wie lange dauert Aufbau / Soundcheck / Abbau?',
-        faqLanguage: 'Ist die Show sprachabhängig?', faqCustom: 'Kann man die Show anpassen (Branding/Theme)?',
-        faqPromoterNeeds: 'Was braucht ihr vom Veranstalter?', faqTravel: 'Reist ihr an?', faqAnswer: 'Details auf Anfrage.',
-        moreShows: 'Weitere Shows', toCatalog: 'Alle Shows →',
-        aboutArtist: 'Über die Künstler',
-        whyItWorks: 'Warum es funktioniert',
-        grandHeadline: 'Bereit, diese Show zu buchen?',
-        grandSub: 'Sende uns deine Event-Details — wir melden uns innerhalb von 24 Stunden.',
-        grandTrust: 'Persönlich geprüft · Kein Mittelsmann · Immer kostenlos',
-        atAGlance: 'Auf einen Blick',
-        price: 'Preis',
-        priceOnRequest: 'Auf Anfrage',
-        priceFrom: 'ab',
-        checklist: [
-          '📅 Datum + Stadt + Venue',
-          '👥 Gästezahl',
-          '🎭 Event-Typ (Gala, Hochzeit, Corporate…)',
-          '⏱ Platzierung im Ablauf (Opener / Finale)',
-        ],
-      }
-    : {
-        back: 'Back', ctaPrimary: 'Request availability →', ctaSecondary: 'Watch video',
-        duration: 'Duration', cast: 'Cast', idealFor: 'Best for',
-        placement: 'Placement in schedule', audience: 'Audience', languages: 'Language',
-        outdoor: 'Outdoor', travel: 'Travel',
-        highlights: 'Highlights', video: 'Video', gallery: 'Gallery',
-        gallerySub: 'Fewer images. Stronger impact.',
-        onRequest: 'Details on request.',
-        faq: 'FAQ',
-        booking: 'Booking',
-        contactAufnehmen: 'Get in touch', name: 'Your name', email: 'Email',
-        eventDate: 'Event date (optional)', message: 'Message', sendRequest: 'Send request',
-        sending: 'Sending…', cancel: 'Cancel', thanks: 'Thank you! We will get back to you.',
-        another: 'Another inquiry', formPlaceholder: 'e.g. Outdoor possible? Stage 6×4m?',
-        faqOutdoor: 'Outdoor possible?', faqStage: 'How big must the stage be?',
-        faqTiming: 'How long for load-in / soundcheck / strike?',
-        faqLanguage: 'Is the show language-dependent?', faqCustom: 'Can the show be adapted (branding/theme)?',
-        faqPromoterNeeds: 'What do you need from the promoter?', faqTravel: 'Do you travel?', faqAnswer: 'Details on request.',
-        moreShows: 'More SHOWS', toCatalog: 'All shows →',
-        aboutArtist: 'About the artist',
-        whyItWorks: 'Why it works',
-        grandHeadline: 'Ready to book this show?',
-        grandSub: "Send us your event details — we'll get back to you within 24 hours.",
-        grandTrust: 'Personally reviewed · No middleman · Always free',
-        atAGlance: 'At a glance',
-        price: 'Price',
-        priceOnRequest: 'On request',
-        priceFrom: 'from',
-        checklist: [
-          '📅 Date + city + venue',
-          '👥 Audience size',
-          '🎭 Event type (gala, wedding, corporate…)',
-          '⏱ Placement in schedule (opener / finale)',
-        ],
-      };
+  }, [show.title, show.shortDescriptionFacts]);
 
   const openContact = useCallback(() => onContactModeChange('form'), [onContactModeChange]);
 
-  const priceLabel = show.priceType === 'POA'
-    ? t.priceOnRequest
-    : show.priceMin != null
-      ? `${t.priceFrom} ${show.priceMin}€`
-      : show.priceMax != null ? `≤ ${show.priceMax}€` : null;
+  const t = locale === 'de'
+    ? {
+        back: 'Zurück', cta: 'Jetzt anfragen', book: 'Show anfragen',
+        duration: 'Dauer', cast: 'Besetzung', idealFor: 'Ideal für',
+        outdoor: 'Outdoor', travel: 'Reise', languages: 'Sprache',
+        about: 'Über die Show', whyItWorks: 'Warum es funktioniert',
+        gallery: 'Galerie', video: 'Video', faq: 'FAQ',
+        onRequest: 'Auf Anfrage', interested: 'Interesse?',
+        sidebarSub: 'Kostenlose Anfrage · Antwort in 24h',
+        requestQuote: 'Anfrage senden →',
+        trustLine: '✓ 0% Provision · Persönlich geprüft · Keine Wartezeiten',
+        faqOutdoor: 'Outdoor möglich?', faqStage: 'Wie groß muss die Bühne sein?',
+        faqTiming: 'Wie lange dauert Aufbau / Soundcheck / Abbau?',
+        faqLanguage: 'Ist die Show sprachabhängig?', faqCustom: 'Kann man die Show anpassen?',
+        faqPromoterNeeds: 'Was braucht ihr vom Veranstalter?', faqTravel: 'Reist ihr an?', faqAnswer: 'Details auf Anfrage.',
+        name: 'Dein Name', email: 'E-Mail', eventDate: 'Event-Datum (optional)',
+        message: 'Nachricht', sendRequest: 'Anfrage senden', sending: 'Wird gesendet…',
+        cancel: 'Abbrechen', thanks: 'Vielen Dank! Wir melden uns bei dir.',
+        another: 'Weitere Anfrage', formPlaceholder: 'z. B. Outdoor möglich? Bühne 6×4m?',
+        grandHeadline: 'Bereit, diese Show zu buchen?',
+        grandSub: 'Sende uns deine Event-Details — wir melden uns innerhalb von 24 Stunden.',
+        contactAufnehmen: 'Kontakt aufnehmen',
+        greetTitle: 'Schön, dass du da bist!',
+        greetSub: 'Schick uns kurz deine Infos – wir melden uns zeitnah.',
+        steps: ['Anfrage senden (2 Min)', 'Antwort innerhalb von 24 Stunden', 'Direkt mit dem Künstler buchen — 0% Provision'],
+        aboutArtist: 'Über die Künstler',
+        artistBio: show.salesPitchText,
+      }
+    : {
+        back: 'Back', cta: 'Request availability', book: 'Book This Show',
+        duration: 'Duration', cast: 'Cast', idealFor: 'Best for',
+        outdoor: 'Outdoor', travel: 'Travel', languages: 'Language',
+        about: 'About this show', whyItWorks: 'Why it works',
+        gallery: 'Gallery', video: 'Video', faq: 'FAQ',
+        onRequest: 'On request', interested: 'Interested?',
+        sidebarSub: 'Free inquiry · Reply within 24h',
+        requestQuote: 'Request a Quote →',
+        trustLine: '✓ 0% commission · Personally reviewed · No waiting',
+        faqOutdoor: 'Outdoor possible?', faqStage: 'How big must the stage be?',
+        faqTiming: 'How long for load-in / soundcheck / strike?',
+        faqLanguage: 'Is the show language-dependent?', faqCustom: 'Can the show be adapted?',
+        faqPromoterNeeds: 'What do you need from the promoter?', faqTravel: 'Do you travel?', faqAnswer: 'Details on request.',
+        name: 'Your name', email: 'Email', eventDate: 'Event date (optional)',
+        message: 'Message', sendRequest: 'Send request', sending: 'Sending…',
+        cancel: 'Cancel', thanks: 'Thank you! We will get back to you.',
+        another: 'Another inquiry', formPlaceholder: 'e.g. Outdoor possible? Stage 6×4m?',
+        grandHeadline: 'Ready to book this show?',
+        grandSub: "Send us your event details — we'll get back to you within 24 hours.",
+        contactAufnehmen: 'Get in touch',
+        greetTitle: "Great you're here!",
+        greetSub: "Send us a quick note – we'll get back to you soon.",
+        steps: ['Send request (2 min)', 'Reply within 24 hours', 'Book directly with the artist — 0% commission'],
+        aboutArtist: 'About the artist',
+        artistBio: show.salesPitchText,
+      };
+
+  const faqItems = [
+    show.faqOutdoor   && { q: t.faqOutdoor,  a: show.faqOutdoor },
+    show.faqStage     && { q: t.faqStage,    a: show.faqStage },
+    show.timingsShort && { q: t.faqTiming,   a: show.timingsShort },
+    show.faqLanguage  && { q: t.faqLanguage, a: show.faqLanguage },
+    show.faqCustom    && { q: t.faqCustom,   a: show.faqCustom },
+    show.faqTravel    && { q: t.faqTravel,   a: show.faqTravel },
+  ].filter((x): x is { q: string; a: string } => !!x);
 
   return (
-    <div className="min-h-screen pb-28 sm:pb-24" style={{ backgroundColor: THEME.surface }}>
+    <div className="min-h-screen bg-parchment pb-28">
 
-      {/* ── CONSTRAINED: Back + Hero ── */}
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
-        <Link to="/catalog" className="text-sm font-medium pt-6 pb-4 inline-block" style={{ color: THEME.muted }}>← {t.back}</Link>
+      {/* ── Back link ── */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-4">
+        <Link
+          to="/catalog"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-warm-muted hover:text-charcoal transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t.back}
+        </Link>
+      </div>
 
-        {/* Hero */}
-        <section className="w-full py-6 sm:py-10 flex flex-col lg:flex-row gap-10 lg:gap-14 items-start">
-          {/* Left: image with gradient overlay */}
-          <div className="relative w-full lg:w-1/2 flex-shrink-0 group">
+      {/* ── Hero image ── */}
+      {heroImage && (
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-10">
+          <div className="relative rounded-3xl overflow-hidden">
             <img
               src={heroImage}
               alt={show.title}
-              className="w-full aspect-[3/2] object-cover"
-              style={{ borderRadius: THEME.radius }}
+              className="w-full aspect-video sm:aspect-[21/9] md:aspect-[16/7] object-cover"
             />
-            {/* Accent gradient overlay at image bottom */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ borderRadius: THEME.radius, background: `linear-gradient(to top, ${accent}cc 0%, ${accent}30 35%, transparent 65%)` }}
-            />
-            {/* Category badge on image */}
-            <div className="absolute bottom-4 left-4 flex gap-2 flex-wrap">
-              <span className="px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full" style={{ backgroundColor: accent, color: accentText }}>
+            {/* Category badge */}
+            <div className="absolute bottom-4 left-4 flex gap-2">
+              <span className="bg-glass text-charcoal text-[11px] font-semibold tracking-wider uppercase px-3 py-1.5 rounded-full">
                 {show.category}
               </span>
               {show.durationMinutes && (
-                <span className="px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full bg-black/50 text-white backdrop-blur-sm">
+                <span className="bg-glass text-charcoal text-[11px] font-semibold px-3 py-1.5 rounded-full">
                   {show.durationMinutes} min
                 </span>
               )}
             </div>
           </div>
-
-          {/* Right: info panel */}
-          <div className="w-full lg:w-1/2 flex-1">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-[1.1] mb-3" style={{ color: THEME.text }}>
-              {show.title}
-            </h1>
-
-            {/* Price badge */}
-            {priceLabel && (
-              <div className="mb-4">
-                <span className="px-4 py-1.5 text-sm font-bold rounded-full" style={{ backgroundColor: `${accent}18`, color: accent }}>
-                  {priceLabel}
-                </span>
-              </div>
-            )}
-
-            {shortPromise && (
-              <p className="text-base sm:text-lg mb-6 leading-relaxed" style={{ color: THEME.text }}>{shortPromise}</p>
-            )}
-
-            {/* Agency quick-scan grid */}
-            <div className="grid grid-cols-2 gap-3 mb-6 p-4 rounded-2xl" style={{ backgroundColor: '#f9f9f7', border: `1px solid ${THEME.rule}` }}>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.duration}</p>
-                <p className="text-sm font-semibold" style={{ color: THEME.text }}>{show.durationMinutes} min</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.languages}</p>
-                <p className="text-sm font-semibold" style={{ color: THEME.text }}>{(show.languageOptions || []).join(', ') || '—'}</p>
-              </div>
-              {(show.idealFor || (show.vibeTags?.length ?? 0) > 0) && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.idealFor}</p>
-                  <p className="text-sm font-semibold" style={{ color: THEME.text }}>{show.idealFor || (show.vibeTags || []).slice(0, 2).join(', ')}</p>
-                </div>
-              )}
-              {show.audienceRange && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.audience}</p>
-                  <p className="text-sm font-semibold" style={{ color: THEME.text }}>{show.audienceRange}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.outdoor}</p>
-                <p className="text-sm font-semibold" style={{ color: THEME.text }}>{show.faqOutdoor || t.onRequest}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.travel}</p>
-                <p className="text-sm font-semibold" style={{ color: THEME.text }}>{show.faqTravel || t.onRequest}</p>
-              </div>
-              {show.cast && (
-                <div className="col-span-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.muted }}>{t.cast}</p>
-                  <p className="text-sm font-semibold whitespace-pre-line" style={{ color: THEME.text }}>{show.cast}</p>
-                </div>
-              )}
-            </div>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap gap-3 mb-5">
-              <button onClick={openContact} className="px-6 py-3 font-semibold text-sm hover:opacity-90 transition shadow-lg" style={{ backgroundColor: accent, color: accentText, borderRadius: THEME.radius }}>
-                {t.ctaPrimary}
-              </button>
-              {videoPreviewUrl && (
-                <a href="#video" className="px-6 py-3 font-semibold text-sm border-2 hover:opacity-80 transition" style={{ borderRadius: THEME.radius, borderColor: accent, color: accent }}>
-                  {t.ctaSecondary}
-                </a>
-              )}
-              <a href="#faq" className="px-6 py-3 font-semibold text-sm border hover:opacity-80 transition" style={{ borderRadius: THEME.radius, borderColor: THEME.rule, color: THEME.muted }}>
-                {t.faq}
-              </a>
-            </div>
-
-            {show.placement && (
-              <p className="text-sm" style={{ color: THEME.muted }}>
-                <span className="font-semibold" style={{ color: THEME.text }}>{t.placement}:</span> {show.placement}
-              </p>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* ── FULL-WIDTH: Promise band ── */}
-      {promisePullquote && (
-        <div style={{ backgroundColor: `${accent}10` }} className="py-14 sm:py-20">
-          <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 text-center">
-            {/* Accent rule */}
-            <div className="w-12 h-1 rounded-full mx-auto mb-8" style={{ backgroundColor: accent }} />
-            <blockquote
-              className="text-xl sm:text-2xl md:text-3xl font-medium italic leading-relaxed max-w-3xl mx-auto mb-8"
-              style={{ color: THEME.text }}
-            >
-              "{promisePullquote}{promisePullquote.length >= 220 ? '…' : '"'}
-            </blockquote>
-            {(show.vibeTags?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap justify-center gap-2">
-                {show.vibeTags.slice(0, 7).map((v, i) => (
-                  <span key={i} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide" style={{ backgroundColor: `${accent}22`, color: accent }}>
-                    {v}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       )}
 
-      {/* ── CONSTRAINED: Gallery, About, Video, Artist, Testimonials, Q&A, FAQ ── */}
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
+      {/* ── Main content: 2-col ── */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] gap-10 lg:gap-14 items-start">
 
-        {/* Gallery */}
-        {photos.length > 0 && (
-          <>
-            <section id="gallery" className="py-10 overflow-hidden w-full">
-              <h2 className="text-xl font-semibold mb-1" style={{ color: THEME.text }}>{t.gallery}</h2>
-              <p className="text-sm mb-6" style={{ color: THEME.muted }}>{t.gallerySub}</p>
-              <div className="overflow-x-auto scrollbar-hide scroll-smooth -mx-4 sm:-mx-6 px-4 sm:px-6">
-                <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-                  {photos.map((url, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setLightboxIndex(i)}
-                      className="flex-shrink-0 w-64 sm:w-80 aspect-[4/3] overflow-hidden focus:outline-none hover:scale-[1.02] transition-transform"
-                      style={{ borderRadius: THEME.radius }}
-                    >
-                      <img src={url} alt={`${show.title} — ${i + 1}`} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-            {lightboxIndex !== null && (
-              <div className="fixed inset-0 z-50 bg-black/96 flex items-center justify-center p-4" onClick={() => setLightboxIndex(null)}>
-                <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-2xl z-10" onClick={() => setLightboxIndex(null)}>×</button>
-                {photos.length > 1 && (
-                  <>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === 0 ? photos.length - 1 : i! - 1)); }} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10">←</button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === photos.length - 1 ? 0 : i! + 1)); }} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10">→</button>
-                  </>
-                )}
-                <img src={photos[lightboxIndex]} alt="" className="max-w-full max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} style={{ borderRadius: THEME.radius }} />
-              </div>
-            )}
-            <Rule />
-          </>
-        )}
+          {/* ── LEFT: title + content ── */}
+          <div className="min-w-0">
 
-        {/* About this show */}
-        <section id="video" className="py-12">
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
-            {/* Left: description */}
-            <div className="w-full lg:w-1/2">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>About</p>
-              <h2 className="text-xl font-semibold mb-4" style={{ color: THEME.text }}>
-                {locale === 'de' ? 'About this SHOW' : 'About this SHOW'}
-              </h2>
-              {show.shortDescriptionFacts && (
-                <p className="text-base leading-relaxed whitespace-pre-line mb-6" style={{ color: THEME.text }}>
+            {/* Title */}
+            <h1 className="text-[1.75rem] sm:text-5xl md:text-[4.5rem] font-semibold tracking-[-0.04em] leading-[1.05] mb-3">
+              <span
+                className="shimmer-text"
+                style={{ '--shimmer-accent': CATEGORY_SHIMMER[show.category] ?? '#6366f1' } as React.CSSProperties}
+              >
+                {show.title}
+              </span>
+            </h1>
+            <p className="text-base text-warm-muted mb-8">
+              {locale === 'de' ? 'von' : 'by'} <span className="font-medium text-charcoal">{show.artistName}</span>
+            </p>
+
+            {/* Stats pills */}
+            <div className="flex flex-wrap gap-2 mb-10">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
+                <Star className="w-3.5 h-3.5 fill-charcoal text-charcoal" /> 5
+              </span>
+              {show.durationMinutes && (
+                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
+                  <Clock className="w-3.5 h-3.5" /> {show.durationMinutes} min
+                </span>
+              )}
+              {show.cast && (
+                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
+                  <Users className="w-3.5 h-3.5" /> {show.cast}
+                </span>
+              )}
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
+                {priceRange}
+              </span>
+              {priceLabel && (
+                <span className="inline-flex items-center px-4 py-2 rounded-full bg-terracotta-light text-sm font-semibold text-terracotta border border-terracotta/20">
+                  {priceLabel}
+                </span>
+              )}
+            </div>
+
+            {/* About this show */}
+            {show.shortDescriptionFacts && (
+              <section className="mb-10">
+                <h2 className="text-xl font-semibold text-charcoal mb-3">{t.about}</h2>
+                <p className="text-base text-charcoal leading-relaxed whitespace-pre-line">
                   {show.shortDescriptionFacts}
                 </p>
-              )}
-              {(show.vibeTags?.length ?? 0) > 0 && (
-                <>
-                  <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: THEME.muted }}>{t.whyItWorks}</p>
-                  <ul className="space-y-2">
-                    {show.vibeTags.slice(0, 5).map((v, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm font-medium" style={{ color: THEME.text }}>
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] flex-shrink-0" style={{ backgroundColor: `${accent}20`, color: accent }}>✓</span>
-                        {v}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
+              </section>
+            )}
 
-            {/* Right: video */}
-            <div className="w-full lg:w-1/2">
-              {videoPreviewUrl ? (
-                <>
-                  <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>{t.video}</p>
-                  <h2 className="text-xl font-semibold mb-2" style={{ color: THEME.text }}>
-                    {locale === 'de' ? 'Preview (15 Sek.)' : 'Preview (15 sec)'}
-                  </h2>
-                  <div className="relative w-full aspect-video overflow-hidden shadow-xl mb-4" style={{ borderRadius: THEME.radius }}>
-                    <iframe src={videoPreviewUrl} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video preview" />
-                  </div>
-                  {videoEmbeds.length > 1 && (
-                    <div className="relative w-full aspect-video overflow-hidden" style={{ borderRadius: THEME.radius }}>
-                      <iframe src={videoEmbeds[1]} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video full" />
+            {/* Why it works / vibeTags checklist */}
+            {(show.vibeTags?.length ?? 0) > 0 && (
+              <section className="mb-10">
+                <h2 className="text-xl font-semibold text-charcoal mb-4">
+                  {locale === 'de' ? 'Was ist enthalten' : "What's Included"}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {show.vibeTags.slice(0, 6).map((tag, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-terracotta flex-shrink-0" />
+                      <span className="text-sm text-charcoal">{tag}</span>
                     </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Ideal for / audience tags */}
+            {(show.idealFor || (show.vibeTags?.length ?? 0) > 0) && (
+              <section className="mb-10">
+                <h2 className="text-xl font-semibold text-charcoal mb-3">{t.idealFor}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {(show.idealFor ? [show.idealFor] : show.vibeTags?.slice(0, 4) ?? []).map((tag, i) => (
+                    <span key={i} className="text-sm text-warm-muted bg-surface-alt px-4 py-2 rounded-full border border-warm-border">
+                      {tag}
+                    </span>
+                  ))}
+                  {show.audienceRange && (
+                    <span className="text-sm text-warm-muted bg-surface-alt px-4 py-2 rounded-full border border-warm-border">
+                      {show.audienceRange}
+                    </span>
                   )}
-                </>
-              ) : (
-                /* No video: show a vibe-tag card grid as visual filler */
-                (show.vibeTags?.length ?? 0) > 3 && (
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    {show.vibeTags.slice(0, 4).map((v, i) => (
-                      <div key={i} className="p-4 rounded-2xl text-sm font-semibold" style={{ backgroundColor: `${accent}${i % 2 === 0 ? '12' : '08'}`, color: THEME.text }}>
-                        {v}
-                      </div>
-                    ))}
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        </section>
+                </div>
+              </section>
+            )}
 
-        <Rule />
-
-        {/* Artist bio */}
-        {show.salesPitchText && (
-          <>
-            <section className="py-12">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>{t.aboutArtist}</p>
-              <div className="flex flex-col lg:flex-row gap-8 items-start">
-                <div className="w-1 self-stretch rounded-full flex-shrink-0 hidden lg:block" style={{ backgroundColor: `${accent}40` }} />
-                <p className="text-lg leading-relaxed whitespace-pre-line flex-1 italic" style={{ color: THEME.text }}>
+            {/* Artist bio */}
+            {show.salesPitchText && (
+              <section className="mb-10">
+                <h2 className="text-xl font-semibold text-charcoal mb-3">{t.aboutArtist}</h2>
+                <p className="text-base text-charcoal leading-relaxed whitespace-pre-line italic border-l-2 border-warm-border pl-4">
                   {show.salesPitchText}
                 </p>
-              </div>
-            </section>
-            <Rule />
-          </>
-        )}
+              </section>
+            )}
 
-        {/* Testimonials */}
-        {(show.testimonials?.length ?? 0) > 0 && (
-          <>
-            <section className="py-12">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-6" style={{ color: accent }}>
-                {locale === 'de' ? 'Stimmen' : 'What clients say'}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {show.testimonials!.map((test, i) => (
-                  <blockquote key={i} className="p-6 rounded-2xl" style={{ backgroundColor: `${accent}08`, border: `1px solid ${accent}20` }}>
-                    <p className="text-base italic leading-relaxed mb-4" style={{ color: THEME.text }}>"{test.quote}"</p>
-                    <footer className="text-xs font-bold uppercase tracking-widest not-italic" style={{ color: accent }}>— {test.name}</footer>
-                  </blockquote>
-                ))}
-              </div>
-            </section>
-            <Rule />
-          </>
-        )}
+            {/* Gallery — no heading */}
+            {photos.length > 1 && (
+              <section className="mb-10">
+                <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+                  <div className="flex gap-3 pb-2 px-4 sm:px-0" style={{ width: 'max-content' }}>
+                    {photos.map((url, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setLightboxIndex(i)}
+                        className="flex-shrink-0 w-56 sm:w-72 aspect-[4/3] overflow-hidden rounded-2xl focus:outline-none hover:scale-[1.02] transition-transform"
+                      >
+                        <img src={url} alt={`${show.title} — ${i + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
 
-        {/* Q&A widget */}
-        {children && (
-          <>
-            <section className="py-10">
-              <div style={{ maxWidth: '600px' }}>{children}</div>
-            </section>
-            <Rule />
-          </>
-        )}
+            {/* Video — no heading */}
+            {videoPreviewUrl && (
+              <section id="video" className="mb-10">
+                <div className="relative w-full aspect-video overflow-hidden rounded-2xl shadow-soft">
+                  <iframe
+                    src={videoPreviewUrl}
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="Video preview"
+                  />
+                </div>
+                {videoEmbeds.length > 1 && (
+                  <div className="relative w-full aspect-video overflow-hidden rounded-2xl shadow-soft mt-4">
+                    <iframe
+                      src={videoEmbeds[1]}
+                      className="absolute inset-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Video full"
+                    />
+                  </div>
+                )}
+              </section>
+            )}
 
-        {/* FAQ */}
-        <section id="faq" className="py-12">
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>{t.faq}</p>
-          <h2 className="text-xl font-semibold mb-6" style={{ color: THEME.text }}>
-            {locale === 'de' ? 'Häufige Fragen' : 'Frequently asked questions'}
-          </h2>
-          <div className="space-y-2">
-            {([
-              { q: t.faqOutdoor, a: show.faqOutdoor || t.faqAnswer },
-              { q: t.faqStage, a: show.faqStage || t.faqAnswer },
-              { q: t.faqTiming, a: show.timingsShort || t.faqAnswer },
-              { q: t.faqLanguage, a: show.faqLanguage || t.faqAnswer },
-              { q: t.faqCustom, a: show.faqCustom || t.faqAnswer },
-              { q: t.faqPromoterNeeds, a: t.faqAnswer },
-              { q: t.faqTravel, a: show.faqTravel || t.faqAnswer },
-            ] as { q: string; a: string }[]).map((item, i) => (
-              <FAQAccordionItem key={i} question={item.q} answer={item.a} accent={accent} />
-            ))}
+            {/* Testimonials */}
+            {(show.testimonials?.length ?? 0) > 0 && (
+              <section className="mb-10">
+                <h2 className="text-xl font-semibold text-charcoal mb-4">
+                  {locale === 'de' ? 'Stimmen' : 'What clients say'}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {show.testimonials!.map((test, i) => (
+                    <blockquote key={i} className="p-5 rounded-2xl bg-surface border border-warm-border shadow-soft">
+                      <p className="text-sm italic leading-relaxed text-charcoal mb-3">"{test.quote}"</p>
+                      <footer className="text-xs font-semibold text-warm-muted not-italic">— {test.name}</footer>
+                    </blockquote>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* FAQ — only shown when at least one answer exists */}
+            {faqItems.length > 0 && (
+              <section id="faq" className="mb-10">
+                <h2 className="text-xl font-semibold text-charcoal mb-4">{t.faq}</h2>
+                <div className="space-y-2">
+                  {faqItems.map((item, i) => (
+                    <FAQAccordionItem key={i} question={item.q} answer={item.a} />
+                  ))}
+                </div>
+              </section>
+            )}
+
           </div>
-        </section>
 
-      </div>
+          {/* ── RIGHT sidebar ── */}
+          <div className="lg:sticky lg:top-24">
+            <div className="bg-surface rounded-3xl border border-warm-border shadow-soft p-6">
 
-      {/* ── FULL-WIDTH: Grand Slam Booking CTA ── */}
-      <div style={{ backgroundColor: '#0f0f10' }} className="py-16 sm:py-24">
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+              <p className="text-xs font-bold uppercase tracking-widest text-terracotta mb-1">{t.interested}</p>
+              <h3 className="text-lg font-semibold text-charcoal tracking-tight leading-snug mb-1">
+                {show.title}
+              </h3>
+              <p className="text-sm text-warm-muted mb-5">{t.sidebarSub}</p>
 
-            {/* Left: headline + checklist + CTA */}
-            <div className="flex-1">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: accent }}>
-                {t.booking}
-              </p>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white mb-5 tracking-tight leading-[1.1]">
-                {t.grandHeadline}
-              </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-10 max-w-md">
-                {t.grandSub}
-              </p>
+              {/* Price */}
+              {priceLabel && (
+                <div className="mb-5 px-4 py-3 bg-surface-alt rounded-2xl border border-warm-border">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-warm-muted mb-0.5">
+                    {locale === 'de' ? 'Preis' : 'Price'}
+                  </p>
+                  <p className="text-base font-semibold text-charcoal">{priceLabel}</p>
+                </div>
+              )}
 
-              {/* Checklist */}
-              <ul className="space-y-3 mb-10">
-                {t.checklist.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0" style={{ backgroundColor: `${accent}25`, color: accent }}>✓</span>
-                    <span className="text-sm text-gray-300 font-medium">{item}</span>
-                  </li>
-                ))}
-              </ul>
+              {/* Quick facts */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {show.durationMinutes && (
+                  <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.duration}</p>
+                    <p className="text-sm font-semibold text-charcoal">{show.durationMinutes} min</p>
+                  </div>
+                )}
+                {(show.languageOptions || []).length > 0 && (
+                  <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.languages}</p>
+                    <p className="text-sm font-semibold text-charcoal">{(show.languageOptions || []).join(', ')}</p>
+                  </div>
+                )}
+                <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.outdoor}</p>
+                  <p className="text-sm font-semibold text-charcoal">{show.faqOutdoor || t.onRequest}</p>
+                </div>
+                <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.travel}</p>
+                  <p className="text-sm font-semibold text-charcoal">{show.faqTravel || t.onRequest}</p>
+                </div>
+              </div>
 
+              {/* CTA */}
               <button
                 onClick={openContact}
-                className="inline-flex items-center gap-2 px-10 py-5 text-base font-bold hover:opacity-90 transition shadow-2xl"
-                style={{ backgroundColor: accent, color: accentText, borderRadius: THEME.radius }}
+                className="w-full py-3.5 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:bg-charcoal/90 transition-colors shadow-soft mb-3"
               >
-                {t.contactAufnehmen} →
+                {t.requestQuote}
               </button>
 
-              <p className="mt-5 text-xs text-gray-600 font-medium">
-                ✓ {t.grandTrust}
-              </p>
-            </div>
+              {waLink(show.title, locale) && (
+                <a
+                  href={waLink(show.title, locale)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 border border-warm-border rounded-2xl text-sm font-medium text-charcoal hover:bg-surface-alt transition-colors flex items-center justify-center gap-2 mb-4"
+                >
+                  <WhatsAppIcon />
+                  {locale === 'de' ? 'Per WhatsApp anfragen' : 'Ask via WhatsApp'}
+                </a>
+              )}
 
-            {/* Right: at-a-glance card */}
-            <div
-              className="w-full lg:w-80 shrink-0 rounded-3xl p-7"
-              style={{ backgroundColor: '#1a1a1c', border: `1px solid ${accent}30` }}
-            >
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-5">{t.atAGlance}</p>
-              <div className="space-y-4">
-                {priceLabel && (
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-gray-400">{t.price}</span>
-                    <span className="text-base font-bold" style={{ color: accent }}>{priceLabel}</span>
+              <p className="text-[11px] text-center text-warm-faint leading-snug">{t.trustLine}</p>
+
+              {/* Vibe tags */}
+              {(show.vibeTags?.length ?? 0) > 0 && (
+                <div className="mt-5 pt-4 border-t border-warm-border">
+                  <div className="flex flex-wrap gap-1.5">
+                    {show.vibeTags.slice(0, 5).map((tag, i) => (
+                      <span key={i} className="text-[10px] text-warm-muted bg-surface-alt px-2.5 py-1 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                )}
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">{t.duration}</span>
-                  <span className="text-sm font-bold text-white">{show.durationMinutes} min</span>
                 </div>
-                {show.audienceRange && (
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-gray-400">{t.audience}</span>
-                    <span className="text-sm font-bold text-white">{show.audienceRange}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">{t.outdoor}</span>
-                  <span className="text-sm font-bold text-white">{show.faqOutdoor || t.onRequest}</span>
-                </div>
-                {show.cast && (
-                  <div className="pt-4 border-t" style={{ borderColor: '#2a2a2c' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">{t.cast}</p>
-                    <p className="text-sm font-semibold text-white">{show.cast}</p>
-                  </div>
-                )}
-                {show.placement && (
-                  <div className="pt-3 border-t" style={{ borderColor: '#2a2a2c' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">{t.placement}</p>
-                    <p className="text-sm font-semibold text-white">{show.placement}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Show color swatch — subtle identity mark */}
-              <div className="mt-6 pt-5 border-t flex items-center gap-3" style={{ borderColor: '#2a2a2c' }}>
-                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
-                <p className="text-xs text-gray-600 font-medium truncate">{show.title}</p>
-              </div>
+              )}
             </div>
-
           </div>
+
         </div>
       </div>
 
-      {/* ── CONSTRAINED: More shows ── */}
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
-        <section className="py-10 text-center">
-          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: THEME.muted }}>{t.moreShows}</h2>
-          <Link to="/catalog" className="inline-block px-8 py-3.5 rounded-2xl font-bold text-sm hover:opacity-90 transition" style={{ backgroundColor: accent, color: accentText }}>
-            {t.toCatalog}
-          </Link>
-        </section>
-        <Rule />
-      </div>
+
+      {/* ── Lightbox ── */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/96 flex items-center justify-center p-4"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-2xl z-10"
+            onClick={() => setLightboxIndex(null)}
+          >×</button>
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === 0 ? photos.length - 1 : i! - 1)); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10"
+              >←</button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === photos.length - 1 ? 0 : i! + 1)); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10"
+              >→</button>
+            </>
+          )}
+          <img
+            src={photos[lightboxIndex]}
+            alt=""
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* ── Contact modal ── */}
       {(contactMode === 'form' || contactMode === 'success') && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50" onClick={() => onContactModeChange('options')}>
-          <div className="w-full sm:max-w-md bg-white p-6 sm:p-8 shadow-2xl" style={{ borderRadius: THEME.radius }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50"
+          onClick={() => onContactModeChange('options')}
+        >
+          <div
+            className="w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
             {contactMode === 'form' && (
               <>
-                <div className="w-8 h-1 rounded-full mb-5" style={{ backgroundColor: accent }} />
-                <h3 className="text-xl font-semibold mb-1" style={{ color: THEME.text }}>
-                  {locale === 'de' ? 'Schön, dass du da bist!' : "Great you're here!"}
-                </h3>
-                <p className="text-sm mb-6" style={{ color: THEME.muted }}>
-                  {locale === 'de' ? "Schick uns kurz deine Infos – wir melden uns zeitnah." : "Send us a quick note – we'll get back to you soon."}
-                </p>
+                <div className="w-8 h-1 rounded-full bg-terracotta mb-5" />
+                <h3 className="text-xl font-semibold text-charcoal mb-1">{t.greetTitle}</h3>
+                <p className="text-sm text-warm-muted mb-5">{t.greetSub}</p>
+                {/* Steps */}
+                <div className="mb-6 p-4 rounded-2xl bg-surface-alt space-y-2.5">
+                  {t.steps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="w-5 h-5 rounded-full bg-terracotta flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">{i + 1}</span>
+                      <span className="text-xs font-medium text-charcoal">{step}</span>
+                    </div>
+                  ))}
+                </div>
                 <form onSubmit={onContactSubmit} className="space-y-4">
                   {contactError && <p className="text-sm text-red-600 font-medium">{contactError}</p>}
-                  <input type="text" required placeholder={t.name} value={contactForm.name} onChange={(e) => onContactFormChange({ ...contactForm, name: e.target.value })} className="w-full px-4 py-3 border text-base focus:outline-none focus:ring-2" style={{ borderRadius: THEME.radius, borderColor: THEME.rule, ['--tw-ring-color' as string]: accent }} />
-                  <input type="email" required placeholder={t.email} value={contactForm.email} onChange={(e) => onContactFormChange({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 border text-base focus:outline-none focus:ring-2" style={{ borderRadius: THEME.radius, borderColor: THEME.rule, ['--tw-ring-color' as string]: accent }} />
-                  <input type="text" placeholder={t.eventDate} value={contactForm.eventDate} onChange={(e) => onContactFormChange({ ...contactForm, eventDate: e.target.value })} className="w-full px-4 py-3 border text-base focus:outline-none focus:ring-2" style={{ borderRadius: THEME.radius, borderColor: THEME.rule, ['--tw-ring-color' as string]: accent }} />
-                  <textarea placeholder={t.formPlaceholder} rows={3} value={contactForm.message} onChange={(e) => onContactFormChange({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 border text-base focus:outline-none focus:ring-2 resize-y" style={{ borderRadius: THEME.radius, borderColor: THEME.rule, ['--tw-ring-color' as string]: accent }} />
+                  <input type="text" required placeholder={t.name} value={contactForm.name} onChange={(e) => onContactFormChange({ ...contactForm, name: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition" />
+                  <input type="email" required placeholder={t.email} value={contactForm.email} onChange={(e) => onContactFormChange({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition" />
+                  <input type="text" placeholder={t.eventDate} value={contactForm.eventDate} onChange={(e) => onContactFormChange({ ...contactForm, eventDate: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition" />
+                  <textarea placeholder={t.formPlaceholder} rows={3} value={contactForm.message} onChange={(e) => onContactFormChange({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition resize-y" />
                   <div className="flex gap-3 pt-2">
-                    <button type="submit" disabled={contactSubmitting} className="flex-1 py-4 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition" style={{ backgroundColor: accent, color: accentText, borderRadius: THEME.radius }}>
+                    <button type="submit" disabled={contactSubmitting} className="flex-1 py-4 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:bg-charcoal/90 disabled:opacity-50 transition">
                       {contactSubmitting ? t.sending : t.sendRequest}
                     </button>
-                    <button type="button" onClick={() => onContactModeChange('options')} className="px-6 py-4 border font-semibold text-sm transition" style={{ borderRadius: THEME.radius, borderColor: THEME.rule, color: THEME.muted }}>
+                    <button type="button" onClick={() => onContactModeChange('options')} className="px-6 py-4 border border-warm-border text-warm-muted font-semibold text-sm rounded-2xl hover:bg-surface-alt transition">
                       {t.cancel}
                     </button>
                   </div>
@@ -718,9 +575,9 @@ export const ShowDetailPage: React.FC<Props> = ({
             )}
             {contactMode === 'success' && (
               <div className="text-center py-6">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold mx-auto mb-4" style={{ backgroundColor: `${accent}20`, color: accent }}>✓</div>
-                <p className="text-lg font-medium mb-4" style={{ color: THEME.text }}>{t.thanks}</p>
-                <button type="button" onClick={() => onContactModeChange('options')} className="text-sm font-semibold" style={{ color: THEME.muted }}>{t.another}</button>
+                <div className="w-16 h-16 rounded-full bg-terracotta/10 flex items-center justify-center text-2xl font-semibold text-terracotta mx-auto mb-4">✓</div>
+                <p className="text-lg font-medium text-charcoal mb-4">{t.thanks}</p>
+                <button type="button" onClick={() => onContactModeChange('options')} className="text-sm font-semibold text-warm-muted">{t.another}</button>
               </div>
             )}
           </div>
@@ -728,30 +585,47 @@ export const ShowDetailPage: React.FC<Props> = ({
       )}
 
       {/* ── Sticky footer ── */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 w-full bg-white/95 backdrop-blur-md border-t" style={{ borderColor: THEME.rule }}>
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-warm-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+            <div className="w-2 h-2 rounded-full bg-terracotta flex-shrink-0" />
             <div className="min-w-0">
-              <p className="font-semibold truncate text-sm" style={{ color: THEME.text }}>{show.title}</p>
-              <div className="flex items-center gap-2 text-xs" style={{ color: THEME.muted }}>
+              <p className="font-semibold truncate text-sm text-charcoal">{show.title}</p>
+              <div className="flex items-center gap-2 text-xs text-warm-muted">
                 <span>{show.durationMinutes} min</span>
                 <span>·</span>
                 <span>{show.category}</span>
                 {priceLabel && (
                   <>
                     <span>·</span>
-                    <span className="font-semibold" style={{ color: accent }}>{priceLabel}</span>
+                    <span className="font-semibold text-terracotta">{priceLabel}</span>
                   </>
                 )}
               </div>
             </div>
           </div>
-          <button onClick={openContact} className="shrink-0 px-6 py-3 font-semibold text-sm hover:opacity-90 transition" style={{ backgroundColor: accent, color: accentText, borderRadius: THEME.radius }}>
-            {t.contactAufnehmen}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {waLink(show.title, locale) && (
+              <a
+                href={waLink(show.title, locale)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3 flex items-center justify-center border border-warm-border rounded-2xl text-green-600 hover:bg-surface-alt transition"
+                title="WhatsApp"
+              >
+                <WhatsAppIcon />
+              </a>
+            )}
+            <button
+              onClick={openContact}
+              className="px-4 sm:px-6 py-3 bg-charcoal text-white font-semibold text-sm rounded-2xl hover:bg-charcoal/90 transition"
+            >
+              {t.cta}
+            </button>
+          </div>
         </div>
       </footer>
+
     </div>
   );
 };

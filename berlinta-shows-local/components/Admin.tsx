@@ -64,6 +64,134 @@ export const AdminLogin: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
   );
 };
 
+// --- Inline submission row ---
+const SubmissionRow: React.FC<{ sub: Submission; onRefresh: () => void }> = ({ sub, onRefresh }) => {
+  const [open, setOpen] = useState(false);
+  const [full, setFull] = useState<Submission | null>(null);
+  const [fetching, setFetching] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editPitch, setEditPitch] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [notes, setNotes] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const toggle = async () => {
+    if (!open && !full) {
+      setFetching(true);
+      try {
+        const s = await adminGetSubmission(sub.id);
+        setFull(s);
+        setEditTitle(s.show_title || '');
+        setEditDesc(s.short_description_facts || '');
+        setEditPitch(s.sales_pitch_text || '');
+        setEditBio((s as Record<string, unknown>).artist_bio as string || '');
+      } finally { setFetching(false); }
+    }
+    setOpen(o => !o);
+  };
+
+  const doAction = async (fn: () => Promise<unknown>, label: string) => {
+    if (!window.confirm(`${label}?`)) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await fn();
+      setDone(true);
+      onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Action failed');
+    } finally { setActionLoading(false); }
+  };
+
+  const isPending = sub.status === 'PENDING_REVIEW';
+  const photos = full && Array.isArray(full.photo_urls) ? full.photo_urls as string[] : [];
+
+  const statusColor: Record<string, string> = {
+    PENDING_REVIEW: 'bg-amber-100 text-amber-800',
+    APPROVED: 'bg-green-100 text-green-700',
+    REJECTED: 'bg-red-100 text-red-700',
+    CHANGES_REQUESTED: 'bg-blue-100 text-blue-700',
+  };
+
+  return (
+    <div className={`bg-white rounded-xl border overflow-hidden transition ${done ? 'opacity-40' : 'border-gray-200'}`}>
+      {/* Collapsed header */}
+      <button onClick={toggle} className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition text-left gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm text-gray-900 truncate">{sub.show_title || '(no title)'}</h3>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor[sub.status] || 'bg-gray-100 text-gray-500'}`}>{STATUS_LABELS[sub.status] || sub.status}</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{sub.submitter_email}</p>
+        </div>
+        <svg className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+
+      {/* Expanded detail */}
+      {open && (
+        <div className="border-t border-gray-100 p-5 space-y-4 bg-gray-50">
+          {fetching && <p className="text-sm text-gray-400">Loading…</p>}
+          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+          {full && (
+            <>
+              {/* Photo */}
+              {photos[0] && <img src={photos[0]} alt="" className="w-full max-h-52 object-cover rounded-xl" />}
+
+              {/* Meta grid */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500">
+                <div><span className="font-semibold text-gray-700">Artist:</span> {(full as Record<string, unknown>).artist_name as string || '—'}</div>
+                <div><span className="font-semibold text-gray-700">Genre:</span> {(full as Record<string, unknown>).artist_genre as string || '—'}</div>
+                <div><span className="font-semibold text-gray-700">Duration:</span> {(full as Record<string, unknown>).duration_minutes ? `${(full as Record<string, unknown>).duration_minutes} min` : '—'}</div>
+                <div><span className="font-semibold text-gray-700">Price:</span> {(full as Record<string, unknown>).price_text as string || '—'}</div>
+              </div>
+
+              {/* Editable fields */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Title</label>
+                <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-3">Description</label>
+                <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10 resize-y" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-3">Sales pitch</label>
+                <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10 resize-y" />
+              </div>
+
+              {/* Notes field for reject/changes */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Notes (for Reject / Request Changes)</label>
+                <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional message to artist…" className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  onClick={() => doAction(() => adminApprove(full.id, { title: editTitle.trim() || undefined, short_description_facts: editDesc.trim() || undefined, sales_pitch_text: editPitch.trim() || undefined }), 'Approve & Publish')}
+                  disabled={actionLoading}
+                  className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm transition disabled:opacity-50"
+                >
+                  ✓ Approve & Publish
+                </button>
+                {isPending && (
+                  <>
+                    <button onClick={() => doAction(() => adminRequestChanges(full.id, notes), 'Request Changes')} disabled={actionLoading} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-sm transition disabled:opacity-50">
+                      Request Changes
+                    </button>
+                    <button onClick={() => doAction(() => adminReject(full.id, notes), 'Reject')} disabled={actionLoading} className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-sm transition disabled:opacity-50">
+                      Reject
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // --- Dashboard: Submissions + Shows in one view ---
 export const AdminDashboard: React.FC = () => {
   const location = useLocation();
@@ -72,7 +200,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => { setTab(pathShows ? 'shows' : 'submissions'); }, [pathShows]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [shows, setShows] = useState<AdminShowListItem[]>([]);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState('PENDING_REVIEW');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -102,50 +230,58 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => load(), [tab, filter]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-        <button onClick={() => { adminLogout(); window.location.href = '/#/admin'; }} className="text-sm font-bold text-gray-500 hover:text-black">Logout</button>
+        <button onClick={() => { adminLogout(); window.location.href = '/#/admin'; }} className="text-sm font-bold text-gray-400 hover:text-black">Logout</button>
       </div>
 
+      {/* Tab bar */}
       <div className="flex gap-2 mb-6">
         <Link to="/admin/submissions" className={`px-4 py-2 rounded-xl text-sm font-bold ${tab === 'submissions' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>Submissions</Link>
         <Link to="/admin/shows" className={`px-4 py-2 rounded-xl text-sm font-bold ${tab === 'shows' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>Published Shows</Link>
       </div>
 
+      {/* Status filter — submissions only */}
       {tab === 'submissions' && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {['', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'CHANGES_REQUESTED'].map((s) => (
-            <button key={s || 'all'} onClick={() => setFilter(s)} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${filter === s ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>{s ? STATUS_LABELS[s] || s : 'All'}</button>
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {[
+            { key: 'PENDING_REVIEW', label: 'Pending' },
+            { key: '', label: 'All' },
+            { key: 'APPROVED', label: 'Approved' },
+            { key: 'REJECTED', label: 'Rejected' },
+            { key: 'CHANGES_REQUESTED', label: 'Changes' },
+          ].map(({ key, label }) => (
+            <button key={key || 'all'} onClick={() => setFilter(key)} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${filter === key ? 'bg-black text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
           ))}
+          <button onClick={load} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-500 hover:bg-gray-200">↻ Refresh</button>
         </div>
       )}
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-      {loading ? <p className="text-gray-500">Loading…</p> : tab === 'submissions' ? (
-        submissions.length === 0 ? <p className="text-gray-500">No submissions.</p> : (
-          <div className="space-y-3">
-            {submissions.map((s) => (
-              <div key={s.id} className="p-4 bg-white rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition">
-                <div>
-                  <h3 className="font-bold">{s.show_title}</h3>
-                  <p className="text-sm text-gray-500">{s.submitter_email} • <span className={s.status === 'PENDING_REVIEW' ? 'text-amber-600 font-medium' : ''}>{STATUS_LABELS[s.status] || s.status}</span></p>
-                </div>
-                <button onClick={() => navigate(`/admin/submissions/${s.id}`)} className="px-4 py-2 bg-black text-white rounded-lg text-sm font-bold">View</button>
-              </div>
-            ))}
-          </div>
-        )
+
+      {loading ? (
+        <p className="text-gray-400 text-sm">Loading…</p>
+      ) : tab === 'submissions' ? (
+        submissions.length === 0
+          ? <p className="text-gray-400 text-sm">No submissions for this filter.</p>
+          : (
+            <div className="space-y-2">
+              {submissions.map((s) => (
+                <SubmissionRow key={s.id} sub={s} onRefresh={load} />
+              ))}
+            </div>
+          )
       ) : (
-        shows.length === 0 ? <p className="text-gray-500">No published shows.</p> : (
-          <div className="space-y-3">
+        shows.length === 0 ? <p className="text-gray-400 text-sm">No published shows.</p> : (
+          <div className="space-y-2">
             {shows.map((s) => (
-              <div key={s.id} className="p-4 bg-white rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition">
+              <div key={s.id} className="p-4 bg-white rounded-xl border border-gray-200 flex justify-between items-center hover:shadow-sm transition">
                 <div>
-                  <h3 className="font-bold">{s.title}</h3>
-                  <p className="text-sm text-gray-500">{s.artist_name}</p>
+                  <h3 className="font-semibold text-sm">{s.title}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">{s.artist_name}</p>
                 </div>
-                <button onClick={() => navigate(`/admin/shows/${s.id}`)} className="px-4 py-2 bg-black text-white rounded-lg text-sm font-bold">Edit</button>
+                <button onClick={() => navigate(`/admin/shows/${s.id}`)} className="px-4 py-2 bg-black text-white rounded-lg text-xs font-bold">Edit</button>
               </div>
             ))}
           </div>

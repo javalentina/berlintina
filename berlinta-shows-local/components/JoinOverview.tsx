@@ -162,7 +162,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-12">
       <div className="mb-10 flex items-center justify-between">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+        <h1 className="font-display text-3xl md:text-4xl font-normal tracking-tight text-charcoal">
           {locale === 'de' ? 'Deine Show im Überblick' : 'Your Show Overview'}
         </h1>
         <button
@@ -189,36 +189,36 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
       <div className="space-y-12">
         {/* Artist name */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Künstlername' : 'Artist name'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Künstlername' : 'Artist name'}</label>
           <input
             type="text"
             value={String(draft.artistName || '')}
             onChange={(e) => update('artistName', e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-lg font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
             placeholder={locale === 'de' ? 'z.B. Anna Müller / Trio Berlin' : 'e.g. Anna Müller / Berlin Trio'}
           />
         </div>
 
         {/* Show title */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Show-Titel' : 'Show title'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Show-Titel' : 'Show title'}</label>
           <input
             type="text"
             value={String(draft.showTitle || '')}
             onChange={(e) => update('showTitle', e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-lg font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
             placeholder={locale === 'de' ? 'z.B. Klassik am Abend' : 'e.g. Classical Evening'}
           />
         </div>
 
         {/* Genre */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Genre / Kategorie' : 'Genre / Category'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Genre / Kategorie' : 'Genre / Category'}</label>
           <input
             type="text"
             value={String(draft.artistGenre || '')}
             onChange={(e) => update('artistGenre', e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-lg font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
             placeholder="CLASSICAL, BAND, ACROBATICS, DANCE"
           />
         </div>
@@ -233,7 +233,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
             value={String(draft.shortDescriptionFacts || '')}
             onChange={(e) => update('shortDescriptionFacts', e.target.value)}
             rows={4}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-y"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta resize-y bg-surface"
             placeholder={locale === 'de' ? 'Kurze Beschreibung deiner Show…' : 'Short description of your show…'}
           />
         </div>
@@ -248,7 +248,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
             value={String(draft.salesPitchText || '')}
             onChange={(e) => update('salesPitchText', e.target.value)}
             rows={2}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-y"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta resize-y bg-surface"
             placeholder={locale === 'de' ? '1–2 Sätze, die Eventplaner begeistern' : '1–2 sentences that excite event planners'}
           />
         </div>
@@ -263,7 +263,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
             value={String(draft.artistBio || '')}
             onChange={(e) => update('artistBio', e.target.value)}
             rows={3}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-y"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta resize-y bg-surface"
             placeholder={locale === 'de' ? 'Kurze Vorstellung…' : 'Short intro…'}
           />
         </div>
@@ -271,17 +271,17 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
         {/* Price & duration */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Preis' : 'Price'}</label>
+            <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Preis' : 'Price'}</label>
             <input
               type="text"
               value={String(draft.priceText || '')}
               onChange={(e) => update('priceText', e.target.value)}
-              className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
               placeholder="z.B. ab 800€ / Individuell"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Dauer (Min.)' : 'Duration (min)'}</label>
+            <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Dauer (Min.)' : 'Duration (min)'}</label>
             <input
               type="number"
               value={draft.durationMinutes ?? ''}
@@ -289,7 +289,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
                 const v = e.target.value;
                 update('durationMinutes', v === '' ? undefined : parseInt(v, 10));
               }}
-              className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
               placeholder="60"
             />
           </div>
@@ -297,24 +297,24 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
 
         {/* Social links */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Instagram / Website' : 'Instagram / Website'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Instagram / Website' : 'Instagram / Website'}</label>
           <input
             type="text"
             value={String(draft.socialLinks || '')}
             onChange={(e) => update('socialLinks', e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
             placeholder="@handle https://website.com"
           />
         </div>
 
         {/* Website URL */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Website' : 'Website'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Website' : 'Website'}</label>
           <input
             type="url"
             value={String(draft.websiteUrl || '')}
             onChange={(e) => update('websiteUrl', e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
             placeholder="https://…"
           />
         </div>
@@ -331,12 +331,12 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
               { key: 'faqTravel', label: locale === 'de' ? 'Reise / Standort?' : 'Travel / location?', placeholder: locale === 'de' ? 'z.B. Berlin-basiert, bundesweit reisend' : 'e.g. Berlin-based, travel nationwide' },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{label}</label>
+                <label className="block text-sm font-semibold text-warm-muted mb-2">{label}</label>
                 <input
                   type="text"
                   value={String((draft as Record<string, unknown>)[key] || '')}
                   onChange={(e) => update(key, e.target.value)}
-                  className="w-full px-5 py-3 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                  className="w-full px-5 py-3 rounded-2xl border border-warm-border text-base focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
                   placeholder={placeholder}
                 />
               </div>
@@ -346,7 +346,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
 
         {/* Photos */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Fotos' : 'Photos'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Fotos' : 'Photos'}</label>
           <div className="flex flex-wrap gap-4">
             {existingPhotoUrls.map((url, i) => (
               <div key={`url-${i}`} className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 bg-gray-100">
@@ -361,7 +361,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
                 </button>
               </div>
             ))}
-            <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-black hover:bg-gray-50 transition text-gray-400 hover:text-black">
+            <label className="w-24 h-24 rounded-xl border-2 border-dashed border-warm-border flex items-center justify-center cursor-pointer hover:border-terracotta hover:bg-terracotta-light transition text-warm-faint hover:text-terracotta">
               <span className="text-2xl">+</span>
               <input type="file" accept="image/*" multiple className="sr-only" onChange={addPhotos} />
             </label>
@@ -370,7 +370,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
 
         {/* Videos */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'Video-URLs' : 'Video URLs'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'Video-URLs' : 'Video URLs'}</label>
           <div className="space-y-3">
             {videoInputs.map((url, i) => (
               <div key={i} className="flex gap-2">
@@ -379,7 +379,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
                   value={url}
                   onChange={(e) => setVideoUrl(i, e.target.value)}
                   placeholder="https://…"
-                  className="flex-1 px-5 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                  className="flex-1 px-5 py-3 rounded-xl border border-warm-border focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
                 />
                 <button type="button" onClick={() => removeVideoUrl(i)} className="px-4 py-2 text-gray-500 hover:text-red-600 font-medium">
                   ×
@@ -394,23 +394,23 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
 
         {/* Email (read-only display) */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">{locale === 'de' ? 'E-Mail' : 'Email'}</label>
+          <label className="block text-sm font-semibold text-warm-muted mb-2">{locale === 'de' ? 'E-Mail' : 'Email'}</label>
           <input
             type="email"
             value={String(draft.submitterEmail || '')}
             onChange={(e) => update('submitterEmail', e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            className="w-full px-5 py-4 rounded-2xl border border-warm-border text-base focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta bg-surface"
             placeholder="deine@email.de"
           />
         </div>
       </div>
 
-      <div className="mt-16 pt-12 border-t border-gray-200">
+      <div className="mt-16 pt-12 border-t border-warm-border">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="w-full py-6 bg-black text-white rounded-2xl font-bold text-lg hover:opacity-90 transition disabled:opacity-50"
+          className="w-full py-6 bg-terracotta text-white rounded-2xl font-semibold text-lg hover:bg-terracotta-dark transition disabled:opacity-50"
         >
           {submitting ? (locale === 'de' ? 'Wird gesendet…' : 'Sending…') : (locale === 'de' ? 'Zur Prüfung senden' : 'Send to review')}
         </button>
