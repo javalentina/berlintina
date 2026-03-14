@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Sparkles, ArrowRight, X, Heart, ArrowUpRight, Star, CheckCircle2, Zap, Users, HeartHandshake } from 'lucide-react';
+import { BrowserRouter, Routes, Route, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
 import { Category, Show, CustomerBrief, ArtistStatus } from './types';
 import { VIBE_OPTIONS } from './constants';
 import { aiService } from './services/aiService';
@@ -7,6 +9,7 @@ import * as apiClient from './services/apiClient';
 import { scoreShows } from './lib/matching';
 import { conversationStart, conversationMessage } from './services/conversationService';
 import { LanguageToggle } from './components/LanguageToggle';
+import { PageSEO } from './components/PageSEO';
 import { ShowCard } from './components/ShowCard';
 import { JoinOverview } from './components/JoinOverview';
 import { useShows } from './contexts/ShowsContext';
@@ -29,7 +32,13 @@ const ShowDetail = lazy(() => import('./components/ShowDetailRoute').then(m => (
 const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLocale: (l: 'de' | 'en') => void }> = ({ children, locale, setLocale }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isActive = (path: string) => location.pathname === path;
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     const path = location.pathname || '/';
@@ -41,6 +50,8 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
       '/blog': 'Blog | Berlintina',
       '/artist': locale === 'de' ? 'Meine Shows | Berlintina' : 'My Shows | Berlintina',
       '/about': 'Über mich | Berlintina',
+      '/impressum': 'Impressum | Berlintina',
+      '/datenschutz': 'Datenschutz | Berlintina',
     };
     if (path.startsWith('/show/') || path.startsWith('/blog/')) return;
     document.title = titles[path] ?? 'Berlintina Shows';
@@ -48,44 +59,111 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
+  const isJoin = location.pathname === '/join/start';
+
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <header className="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 h-14 sm:h-16 flex items-center justify-between">
-          <Link to="/" className="text-base sm:text-lg font-semibold tracking-tight text-black flex items-center gap-2 group">
-            <div className="bg-black text-white w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs sm:text-sm font-bold italic transform group-hover:rotate-6 transition-transform">V</div>
-            <span className="font-semibold text-gray-900 tracking-tight">Berlintina</span>
+    <div className="min-h-screen flex flex-col bg-surface">
+      {/* ── Navbar — hidden on fullscreen join page ── */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transition-all duration-300 ${
+          scrolled
+            ? 'bg-glass shadow-[0_1px_2px_rgba(10,12,20,.04),0_4px_16px_rgba(10,12,20,.04)]'
+            : ''
+        } ${isJoin ? 'hidden' : ''}`}
+      >
+        <Link to="/" className="text-[1.1rem] font-semibold tracking-[-0.02em] text-charcoal no-underline">
+          berlintina<span className="text-terracotta">.</span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-6">
+          <Link to="/catalog" className="text-sm text-warm-muted hover:text-charcoal transition no-underline">
+            {locale === 'de' ? 'Shows' : 'Shows'}
           </Link>
-          <nav className="hidden md:flex items-center gap-8 lg:gap-10">
-            <Link to="/catalog" className={`text-sm font-semibold transition pb-1 border-b-2 ${isActive('/catalog') ? 'text-black border-black' : 'text-gray-500 border-transparent hover:text-black'}`}>Shows</Link>
-            <Link to="/blog" className={`text-sm font-semibold transition pb-1 border-b-2 ${isActive('/blog') ? 'text-black border-black' : 'text-gray-500 border-transparent hover:text-black'}`}>Blog</Link>
-            <Link to="/join" className={`text-sm font-semibold transition pb-1 border-b-2 ${isActive('/join') ? 'text-black border-black' : 'text-gray-500 border-transparent hover:text-black'}`}>{locale === 'de' ? 'Für Künstler' : 'For Artists'}</Link>
-            <Link to="/about" className={`text-sm font-semibold transition pb-1 border-b-2 ${isActive('/about') ? 'text-black border-black' : 'text-gray-500 border-transparent hover:text-black'}`}>{locale === 'de' ? 'Über mich' : 'About me'}</Link>
-          </nav>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <LanguageToggle locale={locale} onChange={setLocale} />
-            <button onClick={() => setMobileMenuOpen((o) => !o)} className="md:hidden p-2 -mr-2 rounded-lg hover:bg-gray-100" aria-label="Menu">
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} /></svg>
-            </button>
-          </div>
+          <Link to="/about" className="text-sm text-warm-muted hover:text-charcoal transition no-underline">
+            {locale === 'de' ? 'Kontakt' : 'Contact'}
+          </Link>
+          <Link to="/join" className="text-sm text-warm-muted hover:text-charcoal transition no-underline">
+            {locale === 'de' ? 'Für Künstler' : 'For Artists'}
+          </Link>
+          <a
+            href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
+            className="text-sm font-medium bg-charcoal text-white px-5 py-2 rounded-[10px] hover:opacity-85 transition no-underline inline-flex items-center gap-1"
+          >
+            {locale === 'de' ? 'Act buchen ↗' : 'Book a Show ↗'}
+          </a>
+          <LanguageToggle locale={locale} onChange={setLocale} />
+        </nav>
+
+        <div className="flex items-center gap-3 md:hidden">
+          <LanguageToggle locale={locale} onChange={setLocale} />
+          <button
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            className="p-2 -mr-1 rounded-lg hover:bg-surface-alt"
+            aria-label="Menu"
+          >
+            <svg className="w-5 h-5 text-warm-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-1">
-            <Link to="/catalog" className="block py-3 text-sm font-semibold text-gray-700 hover:text-black">Shows</Link>
-            <Link to="/blog" className="block py-3 text-sm font-semibold text-gray-700 hover:text-black">Blog</Link>
-            <Link to="/join" className="block py-3 text-sm font-semibold text-gray-700 hover:text-black">{locale === 'de' ? 'Für Künstler' : 'For Artists'}</Link>
-            <Link to="/about" className="block py-3 text-sm font-semibold text-gray-700 hover:text-black">{locale === 'de' ? 'Über mich' : 'About me'}</Link>
+          <div className="absolute top-full left-0 right-0 bg-glass border-t border-warm-border px-6 py-4 space-y-1 md:hidden">
+            <Link to="/catalog" className="block py-2.5 text-sm text-warm-muted hover:text-charcoal transition">Shows</Link>
+            <Link to="/about" className="block py-2.5 text-sm text-warm-muted hover:text-charcoal transition">{locale === 'de' ? 'Kontakt' : 'Contact'}</Link>
+            <Link to="/join" className="block py-2.5 text-sm text-warm-muted hover:text-charcoal transition">{locale === 'de' ? 'Für Künstler' : 'For Artists'}</Link>
+            <a
+              href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
+              className="block py-2.5 text-sm font-medium text-charcoal"
+            >
+              {locale === 'de' ? 'Act buchen ↗' : 'Book a Show ↗'}
+            </a>
           </div>
         )}
       </header>
+
       <main className="flex-grow">
         {children}
       </main>
-      <footer className="bg-white border-t border-gray-100 py-8 sm:py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs text-gray-400 font-medium tracking-wide">© 2024 Berlintina • Created with care in Berlin</p>
-        </div>
-      </footer>
+
+      {/* ── Footer — hidden on join/start fullscreen page ── */}
+      {location.pathname !== '/join/start' && (
+        <footer className="bg-surface border-t border-warm-border px-6 py-10">
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-start justify-between gap-6 text-center sm:text-left">
+            {/* Brand */}
+            <div className="flex flex-col items-center sm:items-start gap-1">
+              <span className="text-[0.95rem] font-semibold tracking-[-0.02em] text-charcoal">
+                berlintina<span className="text-terracotta">.</span>
+              </span>
+              <p className="text-[0.72rem] text-warm-muted">
+                © 2026 Berlintina · {locale === 'de' ? 'Boutique Entertainment, Berlin' : 'Boutique entertainment, Berlin'}
+              </p>
+            </div>
+
+            {/* Contact */}
+            <div className="flex flex-col items-center sm:items-start gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-wider text-warm-faint mb-0.5">
+                {locale === 'de' ? 'Kontakt' : 'Contact'}
+              </span>
+              <a href="tel:+4916081068880" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">+49 160 8106880</a>
+              <a href="mailto:info@berlintina.de" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">info@berlintina.de</a>
+              <a href="https://wa.me/4916081068880" target="_blank" rel="noopener noreferrer" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">WhatsApp</a>
+            </div>
+
+            {/* Links */}
+            <div className="flex flex-col items-center sm:items-start gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-wider text-warm-faint mb-0.5">Links</span>
+              <a href="https://www.instagram.com/berlintina.shows" target="_blank" rel="noopener noreferrer" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition flex items-center gap-1">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                Instagram
+              </a>
+              <Link to="/impressum" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">Impressum</Link>
+              <Link to="/datenschutz" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">Datenschutz</Link>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 };
@@ -94,65 +172,194 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
 const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+      <PageSEO
+        title={locale === 'de' ? 'Über Berlintina — Valiantsina, Boutique-Künstleragentur Berlin' : 'About Berlintina — Valiantsina, Boutique Artist Agency Berlin'}
+        description={locale === 'de'
+          ? 'Hinter Berlintina steht Valiantsina — eine persönlich kuratierte Künstleragentur in Berlin für Showacts, Live-Musik, Akrobatik und mehr.'
+          : 'Berlintina is Valiantsina — a personally curated artist agency in Berlin for show acts, live music, acrobatics and more.'}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: 'Valiantsina Förster',
+          jobTitle: 'Founder & Curator',
+          worksFor: { '@type': 'Organization', name: 'Berlintina' },
+          url: 'https://berlintina.de/about',
+          sameAs: ['https://www.instagram.com/berlintina.shows'],
+        }}
+      />
       <div className="flex flex-col items-center text-center mb-24">
-        <div className="w-32 h-32 rounded-3xl bg-black text-white flex items-center justify-center font-black text-5xl italic shadow-2xl mb-12 transform rotate-6 select-none">V</div>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold mb-6 sm:mb-8 tracking-tight">
+        <div className="w-40 h-40 rounded-3xl overflow-hidden shadow-2xl mb-12">
+          <img src="/images/valiantsina.png" alt="Valiantsina — Berlintina" className="w-full h-full object-cover object-top" />
+        </div>
+        <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal mb-6 sm:mb-8 tracking-tight">
           {locale === 'de' ? 'Hallo, ich bin Valiantsina.' : "Hi, I'm Valiantsina."}
         </h1>
-        <div className="max-w-3xl text-left space-y-6 text-gray-600 text-lg leading-relaxed font-medium">
-          <p>
-            {locale === 'de' 
-              ? 'Ich bin Webentwicklerin, KI-Interessierte (mit Uni-Hintergrund) und Show-Gestalterin — und vor allem jemand, der an echte Verbindung glaubt: an Momente, die berühren und Menschen zusammenbringen.' 
-              : 'I am a web developer, AI enthusiast (with a university background), and show creator — and above all, someone who believes in real connection: in moments that touch people and bring them together.'}
+        <div className="max-w-3xl text-left space-y-6 text-warm-muted text-lg leading-relaxed font-medium">
+          <p className="text-charcoal font-semibold text-xl">
+            {locale === 'de' ? 'Berlintina bin ich — Valiantsina.' : 'Berlintina is me — Valiantsina.'}
           </p>
           <p>
             {locale === 'de'
-              ? 'Berlintina Shows ist mein Herzensprojekt: eine Brücke zwischen Kunst und Technologie. Ich möchte, dass Veranstalter:innen schnell die passende Show finden — und dass Künstler sichtbar werden, ohne sich in Marketing und Chaos zu verlieren.'
-              : 'Berlintina Shows is my heart project: a bridge between art and technology. I want event planners to find the right show quickly — and artists to become visible without getting lost in marketing and chaos.'}
+              ? 'Ich lebe seit Jahren in Berlin, kenne die Kunstszene aus erster Hand, und habe selbst erlebt, wie schwierig es ist, den richtigen Act für ein Event zu finden.'
+              : "I've lived in Berlin for years, I know the arts scene intimately, and I've experienced first-hand how hard it is to find the right act for an event."}
           </p>
           <p>
             {locale === 'de'
-              ? 'Wichtig für dich: Jede Show auf dieser Plattform habe ich persönlich gesehen — oder werde sie sehen, bevor sie dauerhaft gelistet bleibt. Qualität, Respekt und Menschlichkeit stehen für mich an erster Stelle.'
-              : 'Important for you: I have personally seen every show on this platform — or will see it before it remains permanently listed. Quality, respect, and humanity are my top priorities.'}
+              ? 'Deshalb habe ich Berlintina gegründet: Eine Plattform, auf der echte Berliner Künstler sichtbar werden — und Veranstalter den perfekten Match finden, ohne stundenlang suchen zu müssen.'
+              : "So I built Berlintina: a platform where Berlin's finest artists get the visibility they deserve — and event organisers find their perfect match without hours of searching."}
           </p>
-          <div className="bg-[#f1f1ef] p-8 rounded-3xl border border-gray-100 mt-6">
-             <h3 className="font-bold text-black mb-3 text-xl tracking-tight">{locale === 'de' ? 'Warum kostenlos?' : 'Why for free?'}</h3>
-             <p className="text-gray-700">
-               {locale === 'de'
-              ? 'Weil ich glaube, dass Talente nicht "lauter" werden müssen, nur um gefunden zu werden. Viele Künstler sind schüchtern, trainieren hart und haben kaum Zeit für Vermarktung — und oft müssen sie Kompromisse machen, die sie gar nicht wollen. Diese Plattform soll genau das ändern.'
-              : "Because I believe that talents shouldn't have to get \"louder\" just to be found. Many artists are shy, train hard, and have little time for marketing. This platform is meant to change exactly that."}
-             </p>
-          </div>
-          <div className="pt-8 border-t border-gray-100 mt-8">
-             <p className="text-sm font-medium text-gray-400 italic">
-                {locale === 'de'
-                ? 'Transparenz: Meine persönlichen Texte im Blog schreibe ich ohne KI. Und bei jeder Show findest du meine private, ehrliche Einschätzung.'
-                : 'Transparency: I write my personal blog posts without AI. And with every show you will find my private, honest assessment.'}
+          <p>
+            {locale === 'de'
+              ? 'Jeder Künstler auf dieser Seite wurde von mir persönlich ausgewählt. Ich begleite Sie durch den gesamten Buchungsprozess — von der ersten Anfrage bis zur Unterschrift unter den Vertrag.'
+              : 'Every artist on this site has been personally selected by me. I guide you through the entire booking process — from your first enquiry to the signed contract.'}
+          </p>
+          <div className="bg-surface-alt p-8 rounded-3xl border border-warm-border mt-6">
+            <p className="text-charcoal font-semibold italic">
+              {locale === 'de' ? 'Berlintina ist kein Algorithmus. Berlintina bin ich.' : "Berlintina isn't an algorithm. Berlintina is me."}
             </p>
+          </div>
+          <div className="pt-8 border-t border-warm-border mt-8">
             <p className="mt-4">
-              <Link to="/blog" className="text-sm font-bold text-black underline underline-offset-4 hover:opacity-70 transition">
+              <Link to="/blog" className="text-sm font-semibold text-terracotta underline underline-offset-4 hover:opacity-70 transition">
                 {locale === 'de' ? 'Zum Blog →' : 'Read the Blog →'}
               </Link>
-            </p>
-            <p className="text-sm font-medium text-gray-400 mt-2">
-                {locale === 'de'
-                ? 'Pilotprojekt & Lernen: Das ist ein Pilotprojekt. Ich baue hier eine Kommunikation zwischen den kreativsten Menschen — und automatisierten KI-Agenten, die Prozesse abnehmen: Anfrage, Struktur, Texte, Übersicht.'
-                : 'Pilot Project & Learning: This is a pilot project. I am building communication between the most creative people — and automated AI agents that handle processes: inquiries, structure, texts, overview.'}
             </p>
           </div>
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 justify-center items-center mb-32">
-        <Link to="/catalog" className="px-10 py-5 bg-black text-white rounded-2xl font-bold text-sm shadow-xl hover:opacity-90 transition">
+        <Link to="/catalog" className="px-10 py-5 bg-terracotta text-white rounded-2xl font-semibold text-sm shadow-lg hover:bg-terracotta-dark transition">
           {locale === 'de' ? 'Shows entdecken' : 'Discover Shows'}
         </Link>
-        <Link to="/join" className="px-10 py-5 border-2 border-gray-100 rounded-2xl font-bold text-sm text-gray-500 hover:text-black hover:border-black transition">
+        <Link to="/join" className="px-10 py-5 border-2 border-warm-border rounded-2xl font-semibold text-sm text-warm-muted hover:text-charcoal hover:border-charcoal transition">
           {locale === 'de' ? 'Künstler werden' : 'Become an Artist'}
         </Link>
       </div>
     </div>
   );
 };
+
+// --- Impressum View ---
+const Impressum: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
+  <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <PageSEO
+      title="Impressum | Berlintina"
+      description="Impressum der Berlintina Showact-Agentur Berlin — Angaben gemäß § 5 TMG."
+      noindex={true}
+    />
+    <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-charcoal mb-2">Impressum</h1>
+    <p className="text-warm-muted text-sm mb-10">{locale === 'de' ? 'Angaben gemäß § 5 TMG' : 'Information according to § 5 TMG'}</p>
+    <div className="space-y-8 text-sm text-charcoal leading-relaxed">
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? 'Anbieter' : 'Service Provider'}</h2>
+        <p>Valiantsina Förster<br />Berlintina Shows<br />Berlin, Deutschland</p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">Kontakt</h2>
+        <p>
+          Telefon: <a href="tel:+4916081068880" className="text-terracotta hover:underline">+49 160 8106880</a><br />
+          E-Mail: <a href="mailto:info@berlintina.de" className="text-terracotta hover:underline">info@berlintina.de</a>
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? 'Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)' : 'Responsible for Content (§ 18 Abs. 2 MStV)'}</h2>
+        <p>Valiantsina Förster<br />Berlin, Deutschland</p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? 'Haftungsausschluss' : 'Disclaimer'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Die Inhalte dieser Seite wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann keine Gewähr übernommen werden. Als Diensteanbieter sind wir gemäß § 7 Abs. 1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.'
+            : 'The contents of this site have been created with the greatest care. No guarantee can be given for the correctness, completeness and topicality of the content. As a service provider, we are responsible for our own content on these pages in accordance with general laws pursuant to § 7 Abs. 1 TMG.'}
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? 'Urheberrecht' : 'Copyright'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Die durch den Betreiber dieser Seite erstellten Inhalte und Werke unterliegen dem deutschen Urheberrecht. Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.'
+            : 'The content and works created by the operator of this site are subject to German copyright law. Reproduction, editing, distribution and any kind of use outside the limits of copyright law require the written consent of the respective author or creator.'}
+        </p>
+      </section>
+    </div>
+  </div>
+);
+
+// --- Datenschutz View ---
+const Datenschutz: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
+  <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <PageSEO
+      title="Datenschutzerklärung | Berlintina"
+      description="Datenschutzerklärung der Berlintina Showact-Agentur — DSGVO-konform, Berlin."
+      noindex={true}
+    />
+    <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-charcoal mb-2">Datenschutzerklärung</h1>
+    <p className="text-warm-muted text-sm mb-10">
+      {locale === 'de' ? 'Gemäß DSGVO / Art. 13 DSGVO' : 'Privacy Policy pursuant to GDPR'}
+    </p>
+    <div className="space-y-8 text-sm text-charcoal leading-relaxed">
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '1. Verantwortliche Stelle' : '1. Controller'}</h2>
+        <p>
+          Valiantsina Förster · Berlintina Shows · Berlin<br />
+          E-Mail: <a href="mailto:info@berlintina.de" className="text-terracotta hover:underline">info@berlintina.de</a><br />
+          Tel.: <a href="tel:+4916081068880" className="text-terracotta hover:underline">+49 160 8106880</a>
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '2. Erhebung und Speicherung personenbezogener Daten' : '2. Collection and Storage of Personal Data'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Beim Besuch dieser Website werden automatisch Informationen vom Browser des Nutzers übermittelt (Server-Log-Files): IP-Adresse, Datum und Uhrzeit des Zugriffs, Name und URL der abgerufenen Datei, Browser und Betriebssystem. Diese Daten werden nur zur Sicherstellung eines störungsfreien Betriebs der Seite verwendet und nicht mit anderen Daten zusammengeführt.'
+            : 'When visiting this website, the browser automatically transmits information (server log files): IP address, date and time of access, name and URL of the retrieved file, browser and operating system. This data is only used to ensure smooth operation of the site and is not combined with other data.'}
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '3. Kontaktaufnahme' : '3. Contact'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Wenn Sie uns per E-Mail oder WhatsApp kontaktieren, werden die von Ihnen übermittelten Daten (Name, E-Mail-Adresse, Nachrichteninhalt) ausschließlich zur Bearbeitung Ihrer Anfrage gespeichert. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung) bzw. Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).'
+            : 'When you contact us by email or WhatsApp, the data you provide (name, email address, message content) is stored solely for the purpose of processing your enquiry. The legal basis is Art. 6(1)(b) GDPR (pre-contractual measures) or Art. 6(1)(f) GDPR (legitimate interest).'}
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '4. Weitergabe an Dritte' : '4. Sharing with Third Parties'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Personenbezogene Daten werden nicht an Dritte weitergegeben, es sei denn, dies ist zur Erfüllung des Vertrags erforderlich (z. B. Vermittlung an Künstler) oder Sie haben ausdrücklich eingewilligt.'
+            : 'Personal data is not passed on to third parties unless this is necessary for the fulfilment of the contract (e.g. referral to artists) or you have given your express consent.'}
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '5. Hosting & Dienste' : '5. Hosting & Services'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Diese Website wird gehostet über Railway / Vercel. Die Datenbank wird über Supabase (PostgreSQL) betrieben. Beide Anbieter sind DSGVO-konform.'
+            : 'This website is hosted via Railway / Vercel. The database is operated via Supabase (PostgreSQL). Both providers are GDPR-compliant.'}
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '6. Ihre Rechte' : '6. Your Rights'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Wenden Sie sich hierzu an: info@berlintina.de. Sie haben außerdem das Recht, Beschwerde bei einer Datenschutzbehörde einzulegen.'
+            : 'You have the right to access, rectification, erasure, restriction of processing, data portability and objection. Please contact: info@berlintina.de. You also have the right to lodge a complaint with a data protection authority.'}
+        </p>
+      </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '7. Cookies' : '7. Cookies'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Diese Website verwendet ausschließlich technisch notwendige Cookies (z. B. Sitzungsdaten, Spracheinstellung). Es werden keine Tracking- oder Werbe-Cookies eingesetzt.'
+            : 'This website uses only technically necessary cookies (e.g. session data, language setting). No tracking or advertising cookies are used.'}
+        </p>
+      </section>
+      <p className="text-warm-faint text-xs pt-4 border-t border-warm-border">
+        {locale === 'de' ? 'Stand: März 2026' : 'Last updated: March 2026'}
+      </p>
+    </div>
+  </div>
+);
 
 // --- Landing View ---
 const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
@@ -220,14 +427,14 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   const audienceChips = locale === 'de'
     ? [
-        { label: '🏢 Corporate & Gala', query: 'elegante Live-Musik für Gala oder Corporate Event' },
-        { label: '🎂 Private Feier', query: 'Show für private Feier oder Geburtstag' },
-        { label: '💒 Hochzeit & Party', query: 'Unterhaltung für Hochzeit oder Party' },
+        { label: 'Corporate & Gala', query: 'elegante Live-Musik für Gala oder Corporate Event' },
+        { label: 'Private Feier', query: 'Show für private Feier oder Geburtstag' },
+        { label: 'Hochzeit & Party', query: 'Unterhaltung für Hochzeit oder Party' },
       ]
     : [
-        { label: '🏢 Corporate & Gala', query: 'elegant live music for gala or corporate event' },
-        { label: '🎂 Private Celebration', query: 'show for private celebration or birthday' },
-        { label: '💒 Wedding & Party', query: 'entertainment for wedding or party' },
+        { label: 'Corporate & Gala', query: 'elegant live music for gala or corporate event' },
+        { label: 'Private Celebration', query: 'show for private celebration or birthday' },
+        { label: 'Wedding & Party', query: 'entertainment for wedding or party' },
       ];
 
   const handleChip = (chipQuery: string) => {
@@ -235,46 +442,120 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     sendMessage(chipQuery);
   };
 
-  const defaultShows = useMemo(() => shows.slice(0, 6), [shows]);
+  const defaultShows = useMemo(() => shows.slice(0, 12), [shows]);
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [activeCat, setActiveCat] = useState<string>('all');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const filteredShows = useMemo(() => {
+    if (activeCat === 'all') return defaultShows;
+    return defaultShows.filter((s) => s.category === activeCat);
+  }, [defaultShows, activeCat]);
+
+  const catPills = locale === 'de'
+    ? [
+        { label: 'Alle Shows', value: 'all' },
+        { label: 'Akrobatik', value: Category.ACROBATICS },
+        { label: 'Bands', value: Category.BAND },
+        { label: 'Klassik', value: Category.CLASSICAL },
+        { label: 'Tanz', value: Category.DANCE },
+      ]
+    : [
+        { label: 'All Shows', value: 'all' },
+        { label: 'Acrobatics', value: Category.ACROBATICS },
+        { label: 'Live Bands', value: Category.BAND },
+        { label: 'Classical', value: Category.CLASSICAL },
+        { label: 'Dance', value: Category.DANCE },
+      ];
+
+  const dropSuggestions = locale === 'de'
+    ? [
+        'Akrobatik für Corporate-Gala',
+        'Festival-Headliner Act',
+        'Live-Band für Hochzeit',
+        'Feuershow für Outdoor-Event',
+        'Elegante Cocktailhour-Musik',
+      ]
+    : [
+        'Acrobatics for corporate gala',
+        'Festival headliner acts',
+        'Live band for wedding',
+        'Fire show for outdoor event',
+        'Elegant cocktail hour music',
+      ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      {/* ── Section 1: Hero ── */}
-      <section className="py-16 sm:py-24 text-center animate-in fade-in duration-500 print:hidden">
-        <p className="inline-block mb-6 px-4 py-1.5 rounded-full bg-[#f1f1ef] text-xs font-black uppercase tracking-[0.15em] text-gray-500">
-          {locale === 'de' ? 'Für Eventagenturen & private Feiern' : 'For event agencies & private celebrations'}
-        </p>
+    <>
+    <PageSEO
+      title={locale === 'de'
+        ? 'Berlintina | Showacts & Künstler Berlin buchen — persönlich kuratiert'
+        : 'Berlintina | Book Show Acts & Artists in Berlin — Personally Curated'}
+      description={locale === 'de'
+        ? 'Berliner Showacts, Akrobatik, Live-Musik, Tanz & mehr — persönlich ausgewählt von Valiantsina. Kostenlose Anfrage. Antwort in 24 h.'
+        : 'Berlin show acts, acrobatics, live music, dance & more — personally curated by Valiantsina. Free enquiry. Reply within 24 h.'}
+      structuredData={{
+        '@context': 'https://schema.org',
+        '@type': 'EntertainmentBusiness',
+        name: 'Berlintina',
+        description: locale === 'de'
+          ? 'Persönlich kuratierte Showact-Agentur Berlin'
+          : 'Personally curated show act agency Berlin',
+        url: 'https://berlintina.de',
+        telephone: '+4916081068880',
+        email: 'info@berlintina.de',
+        address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
+        areaServed: { '@type': 'City', name: 'Berlin' },
+        sameAs: ['https://www.instagram.com/berlintina.shows'],
+        priceRange: '€€–€€€',
+      }}
+    />
+    {/* ── Hero ── */}
+    <section
+      className="relative min-h-[85vh] flex flex-col items-center justify-center px-6 pt-28 pb-12 bg-noise overflow-hidden"
+      style={{ background: 'radial-gradient(at 20% 20%, hsla(250,100%,65%,.04) 0,transparent 50%), radial-gradient(at 80% 80%, hsla(200,100%,60%,.03) 0,transparent 50%), radial-gradient(at 50% 50%, hsla(280,100%,70%,.02) 0,transparent 50%), hsl(240 20% 97%)' }}
+    >
+      {/* Floating orbs */}
+      <div className="absolute top-20 left-[15%] w-72 h-72 rounded-full pointer-events-none animate-float" style={{ background: 'hsla(250,100%,65%,.05)', filter: 'blur(64px)' }} />
+      <div className="absolute bottom-20 right-[10%] w-96 h-96 rounded-full pointer-events-none" style={{ background: 'hsla(250,100%,65%,.05)', filter: 'blur(64px)', animationDelay: '3s' }} />
+      {/* Dot grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(220 20% 10%) 1px, transparent 0)', backgroundSize: '32px 32px', opacity: 0.025 }} />
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] tracking-tight text-[#1d1d1f] mb-4">
+      <div className="relative z-10 max-w-3xl mx-auto text-center w-full">
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center gap-2 bg-glass px-4 py-2 rounded-full mb-8 text-xs font-medium text-warm-muted tracking-wide"
+        >
+          <span className="text-terracotta">✦</span>
+          {locale === 'de' ? 'Boutique Entertainment Agentur · Berlin' : 'Boutique Entertainment Agency · Berlin'}
+        </motion.div>
+
+        {/* Heading */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[4.5rem] font-semibold tracking-[-0.04em] text-charcoal leading-[1.05] mb-5"
+        >
           {locale === 'de'
-            ? <>Den richtigen Künstler zu finden<br className="hidden sm:block" /> dauert ewig.</>
-            : <>Finding the right artist<br className="hidden sm:block" /> for your event takes forever.</>}
-        </h1>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-400 mb-6 tracking-tight">
-          {locale === 'de' ? 'Nicht mit Berlintina.' : 'Not with Berlintina.'}
-        </h2>
-        <p className="text-lg text-gray-500 mb-10 max-w-xl mx-auto leading-relaxed font-medium">
+            ? <>Außergewöhnliche<br /><span className="shimmer-text">Shows & Künstler</span></>
+            : <>Discover extraordinary<br /><span className="shimmer-text">shows &amp; performers</span></>}
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-lg text-warm-muted mb-10 max-w-[480px] mx-auto font-light leading-relaxed"
+        >
           {locale === 'de'
-            ? 'Beschreibe dein Event — KI findet die perfekte Show. Kuratiert, schnell, kostenlos.'
-            : 'Describe your event — AI finds the perfect show. Curated, fast, free.'}
-        </p>
+            ? 'Handverlesene Künstler für Corporate Events, Festivals und private Anlässe.'
+            : 'Handpicked talent for corporate events, festivals, and private occasions.'}
+        </motion.p>
 
-        {/* Audience chips */}
-        <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {audienceChips.map((chip) => (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => handleChip(chip.query)}
-              disabled={loading}
-              className="px-5 py-2.5 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 hover:border-black hover:text-black transition disabled:opacity-50 touch-manipulation"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search form */}
+        {/* Error banners */}
         {showsError && (
           <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium text-left max-w-2xl mx-auto">
             {showsError}
@@ -286,116 +567,358 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             {retryFn && <button onClick={retryFn} className="px-4 py-2 bg-red-100 rounded-lg font-bold text-xs hover:bg-red-200">{locale === 'de' ? 'Erneut versuchen' : 'Retry'}</button>}
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) sendMessage(query.trim()); }} className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-2">
-          <input
-            type="search"
-            placeholder={locale === 'de' ? 'z. B. elegante Live-Musik, Gala, Berlin' : 'e.g. elegant live music, gala, Berlin'}
-            className="flex-grow px-4 sm:px-6 py-3 sm:py-4 rounded-2xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400 font-medium min-h-[48px]"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label={locale === 'de' ? 'Suche' : 'Search'}
-          />
-          <button type="submit" disabled={loading} className="px-8 py-4 min-h-[48px] rounded-2xl bg-black text-white font-semibold text-sm hover:opacity-90 transition disabled:opacity-50 whitespace-nowrap touch-manipulation">
-            {loading ? '…' : (locale === 'de' ? 'Suchen' : 'Search')}
-          </button>
-        </form>
-        {loading && <p className="mt-4 text-sm text-gray-500">…</p>}
-      </section>
 
-      {/* ── AI Recommendations (replaces default grid after search) ── */}
-      {hasResults && (
-        <section ref={resultsRef} className="pb-16 text-left scroll-mt-20">
-          <h3 className="text-lg font-bold mb-6">{locale === 'de' ? 'Shows – beste Treffer' : 'Shows – best matches'}</h3>
-          <div className="masonry-grid">
-            {recommendations.map(({ show, why }) => (
-              <div key={show.id} className="masonry-item">
-                <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                  <ShowCard show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} />
-                  {why.length > 0 && (
-                    <ul className="mt-2 text-xs text-gray-500 list-disc list-inside">
-                      {why.map((w, i) => <li key={i}>{w}</li>)}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        {/* Search */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="relative max-w-[600px] mx-auto"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) { setSearchFocused(false); sendMessage(query.trim()); } }}>
+            <div
+              className={`flex items-center bg-surface rounded-2xl transition-all duration-300 ${searchFocused ? 'shadow-[0_8px_24px_rgba(10,12,20,.06),0_16px_48px_rgba(10,12,20,.08),0_0_60px_-12px_hsla(250,100%,65%,.12)] outline outline-1 outline-warm-border' : 'shadow-search'}`}
+            >
+              <Search className="ml-5 w-4 h-4 text-warm-muted flex-shrink-0" />
+              <input
+                type="search"
+                placeholder={locale === 'de' ? 'Akrobaten, Bands, Feuershow, DJ suchen…' : 'Search acrobats, bands, fire shows, DJs…'}
+                className="flex-1 border-none outline-none bg-transparent font-light text-base text-charcoal py-5 px-4 placeholder:text-warm-faint/50"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                aria-label={locale === 'de' ? 'Suche' : 'Search'}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-shrink-0 bg-charcoal text-white rounded-xl font-medium text-sm m-1.5 px-3 sm:px-6 py-3 hover:opacity-85 active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+              >
+                {loading ? '…' : (locale === 'de' ? 'Suchen →' : 'Search →')}
+              </button>
+            </div>
+          </form>
 
-      {/* ── Section 2: How it works (shown only before search) ── */}
-      {!hasResults && (
-        <section className="py-16 border-t border-gray-100">
-          <h3 className="text-center text-xs font-black uppercase tracking-[0.15em] text-gray-400 mb-12">
-            {locale === 'de' ? 'So funktioniert\'s' : 'How it works'}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12 text-center">
-            {[
-              {
-                step: '1',
-                title: locale === 'de' ? 'Beschreibe dein Event' : 'Tell us about your event',
-                body: locale === 'de' ? 'Gib ein, was du brauchst — Anlass, Stimmung, Stadt.' : 'Type what you need — occasion, vibe, city.',
-              },
-              {
-                step: '2',
-                title: locale === 'de' ? 'KI findet den Match' : 'AI finds the match',
-                body: locale === 'de' ? 'Aus persönlich geprüften, kuratierten Shows.' : 'From personally reviewed, curated shows.',
-              },
-              {
-                step: '3',
-                title: locale === 'de' ? 'Direkt Kontakt aufnehmen' : 'Contact directly',
-                body: locale === 'de' ? 'Kein Mittelsmann, keine wochenlangen Wartezeiten.' : 'No middleman, no weeks of back-and-forth.',
-              },
-            ].map(({ step, title, body }) => (
-              <div key={step} className="flex flex-col items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-black text-sm">{step}</div>
-                <h4 className="font-bold text-base tracking-tight text-gray-900">{title}</h4>
-                <p className="text-sm text-gray-500 leading-relaxed max-w-[220px]">{body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+          {/* Search dropdown */}
+          <AnimatePresence>
+            {searchFocused && !query && (
+              <motion.div
+                initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute top-[calc(100%+8px)] left-0 right-0 bg-surface/95 backdrop-blur-xl rounded-2xl border border-warm-border shadow-card-hover p-4 z-50"
+              >
+                <span className="block text-[0.625rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-2.5 px-2">
+                  {locale === 'de' ? 'Beliebte Suchanfragen' : 'Trending searches'}
+                </span>
+                {dropSuggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseDown={() => { setQuery(s); sendMessage(s); setSearchFocused(false); }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-charcoal font-light flex items-center gap-3 hover:bg-surface-alt transition group"
+                  >
+                    <Search className="w-3.5 h-3.5 text-warm-faint flex-shrink-0" />
+                    {s}
+                    <ArrowRight className="w-3 h-3 text-warm-faint ml-auto opacity-0 group-hover:opacity-100 transition" />
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-      {/* ── Section 3: Default shows grid (shown only before search) ── */}
-      {!hasResults && (
-        <section className="py-16 border-t border-gray-100">
-          <h3 className="text-lg font-bold mb-8">
-            {locale === 'de' ? 'Shows auf Berlintina' : 'Shows on Berlintina'}
-          </h3>
-          {showsLoading ? (
-            <p className="text-gray-400 text-sm font-medium">{locale === 'de' ? 'Lade Shows…' : 'Loading shows…'}</p>
-          ) : (
-            <div className="masonry-grid">
-              {defaultShows.map((show) => (
-                <div key={show.id} className="masonry-item">
-                  <ShowCard show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} />
-                </div>
+        {/* Loading dots */}
+        {loading && (
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {[0, 160, 320].map((d) => (
+                <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
               ))}
             </div>
-          )}
-          {!showsLoading && defaultShows.length > 0 && (
-            <div className="mt-10 text-center">
-              <Link to="/catalog" className="inline-block px-8 py-3.5 rounded-2xl bg-[#f1f1ef] text-sm font-bold text-gray-700 hover:bg-gray-200 transition">
-                {locale === 'de' ? 'Alle Shows entdecken →' : 'Discover all shows →'}
+            <p className="text-sm text-warm-muted font-light">
+              {locale === 'de' ? 'Suche passende Shows…' : 'Finding matching shows…'}
+            </p>
+          </div>
+        )}
+
+        {/* Category filter pills */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="flex flex-wrap justify-center gap-2 mt-6"
+        >
+          {catPills.map((pill) => (
+            <button
+              key={pill.value}
+              type="button"
+              onClick={() => setActiveCat(pill.value)}
+              className={`px-4 py-1.5 rounded-full border text-sm font-normal transition touch-manipulation ${
+                activeCat === pill.value
+                  ? 'bg-charcoal text-white border-charcoal shadow-soft'
+                  : 'bg-surface text-warm-muted border-warm-border hover:border-charcoal/20 hover:text-charcoal hover:shadow-soft'
+              }`}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+
+    {/* ── AI Recommendations — full width ── */}
+    {hasResults && (
+      <div ref={resultsRef} className="w-full border-t border-warm-border scroll-mt-20">
+        <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur-sm border-b border-warm-border py-3 px-4 sm:px-6 shadow-soft">
+          <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) sendMessage(query.trim()); }} className="max-w-2xl mx-auto flex gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-faint pointer-events-none" />
+              <input
+                type="search"
+                placeholder={locale === 'de' ? 'Neue Suche…' : 'New search…'}
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-warm-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-charcoal/10 focus:border-charcoal/30 placeholder:text-warm-faint font-light text-charcoal"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <button type="submit" disabled={loading} className="px-5 py-2.5 rounded-xl bg-charcoal text-white font-medium text-sm hover:opacity-85 transition disabled:opacity-50 whitespace-nowrap">
+              {loading ? '…' : (locale === 'de' ? 'Suchen' : 'Search')}
+            </button>
+          </form>
+        </div>
+        <div className="w-full py-12 px-4 sm:px-6" style={{ background: 'linear-gradient(180deg,hsl(0 0% 100%) 0%,hsl(220 20% 98.5%) 100%)' }}>
+          <div className="masonry-col">
+            {recommendations.map(({ show, why }) => (
+              <div key={show.id} className="masonry-col-item">
+                <ShowCard show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} />
+                {why.length > 0 && (
+                  <ul className="mt-2 text-xs text-warm-faint list-disc list-inside px-1">
+                    {why.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ══ Default sections ══ */}
+    {!hasResults && (<>
+
+      {/* ── Roster — 100% width masonry ── */}
+      <section className="w-full py-16 md:py-24 bg-noise" style={{ background: 'linear-gradient(180deg,hsl(0 0% 100%) 0%,hsl(220 20% 98.5%) 100%)' }}>
+        <div className="w-full px-4" style={{ position: 'relative' }}>
+          {/* noise overlay handled by bg-noise pseudo */}
+          <div className="masonry-col-lg">
+            {showsLoading ? (
+              <div className="col-span-full flex items-center justify-center py-20">
+                <div className="flex items-center gap-1.5">
+                  {[0, 160, 320].map((d) => (
+                    <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              filteredShows.map((show, i) => (
+                <ShowCard key={show.id} show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} index={i} />
+              ))
+            )}
+          </div>
+          {!showsLoading && (
+            <div className="mt-12 text-center">
+              <Link
+                to="/catalog"
+                className="inline-flex items-center gap-2 font-medium text-sm text-charcoal bg-surface border border-warm-border px-8 py-3.5 rounded-xl hover:shadow-card-hover hover:border-charcoal/20 transition"
+              >
+                {locale === 'de' ? 'Mehr laden' : 'Load more'} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           )}
-        </section>
-      )}
+        </div>
+      </section>
 
-      {/* ── Section 4: Trust strip ── */}
-      {!hasResults && (
-        <section className="py-10 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-400 font-medium tracking-wide">
-            {locale === 'de'
-              ? '★ Jede Show persönlich geprüft · Berlin · Immer kostenlos'
-              : '★ Every show personally reviewed · Berlin · Always free'}
+      {/* ── Why section ── */}
+      <section className="relative py-20 md:py-28 bg-surface overflow-hidden">
+        {/* Center orb */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'hsla(250,100%,65%,.03)', filter: 'blur(120px)' }} />
+        {/* Noise texture */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.015]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+
+        <div className="relative z-10 max-w-[860px] mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="block text-[0.7rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-3">
+              {locale === 'de' ? 'Warum Berlintina' : 'Why Berlintina'}
+            </span>
+            <h2 className="text-[clamp(1.9rem,4vw,3rem)] font-semibold tracking-[-0.04em] text-charcoal leading-[1.1] mb-4">
+              {locale === 'de'
+                ? <>Kein Marktplatz.<br /><span className="shimmer-text">Eine Boutique-Agentur.</span></>
+                : <>Not a marketplace.<br /><span className="shimmer-text">A boutique agency.</span></>}
+            </h2>
+            <p className="text-base text-warm-muted font-light max-w-[380px] mx-auto leading-relaxed">
+              {locale === 'de'
+                ? 'Ich liste keine hundert Acts. Ich vertrete die Außergewöhnlichen.'
+                : "We don't list hundreds of acts. We represent the exceptional ones."}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {([
+              { Icon: CheckCircle2, title: locale === 'de' ? 'Persönlich kuratiert' : 'Personally Curated', text: locale === 'de' ? 'Jeder Künstler wurde von mir handverlesen. Kein Algorithmus — echte Expertise.' : 'Every performer is handpicked by our team. No algorithms — real expertise.' },
+              { Icon: Zap, title: locale === 'de' ? 'Schnell & einfach' : 'Fast & Simple', text: locale === 'de' ? 'Eine Anfrage, ein Kontakt. Ich kümmere mich um Casting, Logistik und Verträge.' : 'One inquiry, one contact. We handle casting, logistics, and contracts.' },
+              { Icon: Users, title: locale === 'de' ? 'Für jeden Anlass' : 'For Every Occasion', text: locale === 'de' ? 'Corporate Galas, Festivals, Hochzeiten — ich kenne die richtige Besetzung.' : 'Corporate galas, festivals, weddings, product launches — we\'ve seen it all.' },
+              { Icon: HeartHandshake, title: locale === 'de' ? 'Künstler-zuerst' : 'Artist-First', text: locale === 'de' ? 'Ich stehe hinter jedem meiner Künstler. Glückliche Künstler liefern unvergessliche Shows.' : 'We invest in our artists like family. Happy artists deliver unforgettable shows.' },
+            ] as const).map((card, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.4, delay: i * 0.05 + 0.05 }}
+                className="group rounded-2xl border border-warm-border p-6 flex flex-col gap-4 transition-all duration-500 hover:border-charcoal/10 hover:shadow-card-hover hover:-translate-y-1 cursor-default"
+                style={{ background: 'hsl(220 20% 98%)' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:bg-charcoal" style={{ background: 'hsl(220 15% 93%)' }}>
+                  <card.Icon className="w-5 h-5 text-charcoal transition-colors duration-300 group-hover:text-white" />
+                </div>
+                <h3 className="text-[0.9rem] font-semibold text-charcoal leading-snug tracking-[-0.015em]">{card.title}</h3>
+                <p className="text-[0.85rem] text-warm-muted font-light leading-relaxed flex-1">{card.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Featured Slider ── */}
+      <FeaturedSlider locale={locale} />
+
+      {/* ── Testimonials ── */}
+      <section className="py-20 bg-surface-alt border-t border-warm-border">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-charcoal mb-3 text-center">
+            {locale === 'de' ? 'Was Kunden sagen' : 'What clients say'}
+          </h2>
+          <p className="text-warm-muted text-center mb-12 font-light">
+            {locale === 'de' ? 'Persönlich kuratiert. Professionell vermittelt.' : 'Personally curated. Professionally arranged.'}
           </p>
-        </section>
-      )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: locale === 'de'
+                  ? '"Valiantsina hat für unsere Gala genau den richtigen Act gefunden — schnell, unkompliziert, perfekt. Wir buchen wieder."'
+                  : '"Valiantsina found exactly the right act for our gala — fast, straightforward, perfect. We\'ll book again."',
+                name: 'Sophie K.',
+                role: locale === 'de' ? 'Eventmanagerin, Berlin' : 'Event Manager, Berlin',
+              },
+              {
+                quote: locale === 'de'
+                  ? '"Unsere Hochzeitsgesellschaft war begeistert. Der Cello-Act war eine Überraschung, die noch Monate danach erwähnt wird."'
+                  : '"Our wedding guests were blown away. The cello act was a surprise that people still talk about months later."',
+                name: 'Markus & Lena',
+                role: locale === 'de' ? 'Hochzeitspaar, Potsdam' : 'Wedding couple, Potsdam',
+              },
+              {
+                quote: locale === 'de'
+                  ? '"Als Künstlerin schätze ich die persönliche Betreuung sehr. Berlintina vermittelt nur Anfragen, die wirklich passen."'
+                  : '"As an artist I really appreciate the personal attention. Berlintina only passes on enquiries that are a genuine match."',
+                name: 'Alina V.',
+                role: locale === 'de' ? 'Sängerin & Performerin' : 'Singer & Performer',
+              },
+            ].map((t, i) => (
+              <div key={i} className="bg-surface rounded-2xl border border-warm-border p-6 flex flex-col gap-4 shadow-soft">
+                <div className="flex gap-1">
+                  {[0,1,2,3,4].map(s => (
+                    <svg key={s} className="w-4 h-4 text-terracotta" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  ))}
+                </div>
+                <p className="text-sm text-warm-muted font-light leading-relaxed italic flex-1">{t.quote}</p>
+                <div>
+                  <p className="text-sm font-semibold text-charcoal">{t.name}</p>
+                  <p className="text-xs text-warm-faint">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-    </div>
+      {/* ── Pricing Transparency ── */}
+      <section className="py-16 bg-surface border-t border-warm-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-charcoal mb-3">
+            {locale === 'de' ? 'Was kostet eine Buchung?' : 'What does a booking cost?'}
+          </h2>
+          <p className="text-warm-muted font-light mb-10">
+            {locale === 'de' ? 'Keine versteckten Gebühren. Transparenz von Anfang an.' : 'No hidden fees. Transparent from the start.'}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[
+              { tier: locale === 'de' ? 'Solo-Acts' : 'Solo Acts', price: locale === 'de' ? 'ab 800 €' : 'from €800', desc: locale === 'de' ? 'Musiker, Sänger, Akrobatik' : 'Musicians, singers, acrobatics' },
+              { tier: locale === 'de' ? 'Premium-Acts' : 'Premium Acts', price: locale === 'de' ? '1.500–4.000 €' : '€1,500–4,000', desc: locale === 'de' ? 'Ensemble, Tanz, Live-Bands' : 'Ensembles, dance, live bands' },
+              { tier: locale === 'de' ? 'Exklusive Shows' : 'Exclusive Shows', price: locale === 'de' ? 'Auf Anfrage' : 'On request', desc: locale === 'de' ? 'Maßgeschneiderte Produktionen' : 'Bespoke productions' },
+            ].map((p, i) => (
+              <div key={i} className={`rounded-2xl border p-5 text-left ${i === 1 ? 'border-terracotta bg-terracotta-light' : 'border-warm-border bg-surface-alt'}`}>
+                <p className="text-xs font-semibold uppercase tracking-wider text-warm-faint mb-1">{p.tier}</p>
+                <p className={`text-2xl font-bold tracking-tight mb-1 ${i === 1 ? 'text-terracotta' : 'text-charcoal'}`}>{p.price}</p>
+                <p className="text-sm text-warm-muted font-light">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-warm-faint">
+            {locale === 'de'
+              ? 'Anfrage kostenlos · Vermittlungsgebühr 15–20 % des Künstlerhonorars · Angebot innerhalb von 24 h'
+              : 'Enquiry free · Agency fee 15–20% of artist fee · Quote within 24 hours'}
+          </p>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <div className="py-20 bg-surface border-t border-warm-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-charcoal mb-3 text-center">
+            {locale === 'de' ? 'Häufige Fragen' : 'Frequently asked questions'}
+          </h2>
+          <p className="text-warm-muted text-center mb-12 font-light">
+            {locale === 'de' ? 'Antworten auf die wichtigsten Fragen.' : 'Answers to the most common questions.'}
+          </p>
+          <div className="space-y-0">
+            {(locale === 'de' ? [
+              { q: 'Wie funktioniert die Buchung?', a: 'Sie beschreiben Ihr Event — Anlass, Datum, Budget, Stil. Ich suche persönlich den passenden Act aus meinem kuratierten Netzwerk heraus und sende Ihnen innerhalb von 24 Stunden konkrete Vorschläge. Bei Interesse stelle ich den Kontakt her und begleite Sie bis zur finalen Buchung.' },
+              { q: 'Was kostet Berlintina?', a: 'Die Anfrage ist völlig kostenlos. Wenn es zur Buchung kommt, fällt eine Vermittlungsgebühr von 15–20% auf das vereinbarte Künstlerhonorar an. Bei komplexen Anfragen (mehrere Künstler, Produktionsbegleitung) kann eine zusätzliche Handling-Fee entstehen — das wird immer vorab transparent kommuniziert. Keine Überraschungen.' },
+              { q: 'Kann ich die Künstler direkt kontaktieren?', a: 'Ja — sobald ich die Verbindung hergestellt habe. Berlintina ist keine Sperrschicht zwischen Ihnen und dem Künstler. Ich sorge für den richtigen Match, danach kommunizieren Sie direkt.' },
+              { q: 'Wie schnell bekomme ich eine Antwort?', a: 'Innerhalb von 24 Stunden — meistens schneller. Bei dringenden Anfragen bitte direkt per WhatsApp oder Telefon kontaktieren.' },
+              { q: 'Wie werden Shows auf Berlintina aufgenommen?', a: 'Jeder Künstler auf Berlintina wurde von mir persönlich ausgewählt. Entweder habe ich ihre Show live erlebt, oder sie wurden mir von vertrauenswürdigen Personen empfohlen. Kein automatisches Listing — nur geprüfte Qualität.' },
+              { q: 'Was, wenn ich keinen passenden Act finde?', a: 'Dann suche ich weiter. Mein Netzwerk geht über die Website hinaus. Sagen Sie mir, was Sie suchen — ich finde eine Lösung.' },
+            ] : [
+              { q: 'How does booking work?', a: 'Describe your event — occasion, date, budget, style. I personally search my curated network and send you concrete suggestions within 24 hours. If you\'re interested, I make the introduction and guide you to the final booking.' },
+              { q: 'What does Berlintina cost?', a: "The enquiry is completely free. When a booking is made, a booking fee of 15–20% of the agreed artist fee applies. For complex requests (multiple artists, production support) an additional handling fee may apply — always communicated transparently upfront. No surprises." },
+              { q: 'Can I contact artists directly?', a: "Yes — once I've made the connection. Berlintina is not a barrier between you and the artist. I find the right match, then you communicate directly." },
+              { q: 'How quickly will I get a reply?', a: 'Within 24 hours — usually faster. For urgent requests, please contact me directly via WhatsApp or phone.' },
+              { q: 'How are artists selected for Berlintina?', a: "Every artist on Berlintina has been personally selected by me. I've either seen their show live, or they've been recommended by trusted contacts. No automatic listings — only vetted quality." },
+              { q: "What if I can't find a suitable act?", a: "Then I keep searching. My network extends beyond the website. Tell me what you're looking for — I'll find a solution." },
+            ]).map((item, i) => (
+              <div key={i} className="border-b border-warm-border">
+                <button
+                  type="button"
+                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                  className="w-full text-left py-5 flex items-center justify-between gap-4 text-charcoal font-medium hover:text-warm-muted transition text-sm"
+                >
+                  <span>{item.q}</span>
+                  <span className={`text-2xl font-light flex-shrink-0 transition-transform duration-200 ${faqOpen === i ? 'rotate-45' : ''}`}>+</span>
+                </button>
+                {faqOpen === i && (
+                  <div className="pb-5 text-warm-muted text-sm font-light leading-relaxed">{item.a}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+    </>)}
+</>
   );
 };
 
@@ -417,7 +940,7 @@ const Results: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     return scoreShows(shows, brief);
   }, [brief, shows]);
 
-  if (!brief) return <div className="p-20 text-center font-medium text-gray-400">{locale === 'de' ? 'Lade Empfehlungen…' : 'Loading recommendations…'}</div>;
+  if (!brief) return <div className="p-20 text-center font-medium text-warm-faint">{locale === 'de' ? 'Lade Empfehlungen…' : 'Loading recommendations…'}</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -430,7 +953,7 @@ const Results: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         <h2 className="text-3xl font-bold mb-3 tracking-tight">
           {locale === 'de' ? 'Unsere Empfehlungen' : 'Our Recommendations'}
         </h2>
-        <p className="text-gray-500 font-medium">
+        <p className="text-warm-muted font-medium">
           {locale === 'de'
             ? 'Basierend auf deiner Suche haben wir diese Highlights gefunden.'
             : 'Based on your search, we found these highlights.'}
@@ -471,6 +994,226 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+// --- Featured Slider ---
+const SLIDER_TABS = [
+  { key: 'all',     de: 'Alle',      en: 'All' },
+  { key: 'shows',   de: 'Shows',     en: 'Shows' },
+  { key: 'artists', de: 'Künstler',  en: 'Artists' },
+  { key: 'new',     de: 'Newcomer',  en: 'New Comers' },
+] as const;
+
+const CATEGORY_SHIMMER_SLIDER: Record<string, string> = {
+  CLASSICAL: '#9333ea', BAND: '#6366f1', ACROBATICS: '#16a34a', DANCE: '#db2777',
+};
+
+const FeaturedSlider: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
+  const { shows } = useShows();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<'all' | 'shows' | 'artists' | 'new'>('all');
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const jimJohn = {
+    id: 'jim-john', type: 'featured' as const,
+    image: '/images/jim-john.jpeg',
+    category: 'ACROBATICS',
+    title: 'Jim & John',
+    artist: locale === 'de' ? 'Berlintinas Top-Act' : "Berlintina's Top Act",
+    description: locale === 'de'
+      ? 'Bekannt aus Das Supertalent, America\'s Got Talent & Cirque du Soleil. 8 deutsche Meistertitel, Guinness-Weltrekord.'
+      : "As seen on Das Supertalent, America's Got Talent & Cirque du Soleil. 8 German championship titles, Guinness World Record.",
+    link: null as string | null,
+  };
+
+  const showSlides = shows.slice(0, 6).map(s => ({
+    id: s.id, type: 'show' as const,
+    image: s.photoUrls?.[0] || '',
+    category: s.category,
+    title: s.title,
+    artist: `${locale === 'de' ? 'von' : 'by'} ${s.artistName}`,
+    description: s.shortDescriptionFacts?.slice(0, 120) || '',
+    link: `/show/${s.slug}` as string | null,
+  }));
+
+  const allSlides = [jimJohn, ...showSlides];
+  const filtered =
+    tab === 'all' ? allSlides
+    : tab === 'shows' ? showSlides
+    : tab === 'artists' ? [jimJohn]
+    : showSlides.slice(-3);
+
+  const slides = filtered.length > 0 ? filtered : allSlides;
+  const clampedIdx = Math.min(idx, slides.length - 1);
+  const active = slides[clampedIdx];
+
+  useEffect(() => { setIdx(0); }, [tab]);
+
+  useEffect(() => {
+    if (paused || slides.length <= 1) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % slides.length), 5000);
+    return () => clearInterval(t);
+  }, [paused, slides.length]);
+
+  return (
+    <section
+      className="relative w-full overflow-hidden"
+      style={{ background: '#0d0d1a' }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+
+        {/* Tabs */}
+        <div className="flex items-center gap-2 mb-10 flex-wrap">
+          {SLIDER_TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                tab === t.key
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'text-white/35 hover:text-white/60 border border-transparent'
+              }`}
+            >
+              {locale === 'de' ? t.de : t.en}
+            </button>
+          ))}
+        </div>
+
+        {/* Headline — static gradient, no animation */}
+        <h2 className="text-[1.75rem] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-semibold tracking-[-0.04em] leading-[1.05] mb-3 gradient-text-static">
+          {locale === 'de' ? 'Berlintinas Top-Acts.' : "Berlintina's Top Acts."}
+        </h2>
+        <p className="text-white/40 text-base mb-8 max-w-xl">
+          {locale === 'de'
+            ? 'Persönlich kuratiert — jeder Act geprüft, jede Show außergewöhnlich.'
+            : 'Personally curated — every act vetted, every show extraordinary.'}
+        </p>
+
+        {/* CTA buttons */}
+        <div className="flex flex-wrap gap-3 mb-12">
+          <a
+            href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-charcoal text-sm font-bold rounded-2xl hover:opacity-90 transition shadow-lg"
+          >
+            <span>berlintina<span className="text-terracotta">.</span></span>
+            {locale === 'de' ? 'anfragen →' : 'enquire →'}
+          </a>
+          <Link
+            to="/join/start"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-semibold rounded-2xl hover:bg-white/10 transition"
+          >
+            {locale === 'de' ? 'Künstler werden ↗' : 'Join as artist ↗'}
+          </Link>
+        </div>
+
+        {/* 2-column: list left · image right */}
+        <div className="flex flex-col-reverse lg:flex-row gap-8 lg:gap-12 items-start">
+
+          {/* LEFT: show list */}
+          <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 space-y-2">
+            {slides.map((s, i) => {
+              const isActive = i === clampedIdx;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setIdx(i)}
+                  className={`w-full text-left rounded-2xl px-5 py-4 transition-all duration-300 ${
+                    isActive
+                      ? 'bg-white/8 border border-white/15'
+                      : 'border border-transparent hover:bg-white/4'
+                  }`}
+                  style={isActive ? { background: 'rgba(255,255,255,0.07)' } : {}}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 transition-colors ${isActive ? 'bg-terracotta' : 'bg-white/15'}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-semibold leading-snug mb-1 transition-colors ${isActive ? 'text-white' : 'text-white/40'}`}>
+                        {s.title}
+                      </p>
+                      <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-white/55' : 'text-white/20'}`}>
+                        {isActive ? s.description : s.artist}
+                      </p>
+                    </div>
+                    {isActive && (
+                      <ArrowUpRight className="w-4 h-4 text-white/30 flex-shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* CTA to catalog */}
+            <div className="pt-2">
+              <Link
+                to="/catalog"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-white/35 hover:text-white/70 transition px-5"
+              >
+                {locale === 'de' ? 'Alle Shows ansehen' : 'View all shows'} →
+              </Link>
+            </div>
+          </div>
+
+          {/* RIGHT: big image */}
+          <div className="flex-1 min-w-0">
+            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] shadow-2xl">
+              {active.image
+                ? (
+                  <img
+                    key={active.id}
+                    src={active.image}
+                    alt={active.title}
+                    className="w-full h-full object-cover transition-opacity duration-500"
+                  />
+                )
+                : <div className="w-full h-full bg-white/5 flex items-center justify-center text-white/20 text-sm">No image</div>
+              }
+              {/* Bottom overlay with info */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <div className="absolute bottom-5 left-6 right-6 flex items-end justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-1">{active.category}</p>
+                  <p className="text-white font-semibold text-lg leading-snug">{active.title}</p>
+                  <p className="text-white/50 text-sm">{active.artist}</p>
+                </div>
+                {active.link ? (
+                  <button
+                    onClick={() => navigate(active.link!)}
+                    className="flex-shrink-0 px-5 py-2.5 bg-white text-charcoal text-sm font-bold rounded-xl hover:opacity-90 transition ml-4"
+                  >
+                    {locale === 'de' ? 'Ansehen →' : 'View →'}
+                  </button>
+                ) : (
+                  <a
+                    href="https://wa.me/491608106880"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 px-5 py-2.5 bg-white text-charcoal text-sm font-bold rounded-xl hover:opacity-90 transition ml-4"
+                  >
+                    {locale === 'de' ? 'Anfragen →' : 'Book →'}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Progress dots */}
+            <div className="flex items-center gap-1.5 mt-4 px-1">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIdx(i)}
+                  className={`rounded-full transition-all duration-300 ${i === clampedIdx ? 'w-6 h-1.5 bg-white/70' : 'w-1.5 h-1.5 bg-white/15 hover:bg-white/30'}`}
+                />
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+};
+
 // --- Join Landing View ---
 const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const navigate = useNavigate();
@@ -482,54 +1225,443 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   const benefits = locale === 'de'
     ? [
-        'Für immer kostenlos — keine Provision, keine Gebühren',
-        'Gefunden von Eventagenturen & Privatkunden',
-        'KI schreibt deine Beschreibung aus deiner Website',
+        'Persönlich geprüft von Valiantsina — nur geprüfte Qualität',
+        'Gefunden von Eventagenturen & Privatkunden in Berlin',
+        'Spare Zeit: Ich erstelle deine Beschreibung aus deiner Website — du musst nichts schreiben',
       ]
     : [
-        'Free forever — no commission, no fees',
-        'Found by event agencies & private customers',
-        'AI writes your description from your website',
+        'Personally reviewed by Valiantsina — only vetted quality',
+        'Found by event agencies & private customers in Berlin',
+        'Save time: I create your profile from your website — no writing needed',
       ];
   return (
     <div className="max-w-2xl mx-auto px-4 py-20 text-center">
       {hasStoredToken && (
-        <div className="mb-8 p-5 rounded-2xl bg-[#f1f1ef] border border-gray-200 text-center">
-          <p className="text-sm font-bold text-gray-700 mb-3">
+        <div className="mb-8 p-5 rounded-2xl bg-surface-alt border border-warm-border text-center">
+          <p className="text-sm font-semibold text-warm-muted mb-3">
             {locale === 'de' ? 'Willkommen zurück! Du hast bereits Shows auf Berlintina.' : 'Welcome back! You already have shows on Berlintina.'}
           </p>
-          <Link to="/artist" className="inline-block px-6 py-2.5 bg-black text-white rounded-xl font-bold text-sm hover:opacity-90 transition">
+          <Link to="/artist" className="inline-block px-6 py-2.5 bg-terracotta text-white rounded-xl font-semibold text-sm hover:bg-terracotta-dark transition">
             {locale === 'de' ? 'Meine Shows ansehen →' : 'View my shows →'}
           </Link>
         </div>
       )}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-10 md:p-12">
-        <div className="w-16 h-16 rounded-2xl bg-black text-white flex items-center justify-center font-black text-2xl italic shadow-xl mx-auto mb-8">V</div>
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1d1d1f] mb-3">
+      <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-6 sm:p-10 md:p-12">
+        <div className="w-16 h-16 rounded-2xl bg-terracotta text-white flex items-center justify-center font-black text-2xl italic shadow-xl mx-auto mb-8">V</div>
+        <h1 className="font-display text-3xl sm:text-4xl font-normal tracking-tight text-charcoal mb-3">
           {locale === 'de' ? 'Zeig deine Show auf Berlintina' : 'Add your show to Berlintina'}
         </h1>
-        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-10">
-          {locale === 'de' ? 'Kostenlos · KI-unterstützt · 5 Minuten' : 'Free · AI-assisted · 5 minutes'}
+        <p className="text-sm font-semibold text-warm-faint uppercase tracking-widest mb-10">
+          {locale === 'de' ? 'PERSÖNLICH BETREUT · ECHTE BUCHUNGSANFRAGEN · BERLIN-NETZWERK' : 'PERSONALLY SUPPORTED · REAL BOOKING ENQUIRIES · BERLIN NETWORK'}
         </p>
         <ul className="text-left space-y-4 mb-12">
           {benefits.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-3 text-sm font-medium text-gray-700">
-              <span className="mt-0.5 w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-xs font-black flex-shrink-0">✓</span>
+            <li key={benefit} className="flex items-start gap-3 text-sm font-medium text-warm-muted">
+              <span className="mt-0.5 w-5 h-5 rounded-full bg-terracotta text-white flex items-center justify-center text-xs font-black flex-shrink-0">✓</span>
               {benefit}
             </li>
           ))}
         </ul>
+        <div className="bg-surface-alt rounded-2xl border border-warm-border p-5 mb-8 text-left">
+          <p className="text-xs font-bold uppercase tracking-widest text-warm-faint mb-3">
+            {locale === 'de' ? 'Wie es funktioniert' : 'How it works'}
+          </p>
+          <ul className="space-y-2.5">
+            {(locale === 'de' ? [
+              'Du bewirbst dich — Valiantsina prüft persönlich (keine Bots)',
+              'Bei Aufnahme: kostenloses Profil + aktive Vermittlung',
+              'Provision nur bei erfolgreicher Buchung: 15% — du zahlst nur, wenn du verdienst',
+            ] : [
+              'You apply — Valiantsina reviews personally (no bots)',
+              'If accepted: free profile + active representation',
+              'Commission only on successful bookings: 15% — you only pay when you earn',
+            ]).map((item, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-warm-muted">
+                <span className="mt-0.5 w-4 h-4 rounded-full bg-terracotta text-white flex items-center justify-center text-[9px] font-black flex-shrink-0">{i + 1}</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
         <button
           type="button"
           onClick={() => navigate('/join/start')}
-          className="w-full py-4 bg-black text-white rounded-2xl font-bold text-sm hover:opacity-90 transition shadow-xl mb-4"
+          className="w-full py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition shadow-lg mb-4"
         >
-          {locale === 'de' ? 'Jetzt eintragen →' : 'Tell me about my show →'}
+          {locale === 'de' ? 'Jetzt bewerben →' : 'Apply now →'}
         </button>
-        <p className="text-xs text-gray-400 font-medium">
+        <p className="text-xs text-warm-faint font-medium">
           {locale === 'de' ? 'Bereits eingetragen? Dein Fortschritt wird gespeichert.' : 'Already listed? Your progress is saved.'}
         </p>
       </div>
+    </div>
+  );
+};
+
+// --- Typing indicator: 3 animated dots ---
+const TypingIndicator: React.FC = () => (
+  <div className="flex justify-start">
+    <div className="bg-surface-alt rounded-[1.5rem] rounded-bl-none px-5 py-3.5 flex items-center gap-1.5 shadow-sm">
+      {[0, 160, 320].map((delay) => (
+        <span key={delay} className="typing-dot w-2 h-2 rounded-full bg-warm-muted inline-block" style={{ animationDelay: `${delay}ms` }} />
+      ))}
+    </div>
+  </div>
+);
+
+// --- Progress pills for submission draft ---
+const PROGRESS_KEYS = [
+  { key: 'artistName', de: 'Name', en: 'Name' },
+  { key: 'showTitle', de: 'Titel', en: 'Title' },
+  { key: 'artistGenre', de: 'Genre', en: 'Genre' },
+  { key: 'shortDescriptionFacts', de: 'Beschreibung', en: 'Description' },
+  { key: 'submitterEmail', de: 'E-Mail', en: 'Email' },
+] as const;
+
+const EDIT_FIELDS = [
+  { key: 'showTitle',             de: 'Show-Titel',        en: 'Show Title',        ph_de: 'z.B. Berlintina Cello Trio',           ph_en: 'e.g. Berlintina Cello Trio',         multiline: false },
+  { key: 'artistName',            de: 'Künstler',           en: 'Artist',            ph_de: 'z.B. Trio Eclat',                      ph_en: 'e.g. Trio Eclat',                    multiline: false },
+  { key: 'artistGenre',           de: 'Genre',              en: 'Genre',             ph_de: 'z.B. Klassik, Akrobatik',              ph_en: 'e.g. Classical, Acrobatics',         multiline: false },
+  { key: 'durationMinutes',       de: 'Dauer (Minuten)',    en: 'Duration (min)',    ph_de: '60',                                   ph_en: '60',                                 multiline: false },
+  { key: 'priceText',             de: 'Preis',              en: 'Price',             ph_de: 'ab 1.500 €',                           ph_en: 'from €1,500',                        multiline: false },
+  { key: 'shortDescriptionFacts', de: 'Kurzbeschreibung',   en: 'Short description', ph_de: 'Was macht deine Show besonders?',      ph_en: 'What makes your show special?',      multiline: true  },
+  { key: 'artistBio',             de: 'Über den Künstler',  en: 'About the artist',  ph_de: 'Hintergrund, Stil, Erfahrung…',        ph_en: 'Background, style, experience…',     multiline: true  },
+  { key: 'socialLinks',           de: 'Website / Social',   en: 'Website / Social',  ph_de: 'https://deine-website.de',             ph_en: 'https://your-website.com',           multiline: false },
+  { key: 'submitterEmail',        de: 'Kontakt E-Mail',     en: 'Contact Email',     ph_de: 'deine@email.de',                       ph_en: 'your@email.com',                     multiline: false },
+];
+
+// --- Live Show Preview (split-panel right side) ---
+const PREVIEW_ACCENT: Record<string, string> = {
+  CLASSICAL: '#7C3AED', KLASSIK: '#7C3AED',
+  BAND: '#1D4ED8',
+  ACROBATICS: '#EA580C', AKROBATIK: '#EA580C', AKROBATIK_VARIETÉ: '#EA580C',
+  DANCE: '#BE185D', TANZ: '#BE185D',
+};
+function previewAccent(genre: string) {
+  const key = genre.toUpperCase().replace(/[^A-ZÄÖÜ]/g, '_');
+  return PREVIEW_ACCENT[key] ?? PREVIEW_ACCENT[genre.toUpperCase()] ?? '#1a1a1a';
+}
+
+const ShowPreview: React.FC<{ draft: Record<string, unknown>; photoFile: File | null; locale: 'de' | 'en'; fullWidth?: boolean; onFieldEdit?: (key: string, val: string) => void; onPhotoChange?: (file: File) => void }> = ({ draft, photoFile, locale, fullWidth, onFieldEdit, onPhotoChange }) => {
+  const title = String(draft.showTitle || '');
+  const artistName = String(draft.artistName || '');
+  const genre = String(draft.artistGenre || '');
+  const description = String(draft.shortDescriptionFacts || draft.salesPitchText || '');
+  const price = String(draft.priceText || '');
+  const duration = draft.durationMinutes ? `${draft.durationMinutes} min` : '';
+  const bio = String(draft.artistBio || '');
+  const socialLinks = String(draft.socialLinks || '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editVal, setEditVal] = useState('');
+
+  useEffect(() => {
+    if (!photoFile) { setPhotoUrl(null); return; }
+    const url = URL.createObjectURL(photoFile);
+    setPhotoUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photoFile]);
+
+  const isEmpty = !title && !artistName && !genre && !description;
+  const accent = previewAccent(genre);
+  const accentBg = `${accent}18`;
+
+  const startEdit = (key: string) => { setEditingField(key); setEditVal(String(draft[key] ?? '')); };
+  const saveEdit = () => { if (editingField) { onFieldEdit?.(editingField, editVal); setEditingField(null); } };
+  const cancelEdit = () => setEditingField(null);
+  const pencilSvg = <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+
+  // Wraps content with a pencil edit button; shows inline editor when active
+  const ef = (key: string, multiline: boolean, node: React.ReactNode, placeholder?: string) => {
+    if (editingField === key) {
+      return (
+        <div className="flex-1">
+          {multiline
+            ? <textarea value={editVal} onChange={e => setEditVal(e.target.value)} rows={4} autoFocus className="w-full text-sm px-3 py-2 rounded-xl border border-terracotta/60 bg-white text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 resize-none" />
+            : <input type="text" value={editVal} onChange={e => setEditVal(e.target.value)} autoFocus onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }} className="w-full text-sm px-3 py-2 rounded-xl border border-terracotta/60 bg-white text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20" />
+          }
+          <div className="flex gap-2 mt-2">
+            <button type="button" onClick={saveEdit} className="text-xs px-3 py-1.5 bg-terracotta text-white rounded-lg font-semibold">{locale === 'de' ? 'Speichern' : 'Save'}</button>
+            <button type="button" onClick={cancelEdit} className="text-xs px-3 py-1.5 bg-white border border-warm-border text-warm-muted rounded-lg">✕</button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="group flex items-start gap-1.5 flex-1">
+        <div className="flex-1 min-w-0">{node || <span className="text-warm-faint italic text-xs">{placeholder}</span>}</div>
+        {onFieldEdit && (
+          <button type="button" onClick={() => startEdit(key)} className="flex-shrink-0 p-1 rounded text-warm-faint hover:text-terracotta transition opacity-40 hover:opacity-100 mt-0.5" title={locale === 'de' ? 'Bearbeiten' : 'Edit'}>
+            {pencilSvg}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const previewShimmer = CATEGORY_SHIMMER_SLIDER[genre?.toUpperCase()] ?? accent;
+
+  if (fullWidth) {
+    return (
+      <div className="h-full overflow-y-auto bg-parchment">
+        {isEmpty ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] px-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-surface-alt border border-warm-border flex items-center justify-center mb-4 text-2xl">✦</div>
+            <p className="text-warm-muted text-sm font-medium mb-1">
+              {locale === 'de' ? 'Deine Show-Seite' : 'Your Show Page'}
+            </p>
+            <p className="text-warm-faint text-xs">
+              {locale === 'de' ? 'Erscheint hier, sobald du mit dem Chat beginnst…' : 'Appears here as you start chatting…'}
+            </p>
+          </div>
+        ) : (
+          <div className="w-full max-w-3xl mx-auto px-5 sm:px-8 py-8">
+
+            {/* Hero image */}
+            <label className="relative rounded-3xl overflow-hidden mb-8 aspect-[16/7] bg-surface-alt block cursor-pointer group/photo">
+              {photoUrl
+                ? <img src={photoUrl} alt={title} className="w-full h-full object-cover" />
+                : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-warm-faint">
+                    <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 20M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span className="text-xs font-medium">{locale === 'de' ? 'Foto hinzufügen' : 'Add photo'}</span>
+                  </div>
+                )
+              }
+              {/* Hover overlay — change photo */}
+              {onPhotoChange && (
+                <div className="absolute inset-0 bg-charcoal/0 group-hover/photo:bg-charcoal/40 transition-colors duration-300 flex items-center justify-center">
+                  <span className="opacity-0 group-hover/photo:opacity-100 transition-opacity duration-300 flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-charcoal text-xs font-semibold shadow-sm">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    {locale === 'de' ? 'Foto ändern' : 'Change photo'}
+                  </span>
+                </div>
+              )}
+              {onPhotoChange && <input type="file" accept="image/*" className="sr-only" onChange={e => { const f = e.target.files?.[0]; if (f) onPhotoChange(f); }} />}
+              {genre && (
+                <div className="absolute bottom-4 left-4">
+                  <span className="bg-glass text-charcoal text-[11px] font-semibold tracking-wider uppercase px-3 py-1.5 rounded-full">{genre}</span>
+                </div>
+              )}
+            </label>
+
+            {/* Title */}
+            <div className="mb-2">
+              {ef('showTitle', false,
+                title
+                  ? <h1 className="text-4xl sm:text-5xl font-semibold tracking-[-0.04em] leading-[1.05] shimmer-text" style={{ '--shimmer-accent': previewShimmer } as React.CSSProperties}>{title}</h1>
+                  : <div className="h-12 w-3/4 bg-surface-alt rounded-xl animate-pulse" />,
+                locale === 'de' ? 'Show-Titel…' : 'Show title…'
+              )}
+            </div>
+
+            {/* Artist */}
+            <div className="mb-6">
+              {ef('artistName', false,
+                artistName
+                  ? <p className="text-base text-warm-muted">{locale === 'de' ? 'von' : 'by'} <span className="font-medium text-charcoal">{artistName}</span></p>
+                  : <div className="h-4 w-1/3 bg-surface-alt rounded animate-pulse" />,
+                locale === 'de' ? 'Künstlername…' : 'Artist name…'
+              )}
+            </div>
+
+            {/* Stats pills */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt border border-warm-border text-sm font-medium text-charcoal">★ 5.0</span>
+              {ef('durationMinutes', false,
+                duration ? <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt border border-warm-border text-sm font-medium text-charcoal">⏱ {duration}</span> : null,
+                locale === 'de' ? 'Dauer…' : 'Duration…'
+              )}
+              {ef('priceText', false,
+                price ? <span className="inline-flex items-center px-4 py-2 rounded-full bg-terracotta-light border border-terracotta/20 text-sm font-semibold text-terracotta">{price}</span> : null,
+                locale === 'de' ? 'Preis…' : 'Price…'
+              )}
+            </div>
+
+            {/* About */}
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-charcoal mb-3">{locale === 'de' ? 'Über die Show' : 'About This Show'}</h2>
+              {ef('shortDescriptionFacts', true,
+                description
+                  ? <p className="text-base text-charcoal leading-relaxed">{description}</p>
+                  : <div className="space-y-2"><div className="h-3 bg-surface-alt rounded animate-pulse" /><div className="h-3 bg-surface-alt rounded animate-pulse w-4/5" /><div className="h-3 bg-surface-alt rounded animate-pulse w-3/5" /></div>,
+                locale === 'de' ? 'Kurzbeschreibung deiner Show…' : 'Short description of your show…'
+              )}
+            </section>
+
+            {/* Artist bio */}
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-charcoal mb-3">{locale === 'de' ? 'Über die Künstler' : 'About the Artist'}</h2>
+              {ef('artistBio', true,
+                bio
+                  ? <p className="text-base text-charcoal leading-relaxed italic border-l-2 border-warm-border pl-4">{bio}</p>
+                  : <div className="space-y-2 border-l-2 border-surface-alt pl-4"><div className="h-3 bg-surface-alt rounded animate-pulse" /><div className="h-3 bg-surface-alt rounded animate-pulse w-4/5" /></div>,
+                locale === 'de' ? 'Hintergrund, Stil, Erfahrung…' : 'Background, style, experience…'
+              )}
+            </section>
+
+            {/* Genre & Social */}
+            <section className="mb-8 grid grid-cols-2 gap-3">
+              <div className="px-4 py-3 bg-surface rounded-2xl border border-warm-border">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-1">Genre</p>
+                {ef('artistGenre', false,
+                  genre ? <p className="text-sm font-semibold text-charcoal">{genre}</p> : null,
+                  locale === 'de' ? 'z.B. Klassik' : 'e.g. Classical'
+                )}
+              </div>
+              <div className="px-4 py-3 bg-surface rounded-2xl border border-warm-border">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-1">Website</p>
+                {ef('socialLinks', false,
+                  socialLinks ? <p className="text-sm font-medium text-charcoal break-all">{socialLinks}</p> : null,
+                  'https://…'
+                )}
+              </div>
+            </section>
+
+            {/* CTA preview */}
+            <div className="mt-6 p-5 bg-surface rounded-2xl border border-warm-border text-center">
+              <p className="text-xs text-warm-faint mb-3">{locale === 'de' ? 'Buchungs-Button (Vorschau)' : 'Booking button (preview)'}</p>
+              <div className="inline-block px-8 py-3 bg-charcoal/20 text-charcoal/40 text-sm font-semibold rounded-2xl cursor-default select-none">
+                {locale === 'de' ? 'Jetzt anfragen →' : 'Request availability →'}
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="sticky top-6">
+      {/* Label */}
+      <div className="flex items-center gap-2 mb-3 px-1">
+        <span className="text-[10px] font-semibold text-warm-faint uppercase tracking-widest">
+          {locale === 'de' ? 'Vorschau · So sieht deine Show-Seite aus' : 'Preview · Your show page'}
+        </span>
+        <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
+      </div>
+
+      <div className="bg-surface rounded-[1.5rem] border border-warm-border shadow-xl overflow-hidden">
+
+        {/* Hero image — matches real page aspect-[3/2] */}
+        <div className="relative w-full aspect-[3/2] bg-[#f0f0ee] overflow-hidden">
+          {photoUrl
+            ? <img src={photoUrl} alt={title} className="w-full h-full object-cover" />
+            : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-warm-border">
+                <svg width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 20M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span className="text-xs font-medium">{locale === 'de' ? 'Foto folgt' : 'Photo coming'}</span>
+              </div>
+            )
+          }
+          {/* Gradient overlay at bottom — same as real page */}
+          {(genre || photoUrl) && (
+            <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(to top, ${accent}cc 0%, ${accent}30 35%, transparent 65%)` }} />
+          )}
+          {/* Category + duration badges at bottom-left — same as real page */}
+          <div className="absolute bottom-3 left-3 flex gap-2 flex-wrap">
+            {genre && (
+              <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full" style={{ backgroundColor: accent, color: '#fff' }}>
+                {genre}
+              </span>
+            )}
+            {duration && (
+              <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-black/50 text-white backdrop-blur-sm">
+                {duration}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Info panel */}
+        <div className="p-5">
+          {isEmpty ? (
+            <div className="text-center py-10">
+              <p className="text-warm-faint text-sm font-medium">
+                {locale === 'de' ? 'Deine Show-Seite erscheint hier, sobald du mit dem Chat beginnst…' : 'Your show page appears here as you chat…'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Title */}
+              {title
+                ? <h2 className="text-2xl font-semibold tracking-tight leading-tight text-charcoal mb-2">{title}</h2>
+                : <div className="h-7 w-3/4 bg-surface-alt rounded-lg mb-2 animate-pulse" />}
+
+              {/* Price badge — matches real page accent color style */}
+              {price && (
+                <div className="mb-3">
+                  <span className="px-3 py-1.5 text-sm font-bold rounded-full" style={{ backgroundColor: accentBg, color: accent }}>
+                    {price}
+                  </span>
+                </div>
+              )}
+
+              {/* Description */}
+              {description
+                ? <p className="text-sm text-charcoal leading-relaxed mb-4 line-clamp-4">{description}</p>
+                : (
+                  <div className="space-y-2 mb-4">
+                    <div className="h-3 bg-surface-alt rounded animate-pulse" />
+                    <div className="h-3 bg-surface-alt rounded animate-pulse w-4/5" />
+                    <div className="h-3 bg-surface-alt rounded animate-pulse w-3/5" />
+                  </div>
+                )}
+
+              {/* Quick-scan grid — matches real page 2-column grid */}
+              {(duration || genre || artistName) && (
+                <div className="grid grid-cols-2 gap-3 mb-4 p-3 rounded-xl bg-surface-alt border border-warm-border">
+                  {duration && (
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-warm-muted mb-0.5">{locale === 'de' ? 'Dauer' : 'Duration'}</p>
+                      <p className="text-sm font-semibold text-charcoal">{duration}</p>
+                    </div>
+                  )}
+                  {genre && (
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-warm-muted mb-0.5">Genre</p>
+                      <p className="text-sm font-semibold text-charcoal">{genre}</p>
+                    </div>
+                  )}
+                  {artistName && (
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-warm-muted mb-0.5">{locale === 'de' ? 'Künstler' : 'Artist'}</p>
+                      <p className="text-sm font-semibold text-charcoal">{artistName}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* About artist */}
+              {bio && (
+                <div className="border-t border-warm-border pt-4 mb-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-warm-muted mb-1">{locale === 'de' ? 'Über die Künstler' : 'About the artist'}</p>
+                  <p className="text-sm text-warm-muted leading-relaxed line-clamp-3">{bio}</p>
+                </div>
+              )}
+
+              {/* Social */}
+              {socialLinks && (
+                <div className="border-t border-warm-border pt-4 mb-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-warm-muted mb-1">Website / Social</p>
+                  <p className="text-xs text-warm-muted font-medium break-all">{socialLinks}</p>
+                </div>
+              )}
+
+              {/* CTA — matches real page black button */}
+              <div className="pt-4 border-t border-warm-border">
+                <div className="w-full py-3.5 bg-terracotta text-white rounded-[14px] text-sm font-semibold text-center opacity-50 cursor-default select-none">
+                  {locale === 'de' ? 'Jetzt anfragen →' : 'Request availability →'}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      <p className="text-[10px] text-warm-faint text-center mt-3 font-medium">
+        {locale === 'de' ? 'Wird mit jedem Schritt aktualisiert' : 'Updates with every step'}
+      </p>
     </div>
   );
 };
@@ -546,7 +1678,8 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [pendingVideoUrl, setPendingVideoUrl] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -555,10 +1688,12 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const [welcomeBackChoice, setWelcomeBackChoice] = useState<'use' | 'fresh' | null>(null);
   const [showMediaInput, setShowMediaInput] = useState(false);
   const [lastNextSlot, setLastNextSlot] = useState<string | null>(null);
-  const [showOverview, setShowOverview] = useState(false);
+
+  // Scroll page to top on mount
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); }, []);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  useEffect(() => { scrollToBottom(); }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages, loading]);
 
   useEffect(() => {
     const token = getStoredArtistToken();
@@ -634,7 +1769,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       setLastNextSlot(res.nextQuestion?.slot ?? null);
       if (res.action === 'SAVE_SUBMISSION') {
         setSubmissionDraft(newDraft);
-        setShowOverview(true);
+        handleFinish(newDraft);
       }
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Request failed');
@@ -647,34 +1782,22 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   if (submissionId) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-24 text-center">
-        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-12 md:p-16">
+        <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16">
           <div className="w-20 h-20 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center text-4xl mx-auto mb-8">✓</div>
           <h2 className="text-3xl font-bold mb-4 tracking-tight">
             {locale === 'de' ? 'Vielen Dank!' : 'Thank you!'}
           </h2>
-          <p className="text-gray-600 mb-2 font-medium">
+          <p className="text-warm-muted mb-2 font-medium">
             {locale === 'de'
               ? 'Wir haben deine Angaben erhalten und prüfen sie. Du hörst in Kürze von uns!'
               : 'We have received your submission and will review it. You will hear from us soon!'}
           </p>
-          <p className="text-xs text-gray-400 font-mono mt-6">ID: {submissionId}</p>
-          <Link to="/catalog" className="inline-block mt-10 px-10 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:opacity-90 transition">
+          <p className="text-xs text-warm-faint font-mono mt-6">ID: {submissionId}</p>
+          <Link to="/catalog" className="inline-block mt-10 px-10 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition">
             {locale === 'de' ? 'Shows entdecken' : 'Discover shows'}
           </Link>
         </div>
       </div>
-    );
-  }
-
-  if (showOverview) {
-    return (
-      <JoinOverview
-        initialDraft={submissionDraft}
-        honeypot={honeypot}
-        locale={locale}
-        onBack={() => setShowOverview(false)}
-        initialPhotoFile={photoFile}
-      />
     );
   }
 
@@ -683,21 +1806,21 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     const label = [acc?.instagramHandle ? `@${acc.instagramHandle}` : null, acc?.websiteUrl].filter(Boolean).join(' • ') || (locale === 'de' ? 'Du' : 'You');
     return (
       <div className="max-w-2xl mx-auto px-4 py-24">
-        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-12 md:p-16">
-          <h2 className="text-2xl font-bold mb-4 tracking-tight text-center">
+        <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16">
+          <h2 className="font-display text-2xl font-normal mb-4 tracking-tight text-center text-charcoal">
             {locale === 'de' ? 'Willkommen zurück!' : 'Welcome back!'}
           </h2>
-          <p className="text-gray-600 mb-8 text-center font-medium">
+          <p className="text-warm-muted mb-8 text-center font-medium">
             {locale === 'de'
               ? 'Soll ich deine gespeicherten Artist-Daten verwenden?'
               : 'Should I use your saved artist details?'}
           </p>
-          {label && <p className="text-sm text-gray-400 text-center mb-8">({label})</p>}
+          {label && <p className="text-sm text-warm-faint text-center mb-8">({label})</p>}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button type="button" onClick={() => setWelcomeBackChoice('use')} className="px-8 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:opacity-90 transition">
+            <button type="button" onClick={() => setWelcomeBackChoice('use')} className="px-8 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition">
               {locale === 'de' ? 'Ja, verwenden' : 'Yes, use them'}
             </button>
-            <button type="button" onClick={() => { clearStoredArtistToken(); setWelcomeBackChoice('fresh'); }} className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold text-sm hover:border-black hover:text-black transition">
+            <button type="button" onClick={() => { clearStoredArtistToken(); setWelcomeBackChoice('fresh'); }} className="px-8 py-4 bg-surface border-2 border-warm-border text-warm-muted rounded-2xl font-semibold text-sm hover:border-terracotta hover:text-terracotta transition">
               {locale === 'de' ? 'Nein, neu starten' : 'No, start fresh'}
             </button>
           </div>
@@ -706,82 +1829,209 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     );
   }
 
+  const filledCount = PROGRESS_KEYS.filter(p => submissionDraft[p.key] && String(submissionDraft[p.key]).trim()).length;
+
+  const canFinish = !!(submissionDraft.showTitle && String(submissionDraft.showTitle).trim() && submissionDraft.artistName && String(submissionDraft.artistName).trim());
+
+  const handleFinish = async (draftOverride?: Record<string, unknown>) => {
+    const d = draftOverride ?? submissionDraft;
+    const submitterEmail = String(d.submitterEmail || '').trim();
+    const showTitle = String(d.showTitle || '').trim();
+    if (!submitterEmail || !submitterEmail.includes('@')) {
+      setSubmitError(locale === 'de' ? 'Bitte gib noch deine E-Mail-Adresse im Chat ein.' : 'Please provide your email address in the chat first.');
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const photoBase64Array: string[] = [];
+      for (const f of photoFiles) {
+        photoBase64Array.push(await fileToBase64(f));
+      }
+      const result = await submitArtistOnboarding({
+        artistName: d.artistName as string | undefined,
+        artistGenre: d.artistGenre as string | undefined,
+        showTitle,
+        photoBase64Array: photoBase64Array.length ? photoBase64Array : undefined,
+        videoUrls: pendingVideoUrl ? [pendingVideoUrl] : undefined,
+        durationMinutes: typeof d.durationMinutes === 'number' ? d.durationMinutes : undefined,
+        priceText: d.priceText as string | undefined,
+        shortDescriptionFacts: d.shortDescriptionFacts as string | undefined,
+        artistBio: d.artistBio as string | undefined,
+        socialLinks: d.socialLinks as string | undefined,
+        submitterEmail,
+        honeypot: honeypot || undefined,
+        artistToken: getStoredArtistToken() ?? undefined,
+      });
+      setSubmissionId(result.submissionId);
+      if (result.artistToken) setStoredArtistToken(result.artistToken);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Submission failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-20 relative">
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl overflow-hidden flex flex-col h-[750px]">
-        <div className="bg-[#f1f1ef] p-8 text-black border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-black text-white flex items-center justify-center font-black text-xl italic shadow-xl">V</div>
-            <div>
-              <h2 className="font-bold text-lg tracking-tight text-gray-800 leading-tight">{locale === 'de' ? 'Für Künstler' : 'For Artists'}</h2>
-              <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">Valiantsina • Berlintina</p>
+    <div className="flex h-[100svh] overflow-hidden bg-parchment">
+
+      {/* ── Panel 1: Chat ── */}
+      <div className="w-[320px] xl:w-[360px] flex-shrink-0 flex flex-col bg-surface border-r border-warm-border">
+
+        {/* Header */}
+        <div className="bg-surface-alt px-5 py-4 border-b border-warm-border flex-shrink-0">
+          <div className="flex items-center gap-3 mb-2.5">
+            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center flex-shrink-0">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M9 11a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m6 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1Z"/></svg>
             </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-sm tracking-tight text-charcoal leading-tight">{locale === 'de' ? 'Assistent' : 'Assistant'}</h2>
+              <p className="text-[10px] text-warm-muted font-medium">{locale === 'de' ? 'Show erstellen' : 'Create your show'}</p>
+            </div>
+            <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
           </div>
+          {filledCount > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {PROGRESS_KEYS.map((p) => {
+                const done = !!(submissionDraft[p.key] && String(submissionDraft[p.key]).trim());
+                return (
+                  <span key={p.key} className={`px-2 py-0.5 rounded-full text-[9px] font-bold transition-all ${done ? 'bg-terracotta text-white' : 'bg-surface/60 text-warm-faint border border-warm-border'}`}>
+                    {done ? '✓ ' : ''}{locale === 'de' ? p.de : p.en}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <div className="flex-grow overflow-y-auto p-8 space-y-8 bg-[#fdfdfb] flex flex-col">
-          {(loading || resolvingToken) && messages.length === 0 && (
-            <div className="flex-grow flex items-center justify-center text-gray-500 text-sm">
-              {locale === 'de' ? 'Lade…' : 'Loading…'}
+
+        {/* Messages */}
+        <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-surface flex flex-col">
+          {resolvingToken && messages.length === 0 && (
+            <div className="flex-grow flex items-center justify-center">
+              <div className="flex items-center gap-1.5">
+                {[0, 160, 320].map(d => <span key={d} className="typing-dot w-2 h-2 rounded-full bg-warm-border inline-block" style={{ animationDelay: `${d}ms` }} />)}
+              </div>
             </div>
           )}
-          {apiError && (
-            <div className="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
-              {apiError}
-            </div>
-          )}
-          {submitError && (
-            <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">
-              {submitError}
-            </div>
-          )}
+          {apiError && <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">{apiError}</div>}
+          {submitError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium">{submitError}</div>}
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-              <div className={`max-w-[85%] px-6 py-4 rounded-[1.5rem] text-[15px] font-medium leading-relaxed whitespace-pre-wrap ${m.role === 'ai' ? 'bg-[#f1f1ef] text-[#37352f] rounded-bl-none shadow-sm' : 'bg-black text-white rounded-br-none shadow-xl'}`}>
+            <div key={i} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
+              {m.role === 'ai' && (
+                <div className="w-6 h-6 rounded-lg bg-black text-white flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 self-end">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M9 11a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m6 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1Z"/></svg>
+                </div>
+              )}
+              <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-[13px] font-medium leading-relaxed whitespace-pre-wrap ${m.role === 'ai' ? 'bg-surface-alt text-charcoal rounded-bl-none' : 'bg-terracotta text-white rounded-br-none shadow-md'}`}>
                 {m.text}
               </div>
             </div>
           ))}
-          {quickReplies.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
+          {loading && messages.length > 0 && <TypingIndicator />}
+          {!loading && quickReplies.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pl-8">
               {quickReplies.map((q, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    if (lastNextSlot === 'has_show') {
-                      const value = (q === 'Ja, habe eine Show' || q === 'Yes, I have a show') ? 'HAS_SHOW' : (q === 'Nein, brainstormen' || q === 'No, brainstorm') ? 'NO_SHOW' : undefined;
-                      sendMessage(q, value ? { action: 'BUTTON', value } : undefined);
-                    } else {
-                      sendMessage(q);
-                    }
-                  }}
-                  disabled={loading}
-                  className="px-4 py-2.5 rounded-xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 hover:border-black hover:text-black transition disabled:opacity-50"
-                >
+                <button key={i} type="button" onClick={() => {
+                  if (lastNextSlot === 'has_show') {
+                    const value = (q === 'Ja, habe eine Show' || q === 'Yes, I have a show') ? 'HAS_SHOW' : (q === 'Nein, brainstormen' || q === 'No, brainstorm') ? 'NO_SHOW' : undefined;
+                    sendMessage(q, value ? { action: 'BUTTON', value } : undefined);
+                  } else { sendMessage(q); }
+                }} disabled={loading} className="px-3 py-1.5 rounded-xl bg-surface border-2 border-warm-border text-xs font-semibold text-warm-muted hover:border-terracotta hover:text-terracotta transition disabled:opacity-50">
                   {q}
                 </button>
               ))}
             </div>
           )}
           {showMediaInput && (
-            <div className="mt-4 flex justify-start">
-              <label className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white border border-gray-200 cursor-pointer text-xs font-bold text-gray-600 hover:bg-gray-50">
+            <div className="pl-8 space-y-2">
+              <label className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-warm-border cursor-pointer text-xs font-semibold text-warm-muted hover:bg-surface-alt">
                 <span>📸</span>
-                <span>{photoFile ? (locale === 'de' ? '✓ Foto ausgewählt' : '✓ Photo selected') : (locale === 'de' ? 'Foto hochladen (optional)' : 'Upload photo (optional)')}</span>
-                <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhotoFile(f); }} />
+                <span>{photoFiles.length > 0 ? `✓ ${photoFiles.length} ${locale === 'de' ? 'Foto(s)' : 'photo(s)'}` : (locale === 'de' ? 'Fotos hochladen' : 'Upload photos')}</span>
+                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => {
+                  const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+                  if (files.length) { setPhotoFiles(prev => [...prev, ...files]); sendMessage(locale === 'de' ? `📸 ${files.length} Foto(s) hinzugefügt` : `📸 ${files.length} photo(s) added`); }
+                }} />
               </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder={locale === 'de' ? 'YouTube-Link (optional)' : 'YouTube link (optional)'}
+                  value={pendingVideoUrl}
+                  onChange={e => setPendingVideoUrl(e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-surface border border-warm-border text-xs font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
+                />
+                {pendingVideoUrl && (
+                  <button type="button" onClick={() => sendMessage(locale === 'de' ? '▶ Video hinzugefügt' : '▶ Video added')}
+                    className="px-3 py-1.5 rounded-xl bg-terracotta text-white text-xs font-semibold">
+                    OK
+                  </button>
+                )}
+              </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
-        <div className="p-8 border-t border-gray-100 flex gap-4 bg-white relative">
-          <input type="text" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} className="hidden" aria-hidden="true" tabIndex={-1} />
-          <input type="text" placeholder={locale === 'de' ? 'Nachricht schreiben...' : 'Type a message...'} className="flex-grow px-7 py-5 rounded-2xl bg-[#f1f1ef] text-base font-semibold focus:outline-none focus:ring-4 focus:ring-black/5 transition text-gray-800 disabled:opacity-50" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} disabled={loading || submitting || !conversationId} />
-          <button onClick={() => sendMessage()} disabled={(!input.trim()) || loading || submitting || !conversationId} className="w-16 h-16 bg-black text-white rounded-2xl hover:opacity-90 transition flex items-center justify-center shadow-2xl disabled:opacity-20">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
+
+        {/* Finish button */}
+        {canFinish && (
+          <div className="px-3 pt-3 flex-shrink-0">
+            {submitError && <p className="text-[11px] text-red-500 mb-2 px-1">{submitError}</p>}
+            <button
+              type="button"
+              onClick={handleFinish}
+              disabled={submitting}
+              className="w-full py-3 bg-terracotta text-white rounded-xl font-semibold text-sm hover:bg-terracotta-dark transition flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {submitting
+                ? <span className="flex gap-1">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
+                : <>{locale === 'de' ? 'Show einreichen' : 'Submit show'} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></>
+              }
+            </button>
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="border-t border-warm-border bg-surface flex-shrink-0">
+          {/https?:\/\//.test(input) && (
+            <div className="px-4 pt-2.5 pb-0 flex items-center gap-1.5 text-[10px] text-warm-muted font-medium">
+              <span>🔍</span>
+              <span>{locale === 'de' ? 'Website wird analysiert' : 'Website will be analyzed'}</span>
+            </div>
+          )}
+          <div className="p-3 flex gap-2">
+            <input type="text" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} className="hidden" aria-hidden="true" tabIndex={-1} />
+            <input
+              type="text"
+              placeholder={locale === 'de' ? 'Antworten oder URL einfügen…' : 'Reply or paste URL…'}
+              className="flex-grow px-4 py-3 rounded-xl bg-surface-alt text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/20 transition text-charcoal disabled:opacity-50 placeholder:text-warm-faint"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+              disabled={loading || submitting || !conversationId}
+            />
+            <button onClick={() => sendMessage()} disabled={(!input.trim()) || loading || submitting || !conversationId}
+              className="w-11 h-11 bg-terracotta text-white rounded-xl hover:bg-terracotta-dark transition flex items-center justify-center shadow-md disabled:opacity-20 flex-shrink-0 self-end">
+              {loading
+                ? <span className="flex gap-0.5">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1 h-1 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
+                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              }
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* ── Panel 2: Live Preview with inline pencil editing ── */}
+      <div className="flex-1 overflow-hidden">
+        <ShowPreview
+          draft={submissionDraft}
+          photoFile={photoFiles[0] ?? null}
+          locale={locale}
+          fullWidth
+          onFieldEdit={(key, val) => setSubmissionDraft(d => ({ ...d, [key]: val }))}
+          onPhotoChange={(f) => setPhotoFiles([f])}
+        />
+      </div>
+
     </div>
   );
 };
@@ -841,16 +2091,21 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     return () => observer.disconnect();
   }, [hasMore, loading]);
 
-  if (loading && shows.length === 0) {
-    return (
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-16 sm:py-20 text-center text-gray-500 font-medium">
-        {locale === 'de' ? 'Lade Shows…' : 'Loading shows…'}
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-12 sm:py-20">
+      <PageSEO
+        title={locale === 'de' ? 'Alle Showacts & Künstler | Berlintina Berlin' : 'All Show Acts & Artists | Berlintina Berlin'}
+        description={locale === 'de'
+          ? 'Entdecke alle persönlich kuratierten Showacts aus Berlin: Akrobatik, Live-Musik, Tanz, Feuershow, Klassik & mehr. Jetzt anfragen.'
+          : 'Discover all personally curated show acts from Berlin: acrobatics, live music, dance, fire shows, classical & more. Enquire now.'}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Berlintina Show Acts Berlin',
+          url: 'https://berlintina.de/catalog',
+          description: 'Persönlich kuratierte Showacts und Künstler aus Berlin',
+        }}
+      />
       {error && (
         <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
           {error}
@@ -858,27 +2113,65 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       )}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 sm:gap-12 mb-12 sm:mb-20">
         <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-6 sm:mb-8 tracking-tight">
-            {locale === 'de' ? 'Alle Shows' : 'All Shows'}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-2 tracking-tight">
+            {locale === 'de' ? 'Berliner Showacts — persönlich kuratiert' : 'Berlin Show Acts — personally curated'}
           </h1>
+          <p className="text-warm-muted text-base mb-6 sm:mb-8">
+            {locale === 'de' ? 'Jeder Act wurde von Valiantsina persönlich ausgewählt.' : 'Every act was personally selected by Valiantsina.'}
+          </p>
           <div className="flex flex-wrap gap-3">
             {(['ALL', ...Object.values(Category)] as const).map(cat => (
-              <button key={cat} onClick={() => setFilter(cat)} className={`px-6 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all shadow-sm ${filter === cat ? 'bg-black text-white' : 'bg-[#f1f1ef] text-gray-500 hover:text-black'}`}>{cat}</button>
+              <button key={cat} onClick={() => setFilter(cat)} className={`px-6 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all shadow-sm ${filter === cat ? 'bg-terracotta text-white' : 'bg-surface-alt text-warm-muted hover:text-charcoal'}`}>{cat}</button>
             ))}
           </div>
         </div>
         <input
           type="text"
           placeholder={locale === 'de' ? 'Künstler oder Show suchen…' : 'Search artist or show…'}
-          className="w-full md:w-96 px-6 py-4 rounded-xl bg-white border border-gray-200 focus:border-black focus:outline-none transition text-sm font-bold shadow-sm"
+          className="w-full md:w-96 px-6 py-4 rounded-xl bg-surface border border-warm-border focus:border-terracotta focus:outline-none transition text-sm font-semibold shadow-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      {!loading && !error && shows.length === 0 ? (
+
+      {/* Grid area — only this part changes on filter/search */}
+      {loading && shows.length === 0 ? (
+        /* ── Search / loading animation ── */
+        <div className="py-24 flex flex-col items-center gap-6">
+          <div className="relative w-16 h-16">
+            {/* Spinning ring */}
+            <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '1.4s' }} viewBox="0 0 64 64" fill="none">
+              <circle cx="32" cy="32" r="28" stroke="#e8eaef" strokeWidth="4" />
+              <path d="M32 4 A28 28 0 0 1 60 32" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" />
+            </svg>
+            {/* Search icon in center */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-sm font-medium text-warm-muted tracking-wide">
+            {locale === 'de' ? 'Suche läuft…' : 'Searching…'}
+          </p>
+          {/* Skeleton cards */}
+          <div className="w-full masonry-col-lg mt-2">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="masonry-col-item rounded-2xl overflow-hidden bg-surface border border-warm-border">
+                <div className="aspect-[3/4] bg-surface-alt animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                <div className="p-4 space-y-2">
+                  <div className="h-3 bg-surface-alt rounded-full animate-pulse w-3/4" style={{ animationDelay: `${i * 80 + 60}ms` }} />
+                  <div className="h-2.5 bg-surface-alt rounded-full animate-pulse w-1/2" style={{ animationDelay: `${i * 80 + 120}ms` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : !loading && !error && shows.length === 0 ? (
         <div className="py-24 text-center">
-          <p className="text-gray-500 font-medium text-lg mb-4">{locale === 'de' ? 'Keine Shows gefunden.' : 'No shows found.'}</p>
-          <p className="text-gray-400 text-sm">{locale === 'de' ? 'Versuche andere Filter oder suche nach etwas anderem.' : 'Try different filters or search for something else.'}</p>
+          <p className="text-warm-muted font-medium text-lg mb-4">{locale === 'de' ? 'Keine Shows gefunden.' : 'No shows found.'}</p>
+          <p className="text-warm-faint text-sm">{locale === 'de' ? 'Versuche andere Filter oder suche nach etwas anderem.' : 'Try different filters or search for something else.'}</p>
         </div>
       ) : (
         <>
@@ -892,12 +2185,44 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           {/* Infinite scroll sentinel */}
           <div ref={sentinelRef} className="h-16" />
           {loading && (
-            <div className="py-8 text-center text-gray-400 text-sm font-medium">
+            <div className="py-8 text-center text-warm-faint text-sm font-medium">
               {locale === 'de' ? 'Lade…' : 'Loading…'}
             </div>
           )}
         </>
       )}
+
+      {/* ── Weitere Acts auf Anfrage — Slider style ── */}
+      <section className="mt-20 relative w-full overflow-hidden" style={{ background: '#0d0d1a' }}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
+          <p className="text-white/30 text-xs font-semibold tracking-[0.2em] uppercase mb-6">
+            berlintina<span className="text-terracotta">.</span>
+          </p>
+          <h2 className="text-4xl sm:text-5xl md:text-[3.5rem] font-semibold tracking-[-0.04em] leading-[1.05] mb-3 gradient-text-static">
+            {locale === 'de' ? 'Weitere Acts auf Anfrage.' : 'More Acts on Request.'}
+          </h2>
+          <p className="text-white/40 text-base mb-8 max-w-xl">
+            {locale === 'de'
+              ? 'Valiantsina hat Zugang zu 50+ weiteren Berliner Künstlern — einfach beschreiben, was ihr sucht.'
+              : "Valiantsina has access to 50+ more Berlin artists — just describe what you're looking for."}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-charcoal text-sm font-bold rounded-2xl hover:opacity-90 transition shadow-lg"
+            >
+              <span>berlintina<span className="text-terracotta">.</span></span>
+              {locale === 'de' ? 'anfragen →' : 'enquire →'}
+            </a>
+            <Link
+              to="/join/start"
+              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-semibold rounded-2xl hover:bg-white/10 transition"
+            >
+              {locale === 'de' ? 'Künstler werden ↗' : 'Join as artist ↗'}
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
@@ -914,7 +2239,7 @@ const Blog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-gray-400 font-medium">
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-warm-faint font-medium">
         {locale === 'de' ? 'Lade Blog…' : 'Loading blog…'}
       </div>
     );
@@ -923,11 +2248,11 @@ const Blog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
       <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4">Blog</h1>
-      <p className="text-gray-400 font-medium mb-16">
+      <p className="text-warm-muted font-medium mb-16">
         {locale === 'de' ? 'Gedanken, Geschichten & Einblicke von Valiantsina.' : 'Thoughts, stories & insights from Valiantsina.'}
       </p>
       {posts.length === 0 ? (
-        <p className="text-gray-400 text-center py-16">
+        <p className="text-warm-faint text-center py-16">
           {locale === 'de' ? 'Noch keine Artikel veröffentlicht.' : 'No articles published yet.'}
         </p>
       ) : (
@@ -940,16 +2265,16 @@ const Blog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               <article
                 key={post.id}
                 onClick={() => navigate(`/blog/${post.slug}`)}
-                className="group cursor-pointer bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-shadow"
+                className="group cursor-pointer bg-surface rounded-2xl border border-warm-border overflow-hidden shadow-sm hover:shadow-lg transition-shadow"
               >
                 {post.coverImageUrl && (
                   <img src={post.coverImageUrl} alt={title} className="w-full aspect-[16/9] object-cover group-hover:scale-[1.02] transition-transform duration-300" />
                 )}
                 <div className="p-6">
-                  {date && <p className="text-xs text-gray-400 font-medium mb-2">{date}</p>}
-                  <h2 className="text-lg font-bold tracking-tight text-gray-900 mb-2 group-hover:text-black transition-colors line-clamp-2">{title}</h2>
-                  {excerpt && <p className="text-sm text-gray-500 leading-relaxed line-clamp-3">{excerpt}</p>}
-                  <p className="mt-4 text-xs font-bold text-black group-hover:underline">
+                  {date && <p className="text-xs text-warm-faint font-medium mb-2">{date}</p>}
+                  <h2 className="text-lg font-semibold tracking-tight text-charcoal mb-2 group-hover:text-terracotta transition-colors line-clamp-2">{title}</h2>
+                  {excerpt && <p className="text-sm text-warm-muted leading-relaxed line-clamp-3">{excerpt}</p>}
+                  <p className="mt-4 text-xs font-semibold text-terracotta group-hover:underline">
                     {locale === 'de' ? 'Weiterlesen →' : 'Read more →'}
                   </p>
                 </div>
@@ -979,13 +2304,13 @@ const BlogPostPage: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   }, [slug]);
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto px-4 py-20 text-center text-gray-400 font-medium">{locale === 'de' ? 'Lade…' : 'Loading…'}</div>;
+    return <div className="max-w-3xl mx-auto px-4 py-20 text-center text-warm-faint font-medium">{locale === 'de' ? 'Lade…' : 'Loading…'}</div>;
   }
   if (notFound || !post) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <p className="text-gray-400 font-medium mb-6">{locale === 'de' ? 'Artikel nicht gefunden.' : 'Article not found.'}</p>
-        <Link to="/blog" className="text-sm font-bold text-black underline underline-offset-4">← {locale === 'de' ? 'Zurück zum Blog' : 'Back to Blog'}</Link>
+        <p className="text-warm-faint font-medium mb-6">{locale === 'de' ? 'Artikel nicht gefunden.' : 'Article not found.'}</p>
+        <Link to="/blog" className="text-sm font-semibold text-terracotta underline underline-offset-4">← {locale === 'de' ? 'Zurück zum Blog' : 'Back to Blog'}</Link>
       </div>
     );
   }
@@ -996,17 +2321,17 @@ const BlogPostPage: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-      <Link to="/blog" className="text-xs font-bold text-gray-400 hover:text-black uppercase tracking-widest transition mb-10 inline-block">← Blog</Link>
+      <Link to="/blog" className="text-xs font-semibold text-warm-faint hover:text-terracotta uppercase tracking-widest transition mb-10 inline-block">← Blog</Link>
       {post.coverImageUrl && (
         <img src={post.coverImageUrl} alt={title} className="w-full aspect-[16/9] object-cover rounded-2xl mb-10 shadow-sm" />
       )}
-      {date && <p className="text-xs text-gray-400 font-medium mb-4">{date}</p>}
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-gray-900 mb-10">{title}</h1>
+      {date && <p className="text-xs text-warm-faint font-medium mb-4">{date}</p>}
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-charcoal mb-10">{title}</h1>
       <div className="prose prose-gray max-w-none">
-        <p className="text-gray-700 leading-relaxed text-base sm:text-lg whitespace-pre-line">{content}</p>
+        <p className="text-warm-muted leading-relaxed text-base sm:text-lg whitespace-pre-line">{content}</p>
       </div>
-      <div className="mt-16 pt-8 border-t border-gray-100">
-        <Link to="/blog" className="text-sm font-bold text-black underline underline-offset-4 hover:opacity-70 transition">← {locale === 'de' ? 'Alle Artikel' : 'All Articles'}</Link>
+      <div className="mt-16 pt-8 border-t border-warm-border">
+        <Link to="/blog" className="text-sm font-semibold text-terracotta underline underline-offset-4 hover:opacity-70 transition">← {locale === 'de' ? 'Alle Artikel' : 'All Articles'}</Link>
       </div>
     </div>
   );
@@ -1029,7 +2354,7 @@ const ArtistPortal: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   }, []);
 
   if (loading) {
-    return <div className="max-w-6xl mx-auto px-4 py-20 text-center text-gray-400 font-medium">{locale === 'de' ? 'Lade…' : 'Loading…'}</div>;
+    return <div className="max-w-6xl mx-auto px-4 py-20 text-center text-warm-faint font-medium">{locale === 'de' ? 'Lade…' : 'Loading…'}</div>;
   }
   if (!data) return null;
 
@@ -1038,9 +2363,9 @@ const ArtistPortal: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-12 sm:py-20">
       <div className="mb-12">
-        <p className="text-xs font-black uppercase tracking-[0.15em] text-gray-400 mb-3">{locale === 'de' ? 'Künstler-Portal' : 'Artist Portal'}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-warm-faint mb-3">{locale === 'de' ? 'Künstler-Portal' : 'Artist Portal'}</p>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-4">{artistLabel}</h1>
-        <p className="text-gray-400 font-medium">
+        <p className="text-warm-faint font-medium">
           {locale === 'de'
             ? `${data.shows.length} Show${data.shows.length !== 1 ? 's' : ''} auf Berlintina`
             : `${data.shows.length} show${data.shows.length !== 1 ? 's' : ''} on Berlintina`}
@@ -1048,7 +2373,7 @@ const ArtistPortal: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </div>
       {data.shows.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-gray-400 font-medium mb-6">{locale === 'de' ? 'Noch keine veröffentlichten Shows.' : 'No published shows yet.'}</p>
+          <p className="text-warm-faint font-medium mb-6">{locale === 'de' ? 'Noch keine veröffentlichten Shows.' : 'No published shows yet.'}</p>
         </div>
       ) : (
         <div className="masonry-grid mb-12">
@@ -1079,7 +2404,7 @@ const ArtistPortal: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <div className="text-center">
         <button
           onClick={() => navigate('/join/start')}
-          className="px-10 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:opacity-90 transition shadow-xl"
+          className="px-10 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition shadow-lg"
         >
           {locale === 'de' ? 'Weitere Show eintragen →' : 'Add another show →'}
         </button>
@@ -1090,13 +2415,13 @@ const ArtistPortal: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
 // --- Admin Layout ---
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="min-h-screen bg-[#fdfdfb]">
-    <header className="bg-white border-b border-gray-100 py-4 px-8 flex items-center justify-between">
+  <div className="min-h-screen bg-parchment">
+    <header className="bg-surface border-b border-warm-border py-4 px-8 flex items-center justify-between">
       <Link to="/" className="text-lg font-bold">Berlintina Admin</Link>
       <nav className="flex gap-4">
-        <Link to="/admin/submissions" className="text-sm font-bold text-gray-500 hover:text-black">Submissions</Link>
-        <Link to="/admin/shows" className="text-sm font-bold text-gray-500 hover:text-black">Shows</Link>
-        <Link to="/admin/blog" className="text-sm font-bold text-gray-500 hover:text-black">Blog</Link>
+        <Link to="/admin/submissions" className="text-sm font-semibold text-warm-muted hover:text-charcoal">Submissions</Link>
+        <Link to="/admin/shows" className="text-sm font-semibold text-warm-muted hover:text-charcoal">Shows</Link>
+        <Link to="/admin/blog" className="text-sm font-semibold text-warm-muted hover:text-charcoal">Blog</Link>
       </nav>
     </header>
     <main>{children}</main>
@@ -1108,11 +2433,11 @@ const App: React.FC = () => {
   const [locale, setLocale] = useState<'de' | 'en'>(navigator.language.startsWith('de') ? 'de' : 'en');
   const [adminLoggedIn, setAdminLoggedIn] = useState(adminIsLoggedIn());
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/admin/*" element={
           <AdminLayout>
-            <Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center text-gray-500">Loading…</div>}>
+            <Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center text-warm-muted">Loading…</div>}>
               <Routes>
                 <Route path="" element={adminLoggedIn ? <AdminDashboard /> : <AdminLogin onSuccess={() => setAdminLoggedIn(true)} />} />
                 <Route path="submissions" element={adminLoggedIn ? <AdminDashboard /> : <Navigate to="/admin" replace />} />
@@ -1132,7 +2457,7 @@ const App: React.FC = () => {
               <Route index element={<Landing locale={locale} />} />
               <Route path="/" element={<Landing locale={locale} />} />
               <Route path="/results/:briefId" element={<Results locale={locale} />} />
-              <Route path="/show/:slugShortId" element={<Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-32 text-center text-gray-500 font-medium">Lade Show…</div>}><ShowDetail locale={locale} /></Suspense>} />
+              <Route path="/show/:slugShortId" element={<Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-32 text-center text-warm-muted font-medium">Lade Show…</div>}><ShowDetail locale={locale} /></Suspense>} />
               <Route path="/catalog" element={<Catalog locale={locale} />} />
               <Route path="/blog" element={<Blog locale={locale} />} />
               <Route path="/blog/:slug" element={<BlogPostPage locale={locale} />} />
@@ -1140,11 +2465,13 @@ const App: React.FC = () => {
               <Route path="/join" element={<JoinLanding locale={locale} />} />
               <Route path="/join/start" element={<Join locale={locale} />} />
               <Route path="/about" element={<About locale={locale} />} />
+              <Route path="/impressum" element={<Impressum locale={locale} />} />
+              <Route path="/datenschutz" element={<Datenschutz locale={locale} />} />
             </Routes>
           </Layout>
         } />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

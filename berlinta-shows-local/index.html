@@ -3,17 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="Berlintina Shows – Find curated live performances in Berlin. Classical, bands, acrobatics, dance. AI-powered event matching for planners and artists." />
-    <meta property="og:title" content="Berlintina Shows" />
-    <meta property="og:description" content="Curated shows & events in Berlin. AI concierge connects event planners with artists." />
+
+    <!-- Default SEO — overridden per-page by React PageSEO component -->
+    <title>Berlintina | Showacts & Künstler Berlin buchen — persönlich kuratiert</title>
+    <meta name="description" content="Berliner Showacts, Akrobatik, Live-Musik & mehr — persönlich ausgewählt von Valiantsina. Kostenlose Anfrage. Antwort in 24 h." />
+    <meta name="keywords" content="Showact Berlin buchen, Künstlervermittlung Berlin, Künstler für Event Berlin, Live-Musik Berlin, Akrobatik Berlin, Showact Agentur, Berlin performer booking" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://berlintina.de/" />
+
+    <!-- Open Graph defaults -->
+    <meta property="og:site_name" content="Berlintina" />
     <meta property="og:type" content="website" />
-    <title>Berlintina Shows</title>
+    <meta property="og:title" content="Berlintina | Showacts & Künstler Berlin buchen — persönlich kuratiert" />
+    <meta property="og:description" content="Berliner Showacts, Akrobatik, Live-Musik & mehr — persönlich ausgewählt von Valiantsina. Kostenlose Anfrage. Antwort in 24 h." />
+    <meta property="og:url" content="https://berlintina.de/" />
+    <meta property="og:image" content="https://berlintina.de/og-image.jpg" />
+    <meta property="og:locale" content="de_DE" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Berlintina | Showacts & Künstler Berlin buchen" />
+    <meta name="twitter:description" content="Berliner Showacts, Akrobatik, Live-Musik & mehr — persönlich ausgewählt von Valiantsina." />
+    <meta name="twitter:image" content="https://berlintina.de/og-image.jpg" />
     <style>
       :root {
-        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        --font-display: 'Inter', -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
       }
       body {
-        font-family: var(--font-apple);
+        font-family: var(--font-body);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         background-color: #ffffff;
@@ -21,9 +39,9 @@
       }
       #root { min-height: 100vh; }
       h1, h2, h3 {
-        font-weight: 600;
-        letter-spacing: -0.025em;
-        color: #1d1d1f;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        color: #1f1f1f;
       }
       .masonry-grid {
         display: block;
@@ -37,22 +55,26 @@
         break-inside: avoid;
         margin-bottom: 1.5rem;
       }
+      .font-display { font-family: var(--font-display); }
       .notion-input {
         transition: all 0.2s ease;
       }
       .notion-input:focus {
-        border-color: #000;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        border-color: #0b57d0;
+        box-shadow: 0 0 0 3px rgba(11,87,208,0.12);
       }
       .chat-bubble-ai {
-        background-color: #f1f1ef;
-        color: #37352f;
+        background-color: #e9eef6;
+        color: #1f1f1f;
       }
       .chat-bubble-user {
-        background-color: #000;
+        background-color: #0b57d0;
         color: #fff;
       }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/index.css">
   </head>
   <body class="text-gray-900">

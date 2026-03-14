@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { PageSEO } from './PageSEO';
 import { Show } from '../types';
 import { useShows } from '../contexts/ShowsContext';
 import { fetchShowByShortId, fetchShowBySlug } from '../services/showsService';
@@ -209,6 +210,8 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     });
   }, [slugShortId, shows, showsLoading]);
 
+  // SEO is handled declaratively via <PageSEO> in the render below
+
   if (detailLoading || (showsLoading && !show)) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-32 text-center text-gray-500 font-medium">
@@ -228,7 +231,46 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   }
   if (!show) return <div className="p-20 text-center font-bold text-gray-300">Show nicht gefunden.</div>;
 
+  const showDescription = (show.salesPitchText || show.shortDescriptionFacts || '').slice(0, 160);
+  const priceMin = show.priceMin ?? show.priceMax;
+
   return (
+    <>
+      <PageSEO
+        title={`${show.title} | Berlintina Berlin`}
+        description={showDescription || `${show.title} – persönlich kuratierter Showact aus Berlin. Jetzt anfragen über Berlintina.`}
+        ogImage={show.photoUrls?.[0]}
+        ogType="article"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'PerformingArtsTheater',
+          name: show.title,
+          description: showDescription,
+          image: show.photoUrls?.[0],
+          url: `https://berlintina.de/show/${show.slug}`,
+          location: {
+            '@type': 'Place',
+            name: 'Berlin',
+            address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
+          },
+          performer: {
+            '@type': 'PerformingGroup',
+            name: show.artistName,
+            description: show.shortDescriptionFacts,
+          },
+          organizer: { '@type': 'Organization', name: 'Berlintina', url: 'https://berlintina.de' },
+          ...(priceMin != null ? {
+            offers: {
+              '@type': 'Offer',
+              price: priceMin,
+              priceCurrency: 'EUR',
+              availability: 'https://schema.org/InStock',
+              url: `https://berlintina.de/show/${show.slug}`,
+            },
+          } : {}),
+          keywords: [show.category, ...(show.extractedTags ?? []), ...(show.vibeTags ?? [])].join(', '),
+        }}
+      />
     <ShowDetailPage
       show={show}
       locale={locale}
@@ -239,8 +281,7 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       onContactModeChange={setContactMode}
       onContactFormChange={setContactForm}
       onContactSubmit={handleContactSubmit}
-    >
-      <ShowQAWidget show={show} locale={locale} />
-    </ShowDetailPage>
+    />
+    </>
   );
 };

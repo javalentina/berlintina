@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import express from 'express';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import nodemailer from 'nodemailer';
@@ -86,6 +91,7 @@ const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const EMAIL_FROM = process.env.EMAIL_FROM || 'Berlintina <noreply@localhost>';
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || 'info@berlintina.de';
 
 async function sendArtistEmail(artistEmail, type, showInfo) {
   const email = (artistEmail || '').trim();
@@ -866,8 +872,8 @@ app.post('/api/conversation/start', aiLimiter, async (req, res) => {
         };
       } else {
         greeting = loc === 'de'
-          ? 'Willkommen! Schön, dass du dabei sein möchtest. Wie lautet dein Künstlername oder der Name deiner Gruppe?'
-          : 'Welcome! Great to have you here. What is your artist name or group name?';
+          ? 'Willkommen! 👋 Lass uns deine Show auf Berlintina bringen — ca. 5 Minuten. Tipp: Du kannst einfach deine Website einfügen, ich lese sie automatisch aus. Starten wir: Wie heißt du oder deine Gruppe?'
+          : "Welcome! 👋 Let's get your show on Berlintina — about 5 minutes. Tip: just paste your website and I'll read it automatically. Let's start: What's your artist or group name?";
         response = ensureContract({
           assistantMessage: greeting,
           action: 'ASK_FOLLOWUP',
@@ -984,10 +990,24 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
           form = mergedForm;
           mergedState.submissionDraft = form;
           const foundFields = Object.keys(scraped).filter(k => scraped[k] && k !== 'photoUrls');
+          const fieldLabels = { showTitle: { de: 'Titel', en: 'title' }, shortDescriptionFacts: { de: 'Beschreibung', en: 'description' }, artistBio: { de: 'Bio', en: 'bio' }, artistGenre: { de: 'Genre', en: 'genre' }, priceText: { de: 'Preis', en: 'price' }, durationMinutes: { de: 'Dauer', en: 'duration' }, socialLinks: { de: 'Links', en: 'links' } };
           if (foundFields.length > 0) {
+            const labelList = foundFields.map(k => (fieldLabels[k]?.[loc] || k)).join(', ');
+            const artistHint = scraped.artistName ? ` (${scraped.artistName})` : '';
+            if (!scraped.showTitle) {
+              // General artist website — no show title found, ask specifically
+              scrapeMessage = loc === 'de'
+                ? `✓ Website ausgelesen${artistHint}. Gefunden: ${labelList}.\n\n👉 Schau mal rechts — so sieht deine Seite schon aus!\n\nNoch eine Frage: Wie heißt die konkrete Show, die du listen möchtest? (z.B. "Solo-Abend", "Duo Act")`
+                : `✓ Website analyzed${artistHint}. Found: ${labelList}.\n\n👉 Check the right side — that's how your page already looks!\n\nOne question: What's the specific show you want to list? (e.g. "Solo Evening", "Duo Act")`;
+            } else {
+              scrapeMessage = loc === 'de'
+                ? `✓ Perfekt! Ich hab deine Website gelesen${artistHint}.\n\n👉 Schau mal rechts — so sieht deine Show-Seite schon aus! Übernommen: ${labelList}.\n\nFehlt noch etwas oder passt alles?`
+                : `✓ Done! I read your website${artistHint}.\n\n👉 Look to the right — that's how your show page already looks! Imported: ${labelList}.\n\nAnything missing or does it all look good?`;
+            }
+          } else {
             scrapeMessage = loc === 'de'
-              ? `Ich habe deine Website analysiert und folgende Infos gefunden: ${foundFields.map(k => ({ showTitle: 'Titel', shortDescriptionFacts: 'Beschreibung', artistBio: 'Bio', artistGenre: 'Genre', priceText: 'Preis', durationMinutes: 'Dauer', socialLinks: 'Links' }[k] || k)).join(', ')}. Bitte prüf sie und ergänze fehlende Details.`
-              : `I analyzed your website and found: ${foundFields.map(k => ({ showTitle: 'title', shortDescriptionFacts: 'description', artistBio: 'bio', artistGenre: 'genre', priceText: 'price', durationMinutes: 'duration', socialLinks: 'links' }[k] || k)).join(', ')}. Please review and add any missing details.`;
+              ? `Ich habe deine Website geladen, konnte aber keine Show-Infos auslesen. Kein Problem — beschreib deine Show kurz und die Vorschau rechts füllt sich mit deinen Antworten!`
+              : `I loaded your website but couldn't extract show info. No problem — describe your show briefly and the preview on the right will fill up with your answers!`;
           }
         } catch (e) {
           // Scraping failed silently — continue normal flow
@@ -999,10 +1019,23 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
       const trimmedMsg = (typeof userMessage === 'string' ? userMessage : '').trim();
       const isPlaceholderQuickReply = /^(Link einfügen|Add link)$/i.test(trimmedMsg)
         || /^(Instagram\/Website|Instagram\/website)$/i.test(trimmedMsg);
-      // Handle skip phrases for optional slots
+      // Handle skip phrases for optional slots — return early to avoid AI storing "Überspringen" as a value
       const currentSlotDef = HAS_SHOW_SLOTS.find(s => s.slot === lastSlot);
       if (lastSlot && isSkipPhrase(trimmedMsg) && currentSlotDef?.optional) {
-        form._skippedSlots = [...(form._skippedSlots || []), lastSlot];
+        form._skippedSlots = [...new Set([...(form._skippedSlots || []), lastSlot])];
+        const { nextQuestion: nextFromState, readyToSave } = getNextArtistQuestion(form, loc, mergedState.mode);
+        mergedState.submissionDraft = form;
+        mergedState.lastSlot = nextFromState?.slot ?? null;
+        conversationStore.set(conversationId, { ...conv, state: mergedState, updatedAt: Date.now() });
+        const skipMsg = loc === 'de' ? 'Kein Problem, übersprungen. ✓' : 'No problem, skipped. ✓';
+        const nextQ = readyToSave ? undefined : nextFromState;
+        return res.json(ensureContract({
+          assistantMessage: nextQ ? `${skipMsg}\n\n${nextQ.text}` : skipMsg,
+          action: readyToSave ? 'SAVE_SUBMISSION' : 'ASK_FOLLOWUP',
+          statePatch: { submissionDraft: form },
+          nextQuestion: nextQ,
+          quickReplies: nextQ?.quickReplies,
+        }));
       } else if (lastSlot && trimmedMsg && !isPlaceholderQuickReply) {
         form[lastSlot] = trimmedMsg;
       }
@@ -1202,6 +1235,29 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
       if (error) {
         console.error('contact insert:', error);
         return res.status(500).json({ error: 'Could not save request.' });
+      }
+    }
+    // --- Notify Valiantsina by email ---
+    if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_SECURE,
+          auth: { user: SMTP_USER, pass: SMTP_PASS },
+        });
+        await transporter.sendMail({
+          from: EMAIL_FROM,
+          to: NOTIFY_EMAIL,
+          subject: `Neue Anfrage: ${showTitle || 'Allgemeine Anfrage'}`,
+          text: [
+            `Show: ${showTitle || '—'}`,
+            `Name: ${requesterName}`,
+            `E-Mail: ${requesterEmail}`,
+            eventDate ? `Datum: ${eventDate}` : '',
+            message ? `Nachricht: ${message}` : '',
+          ].filter(Boolean).join('\n'),
+        });
+      } catch (emailErr) {
+        console.warn('Notification email failed:', emailErr.message);
       }
     }
     res.json({ success: true });
@@ -1895,11 +1951,15 @@ app.post('/api/submissions', submissionsLimiter, async (req, res) => {
       short_description_facts: shortDescriptionFacts || null,
       sales_pitch_text: salesPitchText || null,
       social_links: socialLinks || null,
-      artist_bio: artistBio || null,
+      // artist_name column may not exist yet — prefix into artist_bio until migration runs:
+      // ALTER TABLE show_submissions ADD COLUMN IF NOT EXISTS artist_name text;
+      artist_bio: artistName && !artistBio
+        ? String(artistName).trim()
+        : artistName && artistBio
+          ? `${String(artistName).trim()}\n\n${artistBio}`
+          : (artistBio || null),
       submitter_email: submitterEmail.trim(),
       status: 'PENDING_REVIEW',
-      // New fields: artist name, website, FAQ answers
-      ...(artistName && { artist_name: String(artistName).trim() }),
       ...(websiteUrl && { website_url: String(websiteUrl).trim() }),
       ...(faqOutdoor && { faq_outdoor: String(faqOutdoor).trim() }),
       ...(faqStage && { faq_stage: String(faqStage).trim() }),
@@ -2050,6 +2110,14 @@ app.delete('/api/admin/blog/:id', requireAdmin, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Serve built frontend + SPA fallback ──────────────────────────────────────
+const distPath = join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(join(distPath, 'index.html'));
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function ensureStorageBucket() {
   if (!supabase) return;
