@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, ArrowRight, X, Heart, ArrowUpRight, Star, CheckCircle2, Zap, Users, HeartHandshake } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Outlet, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
@@ -59,17 +60,15 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
-  const isJoin = location.pathname === '/join/start';
-
   return (
     <div className="min-h-screen flex flex-col bg-surface">
-      {/* ── Navbar — hidden on fullscreen join page ── */}
+      {/* ── Navbar ── */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transition-all duration-300 ${
           scrolled
             ? 'bg-glass shadow-[0_1px_2px_rgba(10,12,20,.04),0_4px_16px_rgba(10,12,20,.04)]'
             : ''
-        } ${isJoin ? 'hidden' : ''}`}
+        }`}
       >
         <Link to="/" className="text-[1.1rem] font-semibold tracking-[-0.02em] text-charcoal no-underline">
           berlintina<span className="text-terracotta">.</span>
@@ -127,8 +126,8 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
         {children}
       </main>
 
-      {/* ── Footer — hidden on join/start fullscreen page ── */}
-      {location.pathname !== '/join/start' && (
+      {/* ── Footer ── */}
+      {(
         <footer className="bg-surface border-t border-warm-border px-6 py-10">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-start justify-between gap-6 text-center sm:text-left">
             {/* Brand */}
@@ -1406,13 +1405,17 @@ const ShowPreview: React.FC<{ draft: Record<string, unknown>; photoFile: File | 
       <div className="h-full overflow-y-auto bg-parchment">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[400px] px-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-surface-alt border border-warm-border flex items-center justify-center mb-4 text-2xl">✦</div>
-            <p className="text-warm-muted text-sm font-medium mb-1">
+            <h2 className="text-2xl font-semibold text-charcoal mb-3 tracking-tight">
               {locale === 'de' ? 'Deine Show-Seite' : 'Your Show Page'}
-            </p>
-            <p className="text-warm-faint text-xs">
+            </h2>
+            <p className="text-warm-muted text-sm mb-6">
               {locale === 'de' ? 'Erscheint hier, sobald du mit dem Chat beginnst…' : 'Appears here as you start chatting…'}
             </p>
+            <div className="flex items-center gap-3 w-full max-w-sm">
+              <div className="flex-1 h-px bg-warm-border" />
+              <span className="text-warm-faint text-sm flex-shrink-0">✦</span>
+              <div className="flex-1 h-px bg-warm-border" />
+            </div>
           </div>
         ) : (
           <div className="w-full max-w-3xl mx-auto px-5 sm:px-8 py-8">
@@ -1780,17 +1783,21 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   };
 
   if (submissionId) {
+    // Fire confetti
+    setTimeout(() => {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7', '#ec4899', '#f59e0b'] });
+    }, 100);
     return (
-      <div className="max-w-2xl mx-auto px-4 py-24 text-center">
-        <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16">
-          <div className="w-20 h-20 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center text-4xl mx-auto mb-8">✓</div>
-          <h2 className="text-3xl font-bold mb-4 tracking-tight">
-            {locale === 'de' ? 'Vielen Dank!' : 'Thank you!'}
+      <div className="min-h-[calc(100vh-64px)] mt-16 flex items-center justify-center px-4">
+        <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16 max-w-lg w-full text-center">
+          <div className="text-5xl mb-6">🎉</div>
+          <h2 className="text-3xl font-bold mb-4 tracking-tight text-charcoal">
+            {locale === 'de' ? 'Gesendet!' : 'Sent!'}
           </h2>
-          <p className="text-warm-muted mb-2 font-medium">
+          <p className="text-warm-muted mb-2 font-medium text-base leading-relaxed">
             {locale === 'de'
-              ? 'Wir haben deine Angaben erhalten und prüfen sie. Du hörst in Kürze von uns!'
-              : 'We have received your submission and will review it. You will hear from us soon!'}
+              ? 'Valiantsina wird deine Bewerbung persönlich prüfen — innerhalb von 24 Stunden hörst du von ihr. ❤️'
+              : 'Valiantsina will review your application personally within 24 hours. ❤️'}
           </p>
           <p className="text-xs text-warm-faint font-mono mt-6">ID: {submissionId}</p>
           <Link to="/catalog" className="inline-block mt-10 px-10 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition">
@@ -1873,39 +1880,52 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   };
 
   return (
-    <div className="flex h-[100svh] overflow-hidden bg-parchment">
+    <div className="flex bg-parchment min-h-[calc(100vh-64px)] mt-16">
 
-      {/* ── Panel 1: Chat ── */}
-      <div className="w-[320px] xl:w-[360px] flex-shrink-0 flex flex-col bg-surface border-r border-warm-border">
+      {/* ── LEFT: Chat Panel (30%) ── */}
+      <div className="w-[32%] min-w-[300px] flex-shrink-0 flex flex-col bg-surface border-r border-warm-border h-[calc(100vh-64px)] sticky top-16">
 
-        {/* Header */}
-        <div className="bg-surface-alt px-5 py-4 border-b border-warm-border flex-shrink-0">
-          <div className="flex items-center gap-3 mb-2.5">
-            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center flex-shrink-0">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M9 11a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m6 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1Z"/></svg>
+        {/* Progress bar */}
+        {filledCount > 0 && (
+          <div className="px-5 pt-3 pb-0 flex-shrink-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-semibold text-warm-muted uppercase tracking-widest">
+                Step {Math.min(filledCount, PROGRESS_KEYS.length)}/{PROGRESS_KEYS.length}
+              </span>
+              <span className="text-[10px] font-semibold text-terracotta">
+                {Math.round((filledCount / PROGRESS_KEYS.length) * 100)}% complete
+              </span>
+            </div>
+            <div className="h-1 rounded-full bg-surface-alt overflow-hidden">
+              <div
+                className="h-full rounded-full bg-terracotta transition-all duration-700"
+                style={{ width: `${Math.round((filledCount / PROGRESS_KEYS.length) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Chat header — Tina avatar + headline */}
+        <div className="px-5 pt-4 pb-3 border-b border-warm-border flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm shadow-soft">
+              V
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-sm tracking-tight text-charcoal leading-tight">{locale === 'de' ? 'Assistent' : 'Assistant'}</h2>
-              <p className="text-[10px] text-warm-muted font-medium">{locale === 'de' ? 'Show erstellen' : 'Create your show'}</p>
+              <p className="text-[11px] font-semibold text-charcoal leading-tight">Valiantsina's AI Helper</p>
+              <p className="text-[10px] text-green-500 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                Online
+              </p>
             </div>
-            <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
           </div>
-          {filledCount > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {PROGRESS_KEYS.map((p) => {
-                const done = !!(submissionDraft[p.key] && String(submissionDraft[p.key]).trim());
-                return (
-                  <span key={p.key} className={`px-2 py-0.5 rounded-full text-[9px] font-bold transition-all ${done ? 'bg-terracotta text-white' : 'bg-surface/60 text-warm-faint border border-warm-border'}`}>
-                    {done ? '✓ ' : ''}{locale === 'de' ? p.de : p.en}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          <p className="text-[11px] text-warm-muted font-medium mt-2 leading-relaxed">
+            Let's build your perfect Berlintina profile together ✨
+          </p>
         </div>
 
         {/* Messages */}
-        <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-surface flex flex-col">
+        <div className="flex-grow overflow-y-auto px-4 py-4 space-y-3 flex flex-col">
           {resolvingToken && messages.length === 0 && (
             <div className="flex-grow flex items-center justify-center">
               <div className="flex items-center gap-1.5">
@@ -1916,13 +1936,15 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           {apiError && <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">{apiError}</div>}
           {submitError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium">{submitError}</div>}
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
+            <div key={i} className={`flex ${m.role === 'ai' ? 'items-end gap-2' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
               {m.role === 'ai' && (
-                <div className="w-6 h-6 rounded-lg bg-black text-white flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 self-end">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M9 11a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m6 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1Z"/></svg>
-                </div>
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-[9px] mb-0.5">V</div>
               )}
-              <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-[13px] font-medium leading-relaxed whitespace-pre-wrap ${m.role === 'ai' ? 'bg-surface-alt text-charcoal rounded-bl-none' : 'bg-terracotta text-white rounded-br-none shadow-md'}`}>
+              <div className={`max-w-[78%] px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
+                m.role === 'ai'
+                  ? 'bg-terracotta-light text-charcoal rounded-2xl rounded-bl-none border border-terracotta/15'
+                  : 'bg-[#0084ff] text-white rounded-2xl rounded-br-none shadow-sm'
+              }`}>
                 {m.text}
               </div>
             </div>
@@ -1974,8 +1996,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
         {/* Finish button */}
         {canFinish && (
-          <div className="px-3 pt-3 flex-shrink-0">
-            {submitError && <p className="text-[11px] text-red-500 mb-2 px-1">{submitError}</p>}
+          <div className="px-3 pt-2 flex-shrink-0">
             <button
               type="button"
               onClick={handleFinish}
@@ -2003,25 +2024,26 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             <input
               type="text"
               placeholder={locale === 'de' ? 'Antworten oder URL einfügen…' : 'Reply or paste URL…'}
-              className="flex-grow px-4 py-3 rounded-xl bg-surface-alt text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/20 transition text-charcoal disabled:opacity-50 placeholder:text-warm-faint"
+              className="flex-grow px-4 py-2.5 rounded-xl bg-surface-alt text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/20 transition text-charcoal disabled:opacity-50 placeholder:text-warm-faint"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
               disabled={loading || submitting || !conversationId}
             />
             <button onClick={() => sendMessage()} disabled={(!input.trim()) || loading || submitting || !conversationId}
-              className="w-11 h-11 bg-terracotta text-white rounded-xl hover:bg-terracotta-dark transition flex items-center justify-center shadow-md disabled:opacity-20 flex-shrink-0 self-end">
+              className="w-10 h-10 bg-terracotta text-white rounded-xl hover:bg-terracotta-dark transition flex items-center justify-center shadow-md disabled:opacity-20 flex-shrink-0 self-end">
               {loading
                 ? <span className="flex gap-0.5">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1 h-1 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
-                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                : <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               }
             </button>
           </div>
+          <p className="text-center text-[9px] text-warm-faint pb-2">Powered by OpenAI</p>
         </div>
       </div>
 
-      {/* ── Panel 2: Live Preview with inline pencil editing ── */}
-      <div className="flex-1 overflow-hidden">
+      {/* ── RIGHT: Live Preview (65%) ── */}
+      <div className="flex-1 overflow-hidden h-[calc(100vh-64px)] sticky top-16">
         <ShowPreview
           draft={submissionDraft}
           photoFile={photoFiles[0] ?? null}
@@ -2459,7 +2481,7 @@ const App: React.FC = () => {
           <Route path="blog" element={<Blog locale={locale} />} />
           <Route path="blog/:slug" element={<BlogPostPage locale={locale} />} />
           <Route path="artist" element={<ArtistPortal locale={locale} />} />
-          <Route path="join" element={<JoinLanding locale={locale} />} />
+          <Route path="join" element={<Join locale={locale} />} />
           <Route path="join/start" element={<Join locale={locale} />} />
           <Route path="about" element={<About locale={locale} />} />
           <Route path="impressum" element={<Impressum locale={locale} />} />
