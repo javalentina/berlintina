@@ -524,7 +524,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
       <div className="relative z-10 flex-1 flex flex-col">
         {/* ── Top: H1 left + description right — both bottom-aligned ── */}
-        <div className="flex items-end justify-between gap-8 px-6 sm:px-10 lg:px-16 pt-8 pb-10">
+        <div className="flex items-end justify-between gap-8 px-6 pt-8 pb-10">
 
           {/* Left: Big shimmer H1 */}
           <motion.h1
@@ -560,14 +560,15 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </motion.div>
         </div>
 
-        {/* ── Show slider: 4-up paginated ── */}
+        {/* ── Show slider: 3 + 10% peek paginated ── */}
         {(() => {
-          const perPage = 4;
+          const perPage = 3;
           const shows = filteredShows;
           const totalPages = Math.ceil(shows.length / perPage);
           const pageShows = shows.slice(sliderPage * perPage, sliderPage * perPage + perPage);
+          const nextShow = shows[sliderPage * perPage + perPage];
           return (
-            <div className="mt-auto pb-8">
+            <div className="mt-auto pb-10">
               {showsLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="flex items-center gap-1.5">
@@ -581,19 +582,20 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={sliderPage}
-                      initial={{ opacity: 0, x: 40 }}
+                      initial={{ opacity: 0, x: 50 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -40 }}
-                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="grid grid-cols-4 gap-3 px-6 sm:px-10 lg:px-16"
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex gap-6 pl-6 overflow-hidden"
                     >
                       {pageShows.map((show) => (
                         <div
                           key={show.id}
                           onClick={() => navigate(`/show/${show.slug}`)}
-                          className="cursor-pointer group"
+                          className="cursor-pointer group flex-shrink-0"
+                          style={{ width: 'calc((100% - 24px - 2 * 24px) / 3.1)' }}
                         >
-                          <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-2.5 relative">
+                          <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-3 relative">
                             <img
                               src={show.photoUrls?.[0] || ''}
                               alt={show.title}
@@ -611,11 +613,24 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                           <p className="text-xs text-warm-muted">{show.artistName}</p>
                         </div>
                       ))}
+                      {/* 10% peek of next card */}
+                      {nextShow && (
+                        <div
+                          className="flex-shrink-0 cursor-pointer group"
+                          style={{ width: 'calc((100% - 24px - 2 * 24px) / 3.1)' }}
+                          onClick={() => setSliderPage(p => p + 1)}
+                        >
+                          <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-3 relative">
+                            <img src={nextShow.photoUrls?.[0] || ''} alt={nextShow.title} className="w-full h-full object-cover" loading="lazy" />
+                            <div className="absolute inset-0 bg-charcoal/20" />
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   </AnimatePresence>
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-end gap-3 px-6 sm:px-10 lg:px-16 mt-5">
+                    <div className="flex items-center justify-end gap-3 px-6 mt-6">
                       <button
                         type="button"
                         onClick={() => setSliderPage(p => Math.max(0, p - 1))}
