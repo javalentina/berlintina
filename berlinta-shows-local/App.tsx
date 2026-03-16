@@ -75,13 +75,13 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/catalog" className="text-sm text-warm-muted hover:text-charcoal transition no-underline">
+          <Link to="/catalog" className="text-sm font-semibold tracking-[0.3px] text-warm-muted hover:text-charcoal transition no-underline">
             {locale === 'de' ? 'Shows' : 'Shows'}
           </Link>
-          <Link to="/about" className="text-sm text-warm-muted hover:text-charcoal transition no-underline">
+          <Link to="/about" className="text-sm font-semibold tracking-[0.3px] text-warm-muted hover:text-charcoal transition no-underline">
             {locale === 'de' ? 'Kontakt' : 'Contact'}
           </Link>
-          <Link to="/join" className="text-sm text-warm-muted hover:text-charcoal transition no-underline">
+          <Link to="/join" className="text-sm font-semibold tracking-[0.3px] text-warm-muted hover:text-charcoal transition no-underline">
             {locale === 'de' ? 'Für Künstler' : 'For Artists'}
           </Link>
           <a
@@ -532,9 +532,9 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
         {/* Heading */}
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[4.5rem] font-semibold tracking-[-0.04em] text-charcoal leading-[1.05] mb-5"
         >
           {locale === 'de'
@@ -748,7 +748,14 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         <div className="absolute inset-0 pointer-events-none opacity-[0.015]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
 
         <div className="relative z-10 max-w-[860px] mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 rounded-3xl px-8 py-10 mx-auto max-w-[520px]"
+            style={{
+              background: 'rgba(248,250,252,0.45)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(15,23,42,0.06)',
+            }}
+          >
             <span className="block text-[0.7rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-3">
               {locale === 'de' ? 'Warum Berlintina' : 'Why Berlintina'}
             </span>
@@ -776,11 +783,19 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: i * 0.05 + 0.05 }}
-                className="group rounded-2xl border border-warm-border p-6 flex flex-col gap-4 transition-all duration-500 hover:border-charcoal/10 hover:shadow-card-hover hover:-translate-y-1 cursor-default"
-                style={{ background: 'hsl(220 20% 98%)' }}
+                className="group rounded-2xl p-6 flex flex-col gap-4 cursor-default transition-all duration-500 hover:-translate-y-[5px]"
+                style={{
+                  background: 'rgba(248,250,252,0.55)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(15,23,42,0.08)',
+                  boxShadow: '0 2px 8px rgba(15,23,42,0.04), 0 0 0 0.5px rgba(15,23,42,0.04)',
+                }}
+                whileHover={{ boxShadow: '0 12px 32px rgba(15,23,42,0.10), 0 0 0 0.5px rgba(15,23,42,0.06)' }}
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:bg-charcoal" style={{ background: 'hsl(220 15% 93%)' }}>
-                  <card.Icon className="w-5 h-5 text-charcoal transition-colors duration-300 group-hover:text-white" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
+                  style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.15)' }}>
+                  <card.Icon className="w-5 h-5 text-terracotta" />
                 </div>
                 <h3 className="text-[0.9rem] font-semibold text-charcoal leading-snug tracking-[-0.015em]">{card.title}</h3>
                 <p className="text-[0.85rem] text-warm-muted font-light leading-relaxed flex-1">{card.text}</p>
@@ -826,7 +841,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 role: locale === 'de' ? 'Sängerin & Performerin' : 'Singer & Performer',
               },
             ].map((t, i) => (
-              <div key={i} className="bg-surface rounded-2xl border border-warm-border p-6 flex flex-col gap-4 shadow-soft">
+              <div key={i} className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-400 hover:-translate-y-1" style={{ background: 'rgba(248,250,252,0.6)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
                 <div className="flex gap-1">
                   {[0,1,2,3,4].map(s => (
                     <svg key={s} className="w-4 h-4 text-terracotta" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
@@ -858,7 +873,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               { tier: locale === 'de' ? 'Premium-Acts' : 'Premium Acts', price: locale === 'de' ? '1.500–4.000 €' : '€1,500–4,000', desc: locale === 'de' ? 'Ensemble, Tanz, Live-Bands' : 'Ensembles, dance, live bands' },
               { tier: locale === 'de' ? 'Exklusive Shows' : 'Exclusive Shows', price: locale === 'de' ? 'Auf Anfrage' : 'On request', desc: locale === 'de' ? 'Maßgeschneiderte Produktionen' : 'Bespoke productions' },
             ].map((p, i) => (
-              <div key={i} className={`rounded-2xl border p-5 text-left ${i === 1 ? 'border-terracotta bg-terracotta-light' : 'border-warm-border bg-surface-alt'}`}>
+              <div key={i} className={`rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover ${i === 1 ? 'border-terracotta bg-terracotta-light' : 'border-warm-border bg-surface-alt'}`}>
                 <p className="text-xs font-semibold uppercase tracking-wider text-warm-faint mb-1">{p.tier}</p>
                 <p className={`text-2xl font-bold tracking-tight mb-1 ${i === 1 ? 'text-terracotta' : 'text-charcoal'}`}>{p.price}</p>
                 <p className="text-sm text-warm-muted font-light">{p.desc}</p>
