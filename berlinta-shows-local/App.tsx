@@ -595,22 +595,31 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                           className="cursor-pointer group flex-shrink-0"
                           style={{ width: 'calc((100% - 24px - 2 * 24px) / 3.1)' }}
                         >
-                          <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-3 relative">
+                          <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt relative">
                             <img
                               src={show.photoUrls?.[0] || ''}
                               alt={show.title}
                               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                               loading="lazy"
                             />
-                            <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/15 transition-colors duration-500" />
-                            <div className="absolute bottom-3 left-3">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-charcoal">
-                                {show.category}
-                              </span>
+                            {/* Hover liquidglass overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
+                              <div style={{
+                                background: 'rgba(255,255,255,0.18)',
+                                backdropFilter: 'blur(18px) saturate(1.6)',
+                                WebkitBackdropFilter: 'blur(18px) saturate(1.6)',
+                                border: '1px solid rgba(255,255,255,0.35)',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.4)',
+                                borderRadius: '1rem',
+                                padding: '1rem 1.5rem',
+                                textAlign: 'center',
+                                maxWidth: '85%',
+                              }}>
+                                <p style={{ fontFamily: 'var(--font-display, inherit)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.35)', lineHeight: 1.25, marginBottom: '0.35rem' }}>{show.title}</p>
+                                <p style={{ fontFamily: 'var(--font-display, inherit)', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>{show.category}</p>
+                              </div>
                             </div>
                           </div>
-                          <p className="text-sm font-semibold text-charcoal truncate">{show.title}</p>
-                          <p className="text-xs text-warm-muted">{show.artistName}</p>
                         </div>
                       ))}
                       {/* 10% peek of next card */}
