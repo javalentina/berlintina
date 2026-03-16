@@ -5,7 +5,7 @@ import { MOCK_SHOWS } from '../constants';
 
 const isProduction = import.meta.env.PROD;
 const apiBase = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
-const useApiForShows = !!apiBase;
+const useApiForShows = true; // always use Express API (relative /api/* in prod, proxied in dev)
 
 export type FetchShowsResult = { shows: Show[]; error: string | null };
 
