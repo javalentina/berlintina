@@ -522,19 +522,20 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
 
       <div className="relative z-10 flex-1 flex flex-col">
-        {/* ── Top: H1 left + description right ── */}
-        <div className="flex items-start justify-between gap-6 px-6 sm:px-10 lg:px-16 pt-8 pb-12">
+        {/* ── Top: H1 left + description right — both bottom-aligned ── */}
+        <div className="flex items-end justify-between gap-8 px-6 sm:px-10 lg:px-16 pt-8 pb-10">
 
-          {/* Left: Big H1 */}
+          {/* Left: Big shimmer H1 */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(2.8rem,6.5vw,6.5rem)] font-bold tracking-[-0.03em] leading-[0.93] text-charcoal max-w-[65%]"
+            className="text-[clamp(3rem,6.5vw,7rem)] font-bold tracking-[-0.03em] leading-[0.93] max-w-[65%] shimmer-text"
+            style={{ '--shimmer-accent': '#6366f1' } as React.CSSProperties}
           >
             {locale === 'de'
-              ? <>Außergewöhnliche<br />Shows für<br />unvergessliche<br />Momente.</>
-              : <>Extraordinary<br />shows for<br />unforgettable<br />moments.</>}
+              ? <>Shows die<br />Köpfe drehen<br />und Herzen<br />gewinnen.</>
+              : <>Shows that<br />turn heads<br />and conquer<br />hearts.</>}
           </motion.h1>
 
           {/* Right: Description + CTA */}
@@ -542,30 +543,19 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="pt-4 flex flex-col gap-6 max-w-[220px] sm:max-w-[260px]"
+            className="flex flex-col gap-6 max-w-[260px] sm:max-w-[300px] pb-1"
           >
-            <p className="text-sm text-warm-muted leading-relaxed font-light">
+            <p className="text-base text-charcoal leading-relaxed font-light">
               {locale === 'de'
-                ? 'Berlintina kuratiert handverlesene Showacts für Corporate Events, Hochzeiten und Festivals — persönlich von Valiantsina.'
-                : 'Berlintina curates handpicked show acts for corporate events, weddings and festivals — personally by Valiantsina.'}
+                ? 'Berlintina ist eine Boutique Artist Agentur — spezialisiert auf Live Show Acts für Events, Galas und private Anlässe.'
+                : 'Berlintina is a boutique artist agency — specialised in live show acts for events, galas and private occasions.'}
             </p>
             <Link
               to="/catalog"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:opacity-85 transition w-fit"
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:opacity-85 transition w-fit"
             >
               {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-4 h-4" />
             </Link>
-            {/* Search hint */}
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('hero-search');
-                if (el) el.focus();
-              }}
-              className="text-xs text-warm-faint hover:text-warm-muted transition text-left"
-            >
-              {locale === 'de' ? '← oder direkt suchen' : '← or search directly'}
-            </button>
           </motion.div>
         </div>
 
@@ -633,23 +623,6 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </AnimatePresence>
           </form>
 
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {catPills.map((pill) => (
-              <button
-                key={pill.value}
-                type="button"
-                onClick={() => setActiveCat(pill.value)}
-                className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition touch-manipulation ${
-                  activeCat === pill.value
-                    ? 'bg-charcoal text-white border-charcoal'
-                    : 'bg-white text-warm-muted border-warm-border hover:border-charcoal/20 hover:text-charcoal'
-                }`}
-              >
-                {pill.label}
-              </button>
-            ))}
-          </div>
         </motion.div>
 
         {/* ── Scroll-linked show slider ── */}
