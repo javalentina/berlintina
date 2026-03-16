@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Search, Sparkles, ArrowRight, X, Heart, ArrowUpRight, Star, CheckCircle2, Zap, Users, HeartHandshake } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Outlet, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
 import { Category, Show, CustomerBrief, ArtistStatus } from './types';
@@ -374,6 +374,12 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const [retryFn, setRetryFn] = useState<(() => void) | null>(null);
   const navigate = useNavigate();
   const resultsRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroScroll } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const sliderX = useTransform(heroScroll, [0, 1], ['0%', '-25%']);
 
   const recommendations = useMemo(() => {
     if (!rawRecommendations.length || !shows.length) return [];
@@ -509,162 +515,205 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     />
     {/* ── Hero ── */}
     <section
-      className="relative min-h-[85vh] flex flex-col items-center justify-center px-6 pt-28 pb-12 bg-noise overflow-hidden"
-      style={{ background: 'radial-gradient(at 20% 20%, hsla(250,100%,65%,.04) 0,transparent 50%), radial-gradient(at 80% 80%, hsla(200,100%,60%,.03) 0,transparent 50%), radial-gradient(at 50% 50%, hsla(280,100%,70%,.02) 0,transparent 50%), hsl(240 20% 97%)' }}
+      ref={heroRef}
+      className="relative bg-[#f5f4f1] overflow-hidden pt-24 pb-0 min-h-screen flex flex-col"
     >
-      {/* Floating orbs */}
-      <div className="absolute top-20 left-[15%] w-72 h-72 rounded-full pointer-events-none animate-float" style={{ background: 'hsla(250,100%,65%,.05)', filter: 'blur(64px)' }} />
-      <div className="absolute bottom-20 right-[10%] w-96 h-96 rounded-full pointer-events-none" style={{ background: 'hsla(250,100%,65%,.05)', filter: 'blur(64px)', animationDelay: '3s' }} />
-      {/* Dot grid */}
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(220 20% 10%) 1px, transparent 0)', backgroundSize: '32px 32px', opacity: 0.025 }} />
+      {/* Subtle noise texture */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
 
-      <div className="relative z-10 max-w-3xl mx-auto text-center w-full">
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 bg-glass px-4 py-2 rounded-full mb-8 text-xs font-medium text-warm-muted tracking-wide"
-        >
-          <span className="text-terracotta">✦</span>
-          {locale === 'de' ? 'Boutique Entertainment Agentur · Berlin' : 'Boutique Entertainment Agency · Berlin'}
-        </motion.div>
+      <div className="relative z-10 flex-1 flex flex-col">
+        {/* ── Top: H1 left + description right ── */}
+        <div className="flex items-start justify-between gap-6 px-6 sm:px-10 lg:px-16 pt-8 pb-12">
 
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[4.5rem] font-semibold tracking-[-0.04em] text-charcoal leading-[1.05] mb-5"
-        >
-          {locale === 'de'
-            ? <>Außergewöhnliche<br /><span className="shimmer-text">Shows & Künstler</span></>
-            : <>Discover extraordinary<br /><span className="shimmer-text">shows &amp; performers</span></>}
-        </motion.h1>
+          {/* Left: Big H1 */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[clamp(2.8rem,6.5vw,6.5rem)] font-bold tracking-[-0.03em] leading-[0.93] text-charcoal max-w-[65%]"
+          >
+            {locale === 'de'
+              ? <>Außergewöhnliche<br />Shows für<br />unvergessliche<br />Momente.</>
+              : <>Extraordinary<br />shows for<br />unforgettable<br />moments.</>}
+          </motion.h1>
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-lg text-warm-muted mb-10 max-w-[480px] mx-auto font-light leading-relaxed"
-        >
-          {locale === 'de'
-            ? 'Handverlesene Künstler für Corporate Events, Festivals und private Anlässe.'
-            : 'Handpicked talent for corporate events, festivals, and private occasions.'}
-        </motion.p>
-
-        {/* Error banners */}
-        {showsError && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium text-left max-w-2xl mx-auto">
-            {showsError}
-          </div>
-        )}
-        {apiError && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium text-left flex items-center justify-between gap-4 max-w-2xl mx-auto">
-            <span>{apiError}</span>
-            {retryFn && <button onClick={retryFn} className="px-4 py-2 bg-red-100 rounded-lg font-bold text-xs hover:bg-red-200">{locale === 'de' ? 'Erneut versuchen' : 'Retry'}</button>}
-          </div>
-        )}
-
-        {/* Search */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="relative max-w-[600px] mx-auto"
-        >
-          <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) { setSearchFocused(false); sendMessage(query.trim()); } }}>
-            <div
-              className={`flex items-center bg-surface rounded-2xl transition-all duration-300 ${searchFocused ? 'shadow-[0_8px_24px_rgba(10,12,20,.06),0_16px_48px_rgba(10,12,20,.08),0_0_60px_-12px_hsla(250,100%,65%,.12)] outline outline-1 outline-warm-border' : 'shadow-search'}`}
+          {/* Right: Description + CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-4 flex flex-col gap-6 max-w-[220px] sm:max-w-[260px]"
+          >
+            <p className="text-sm text-warm-muted leading-relaxed font-light">
+              {locale === 'de'
+                ? 'Berlintina kuratiert handverlesene Showacts für Corporate Events, Hochzeiten und Festivals — persönlich von Valiantsina.'
+                : 'Berlintina curates handpicked show acts for corporate events, weddings and festivals — personally by Valiantsina.'}
+            </p>
+            <Link
+              to="/catalog"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:opacity-85 transition w-fit"
             >
-              <Search className="ml-5 w-4 h-4 text-warm-muted flex-shrink-0" />
+              {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-4 h-4" />
+            </Link>
+            {/* Search hint */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('hero-search');
+                if (el) el.focus();
+              }}
+              className="text-xs text-warm-faint hover:text-warm-muted transition text-left"
+            >
+              {locale === 'de' ? '← oder direkt suchen' : '← or search directly'}
+            </button>
+          </motion.div>
+        </div>
+
+        {/* ── Search bar ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="px-6 sm:px-10 lg:px-16 mb-10"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) { setSearchFocused(false); sendMessage(query.trim()); } }} className="relative max-w-xl">
+            {showsError && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+                {showsError}
+              </div>
+            )}
+            {apiError && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex items-center justify-between gap-4">
+                <span>{apiError}</span>
+                {retryFn && <button onClick={retryFn} className="px-3 py-1.5 bg-red-100 rounded-lg font-bold text-xs">{locale === 'de' ? 'Retry' : 'Retry'}</button>}
+              </div>
+            )}
+            <div className={`flex items-center bg-white rounded-2xl transition-all duration-300 ${searchFocused ? 'shadow-[0_4px_24px_rgba(10,12,20,.08)] outline outline-1 outline-warm-border' : 'shadow-soft border border-warm-border'}`}>
+              <Search className="ml-4 w-4 h-4 text-warm-muted flex-shrink-0" />
               <input
+                id="hero-search"
                 type="search"
-                placeholder={locale === 'de' ? 'Akrobaten, Bands, Feuershow, DJ suchen…' : 'Search acrobats, bands, fire shows, DJs…'}
-                className="flex-1 border-none outline-none bg-transparent font-light text-base text-charcoal py-5 px-4 placeholder:text-warm-faint/50"
+                placeholder={locale === 'de' ? 'Akrobaten, Bands, Feuershow…' : 'Search acrobats, bands, fire shows…'}
+                className="flex-1 border-none outline-none bg-transparent font-light text-sm text-charcoal py-4 px-3 placeholder:text-warm-faint/60"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-                aria-label={locale === 'de' ? 'Suche' : 'Search'}
               />
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-shrink-0 bg-charcoal text-white rounded-xl font-medium text-sm m-1.5 px-3 sm:px-6 py-3 hover:opacity-85 active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
-              >
-                {loading ? '…' : (locale === 'de' ? 'Suchen →' : 'Search →')}
+              <button type="submit" disabled={loading} className="flex-shrink-0 bg-charcoal text-white rounded-xl font-medium text-sm m-1.5 px-5 py-2.5 hover:opacity-85 transition disabled:opacity-50">
+                {loading ? '…' : (locale === 'de' ? 'Suchen' : 'Search')}
               </button>
             </div>
+            <AnimatePresence>
+              {searchFocused && !query && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-xl rounded-2xl border border-warm-border shadow-card-hover p-4 z-50"
+                >
+                  <span className="block text-[0.625rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-2.5 px-2">
+                    {locale === 'de' ? 'Beliebte Suchanfragen' : 'Trending searches'}
+                  </span>
+                  {dropSuggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onMouseDown={() => { setQuery(s); sendMessage(s); setSearchFocused(false); }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-charcoal font-light flex items-center gap-3 hover:bg-surface-alt transition group"
+                    >
+                      <Search className="w-3.5 h-3.5 text-warm-faint flex-shrink-0" />
+                      {s}
+                      <ArrowRight className="w-3 h-3 text-warm-faint ml-auto opacity-0 group-hover:opacity-100 transition" />
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
 
-          {/* Search dropdown */}
-          <AnimatePresence>
-            {searchFocused && !query && (
-              <motion.div
-                initial={{ opacity: 0, y: 4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-                className="absolute top-[calc(100%+8px)] left-0 right-0 bg-surface/95 backdrop-blur-xl rounded-2xl border border-warm-border shadow-card-hover p-4 z-50"
+          {/* Category pills */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {catPills.map((pill) => (
+              <button
+                key={pill.value}
+                type="button"
+                onClick={() => setActiveCat(pill.value)}
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition touch-manipulation ${
+                  activeCat === pill.value
+                    ? 'bg-charcoal text-white border-charcoal'
+                    : 'bg-white text-warm-muted border-warm-border hover:border-charcoal/20 hover:text-charcoal'
+                }`}
               >
-                <span className="block text-[0.625rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-2.5 px-2">
-                  {locale === 'de' ? 'Beliebte Suchanfragen' : 'Trending searches'}
-                </span>
-                {dropSuggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onMouseDown={() => { setQuery(s); sendMessage(s); setSearchFocused(false); }}
-                    className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-charcoal font-light flex items-center gap-3 hover:bg-surface-alt transition group"
-                  >
-                    <Search className="w-3.5 h-3.5 text-warm-faint flex-shrink-0" />
-                    {s}
-                    <ArrowRight className="w-3 h-3 text-warm-faint ml-auto opacity-0 group-hover:opacity-100 transition" />
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {pill.label}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Loading dots */}
-        {loading && (
-          <div className="mt-6 flex flex-col items-center gap-2">
+        {/* ── Scroll-linked show slider ── */}
+        {!showsLoading && filteredShows.length > 0 && (
+          <div className="overflow-hidden mt-auto">
+            <motion.div
+              style={{ x: sliderX }}
+              className="flex gap-4 px-6 sm:px-10 lg:px-16 pb-8"
+            >
+              {filteredShows.slice(0, 8).map((show, i) => (
+                <motion.div
+                  key={show.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 + i * 0.06 }}
+                  onClick={() => navigate(`/show/${show.slug}`)}
+                  className="flex-shrink-0 w-[220px] sm:w-[260px] cursor-pointer group"
+                >
+                  <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-3 relative">
+                    <img
+                      src={show.photoUrls?.[0] || ''}
+                      alt={show.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/15 transition-colors duration-500" />
+                    <div className="absolute bottom-3 left-3">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-charcoal">
+                        {show.category}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-charcoal truncate">{show.title}</p>
+                  <p className="text-xs text-warm-muted">{show.artistName}</p>
+                </motion.div>
+              ))}
+              {/* "View all" card */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+                className="flex-shrink-0 w-[160px] flex items-center justify-center"
+              >
+                <Link to="/catalog" className="flex flex-col items-center gap-3 text-warm-muted hover:text-charcoal transition group">
+                  <div className="w-12 h-12 rounded-full border-2 border-warm-border group-hover:border-charcoal flex items-center justify-center transition">
+                    <ArrowRight className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-semibold text-center">{locale === 'de' ? 'Alle Shows' : 'All shows'}</span>
+                </Link>
+              </motion.div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {showsLoading && (
+          <div className="flex items-center justify-center py-16">
             <div className="flex items-center gap-1.5">
               {[0, 160, 320].map((d) => (
                 <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
               ))}
             </div>
-            <p className="text-sm text-warm-muted font-light">
-              {locale === 'de' ? 'Suche passende Shows…' : 'Finding matching shows…'}
-            </p>
           </div>
         )}
-
-        {/* Category filter pills */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="flex flex-wrap justify-center gap-2 mt-6"
-        >
-          {catPills.map((pill) => (
-            <button
-              key={pill.value}
-              type="button"
-              onClick={() => setActiveCat(pill.value)}
-              className={`px-4 py-1.5 rounded-full border text-sm font-normal transition touch-manipulation ${
-                activeCat === pill.value
-                  ? 'bg-charcoal text-white border-charcoal shadow-soft'
-                  : 'bg-surface text-warm-muted border-warm-border hover:border-charcoal/20 hover:text-charcoal hover:shadow-soft'
-              }`}
-            >
-              {pill.label}
-            </button>
-          ))}
-        </motion.div>
       </div>
     </section>
 
