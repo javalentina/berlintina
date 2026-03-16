@@ -541,15 +541,15 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
       <div className="relative z-10 flex-1 flex flex-col">
         {/* ── Top: H1 left + description right — both bottom-aligned ── */}
-        <div className="flex items-end justify-between gap-8 px-6 pt-8 pb-10">
+        <div className="flex items-end justify-between px-[5rem] pt-8 pb-10" style={{ gap: '5rem' }}>
 
           {/* Left: Big shimmer H1 */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(3rem,6.5vw,7rem)] font-bold tracking-[-0.03em] leading-[0.93] max-w-[65%] shimmer-text"
-            style={{ '--shimmer-accent': '#6366f1' } as React.CSSProperties}
+            className="text-[clamp(3rem,6.5vw,7rem)] font-bold tracking-[-0.03em] leading-[0.93] shimmer-text flex-shrink-0"
+            style={{ '--shimmer-accent': '#6366f1', width: '90ch', maxWidth: '55vw' } as React.CSSProperties}
           >
             {locale === 'de'
               ? <>Shows die<br />Köpfe drehen<br />und Herzen<br />gewinnen.</>
@@ -561,7 +561,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col gap-6 max-w-[260px] sm:max-w-[300px] pb-1"
+            className="flex flex-col gap-6 pb-1"
           >
             <p className="text-base text-charcoal leading-relaxed font-light">
               {locale === 'de'
@@ -570,15 +570,16 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </p>
             <Link
               to="/catalog"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:opacity-85 transition w-fit"
+              className="inline-flex items-center gap-2 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:opacity-85 transition w-fit"
+              style={{ padding: '1.25rem 1.625rem' }}
             >
               {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         </div>
 
-        {/* ── Show slider: scroll-driven ── */}
-        <div className="mt-auto pb-10 overflow-hidden">
+        {/* ── Show slider: scroll-driven, full width ── */}
+        <div className="mt-auto overflow-hidden">
           {showsLoading ? (
             <div className="flex items-center justify-center py-16">
               <div className="flex items-center gap-1.5">
@@ -590,15 +591,15 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           ) : filteredShows.length > 0 ? (
             <motion.div
               ref={sliderTrackRef}
-              style={{ x: sliderXVal }}
-              className="flex gap-6 pl-6 will-change-transform"
+              style={{ x: sliderXVal, gap: '2rem' }}
+              className="flex will-change-transform"
             >
               {filteredShows.map((show) => (
                 <div
                   key={show.id}
                   onClick={() => navigate(`/show/${show.slug}`)}
                   className="cursor-pointer group flex-shrink-0"
-                  style={{ width: 'calc((100vw - 72px) / 3.1)' }}
+                  style={{ width: 'calc((100vw - 4rem) / 3.1)' }}
                 >
                   <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt relative">
                     <img
@@ -613,12 +614,10 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                         background: 'rgba(255,255,255,0.18)',
                         backdropFilter: 'blur(18px) saturate(1.6)',
                         WebkitBackdropFilter: 'blur(18px) saturate(1.6)',
-                        border: '1px solid rgba(255,255,255,0.35)',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.4)',
                         borderRadius: '1rem',
-                        padding: '1rem 1.5rem',
+                        padding: '5rem',
                         textAlign: 'center',
-                        maxWidth: '85%',
                       }}>
                         <p style={{ fontFamily: 'var(--font-display, inherit)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.35)', lineHeight: 1.25, marginBottom: '0.35rem' }}>{show.title}</p>
                         <p style={{ fontFamily: 'var(--font-display, inherit)', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>{show.category}</p>
@@ -629,6 +628,13 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               ))}
             </motion.div>
           ) : null}
+        </div>
+
+        {/* ── Under-slider text ── */}
+        <div className="px-[5rem] py-12">
+          <p className="text-base text-charcoal leading-relaxed max-w-[75ch]">
+            Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben fest an die Kraft von Live-Performances und echten menschlichen Emotionen. Jeder Act erzählt eine Geschichte und verleiht deinem Event Strahlkraft, Glaubwürdigkeit und eine besondere Energie. Bei uns findest du fertige Shows und handverlesene Künstler, die du direkt anfragen kannst. Auf Wunsch übernehmen wir die komplette Organisation für dich. Wir entwickeln und realisieren auch individuelle Shows und Performances, die genau zu deinem Event passen. Dafür bringen wir alles zusammen, was es braucht — von Künstlern über Konzept bis hin zu Kostüm und Maske. Begeistere dein Publikum wie nie zuvor.
+          </p>
         </div>
       </div>
     </section>
