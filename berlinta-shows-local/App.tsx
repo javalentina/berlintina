@@ -450,6 +450,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const defaultShows = useMemo(() => shows.slice(0, 12), [shows]);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [activeCat, setActiveCat] = useState<string>('all');
+  const [sliderPage, setSliderPage] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const filteredShows = useMemo(() => {
     if (activeCat === 'all') return defaultShows;
@@ -559,134 +560,86 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </motion.div>
         </div>
 
-        {/* ── Search bar ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-          className="px-6 sm:px-10 lg:px-16 mb-10"
-        >
-          <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) { setSearchFocused(false); sendMessage(query.trim()); } }} className="relative max-w-xl">
-            {showsError && (
-              <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
-                {showsError}
-              </div>
-            )}
-            {apiError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex items-center justify-between gap-4">
-                <span>{apiError}</span>
-                {retryFn && <button onClick={retryFn} className="px-3 py-1.5 bg-red-100 rounded-lg font-bold text-xs">{locale === 'de' ? 'Retry' : 'Retry'}</button>}
-              </div>
-            )}
-            <div className={`flex items-center bg-white rounded-2xl transition-all duration-300 ${searchFocused ? 'shadow-[0_4px_24px_rgba(10,12,20,.08)] outline outline-1 outline-warm-border' : 'shadow-soft border border-warm-border'}`}>
-              <Search className="ml-4 w-4 h-4 text-warm-muted flex-shrink-0" />
-              <input
-                id="hero-search"
-                type="search"
-                placeholder={locale === 'de' ? 'Akrobaten, Bands, Feuershow…' : 'Search acrobats, bands, fire shows…'}
-                className="flex-1 border-none outline-none bg-transparent font-light text-sm text-charcoal py-4 px-3 placeholder:text-warm-faint/60"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              />
-              <button type="submit" disabled={loading} className="flex-shrink-0 bg-charcoal text-white rounded-xl font-medium text-sm m-1.5 px-5 py-2.5 hover:opacity-85 transition disabled:opacity-50">
-                {loading ? '…' : (locale === 'de' ? 'Suchen' : 'Search')}
-              </button>
-            </div>
-            <AnimatePresence>
-              {searchFocused && !query && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-xl rounded-2xl border border-warm-border shadow-card-hover p-4 z-50"
-                >
-                  <span className="block text-[0.625rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-2.5 px-2">
-                    {locale === 'de' ? 'Beliebte Suchanfragen' : 'Trending searches'}
-                  </span>
-                  {dropSuggestions.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onMouseDown={() => { setQuery(s); sendMessage(s); setSearchFocused(false); }}
-                      className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-charcoal font-light flex items-center gap-3 hover:bg-surface-alt transition group"
+        {/* ── Show slider: 4-up paginated ── */}
+        {(() => {
+          const perPage = 4;
+          const shows = filteredShows;
+          const totalPages = Math.ceil(shows.length / perPage);
+          const pageShows = shows.slice(sliderPage * perPage, sliderPage * perPage + perPage);
+          return (
+            <div className="mt-auto pb-8">
+              {showsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="flex items-center gap-1.5">
+                    {[0, 160, 320].map((d) => (
+                      <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
+                    ))}
+                  </div>
+                </div>
+              ) : shows.length > 0 ? (
+                <>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={sliderPage}
+                      initial={{ opacity: 0, x: 40 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -40 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="grid grid-cols-4 gap-3 px-6 sm:px-10 lg:px-16"
                     >
-                      <Search className="w-3.5 h-3.5 text-warm-faint flex-shrink-0" />
-                      {s}
-                      <ArrowRight className="w-3 h-3 text-warm-faint ml-auto opacity-0 group-hover:opacity-100 transition" />
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </form>
-
-        </motion.div>
-
-        {/* ── Scroll-linked show slider ── */}
-        {!showsLoading && filteredShows.length > 0 && (
-          <div className="overflow-hidden mt-auto">
-            <motion.div
-              style={{ x: sliderX }}
-              className="flex gap-4 px-6 sm:px-10 lg:px-16 pb-8"
-            >
-              {filteredShows.slice(0, 8).map((show, i) => (
-                <motion.div
-                  key={show.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 + i * 0.06 }}
-                  onClick={() => navigate(`/show/${show.slug}`)}
-                  className="flex-shrink-0 w-[220px] sm:w-[260px] cursor-pointer group"
-                >
-                  <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-3 relative">
-                    <img
-                      src={show.photoUrls?.[0] || ''}
-                      alt={show.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/15 transition-colors duration-500" />
-                    <div className="absolute bottom-3 left-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-charcoal">
-                        {show.category}
-                      </span>
+                      {pageShows.map((show) => (
+                        <div
+                          key={show.id}
+                          onClick={() => navigate(`/show/${show.slug}`)}
+                          className="cursor-pointer group"
+                        >
+                          <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt mb-2.5 relative">
+                            <img
+                              src={show.photoUrls?.[0] || ''}
+                              alt={show.title}
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/15 transition-colors duration-500" />
+                            <div className="absolute bottom-3 left-3">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-charcoal">
+                                {show.category}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-sm font-semibold text-charcoal truncate">{show.title}</p>
+                          <p className="text-xs text-warm-muted">{show.artistName}</p>
+                        </div>
+                      ))}
+                    </motion.div>
+                  </AnimatePresence>
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-end gap-3 px-6 sm:px-10 lg:px-16 mt-5">
+                      <button
+                        type="button"
+                        onClick={() => setSliderPage(p => Math.max(0, p - 1))}
+                        disabled={sliderPage === 0}
+                        className="w-9 h-9 rounded-full border border-warm-border flex items-center justify-center text-warm-muted hover:border-charcoal hover:text-charcoal transition disabled:opacity-30"
+                      >
+                        <ArrowRight className="w-4 h-4 rotate-180" />
+                      </button>
+                      <span className="text-xs text-warm-faint">{sliderPage + 1} / {totalPages}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSliderPage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={sliderPage === totalPages - 1}
+                        className="w-9 h-9 rounded-full border border-warm-border flex items-center justify-center text-warm-muted hover:border-charcoal hover:text-charcoal transition disabled:opacity-30"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
-                  <p className="text-sm font-semibold text-charcoal truncate">{show.title}</p>
-                  <p className="text-xs text-warm-muted">{show.artistName}</p>
-                </motion.div>
-              ))}
-              {/* "View all" card */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.9 }}
-                className="flex-shrink-0 w-[160px] flex items-center justify-center"
-              >
-                <Link to="/catalog" className="flex flex-col items-center gap-3 text-warm-muted hover:text-charcoal transition group">
-                  <div className="w-12 h-12 rounded-full border-2 border-warm-border group-hover:border-charcoal flex items-center justify-center transition">
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-center">{locale === 'de' ? 'Alle Shows' : 'All shows'}</span>
-                </Link>
-              </motion.div>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Loading state */}
-        {showsLoading && (
-          <div className="flex items-center justify-center py-16">
-            <div className="flex items-center gap-1.5">
-              {[0, 160, 320].map((d) => (
-                <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
-              ))}
+                  )}
+                </>
+              ) : null}
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </section>
 
