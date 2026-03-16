@@ -381,23 +381,6 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   });
   const sliderTrackRef = useRef<HTMLDivElement>(null);
   const sliderXVal = useMotionValue(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const hero = heroRef.current;
-      const track = sliderTrackRef.current;
-      if (!hero || !track) return;
-      const heroTop = hero.offsetTop;
-      const heroH = hero.offsetHeight;
-      const scrolled = window.scrollY - heroTop;
-      const progress = Math.max(0, Math.min(1, scrolled / (heroH * 0.75)));
-      const containerW = track.parentElement?.offsetWidth ?? 0;
-      const maxShift = Math.max(0, track.scrollWidth - containerW);
-      sliderXVal.set(-progress * maxShift);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [filteredShows.length]);
 
   const recommendations = useMemo(() => {
     if (!rawRecommendations.length || !shows.length) return [];
@@ -473,6 +456,24 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     if (activeCat === 'all') return defaultShows;
     return defaultShows.filter((s) => s.category === activeCat);
   }, [defaultShows, activeCat]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const hero = heroRef.current;
+      const track = sliderTrackRef.current;
+      if (!hero || !track) return;
+      const heroTop = hero.offsetTop;
+      const heroH = hero.offsetHeight;
+      const scrolled = window.scrollY - heroTop;
+      const progress = Math.max(0, Math.min(1, scrolled / (heroH * 0.75)));
+      const containerW = track.parentElement?.offsetWidth ?? 0;
+      const maxShift = Math.max(0, track.scrollWidth - containerW);
+      sliderXVal.set(-progress * maxShift);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [filteredShows.length]);
 
   const catPills = locale === 'de'
     ? [
