@@ -33,13 +33,6 @@ const ShowDetail = lazy(() => import('./components/ShowDetailRoute').then(m => (
 const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLocale: (l: 'de' | 'en') => void }> = ({ children, locale, setLocale }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     const path = location.pathname || '/';
@@ -61,34 +54,26 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F4F1' }}>
       {/* ── Navbar ── */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transition-all duration-300 ${
-          scrolled
-            ? 'bg-glass shadow-[0_1px_2px_rgba(10,12,20,.04),0_4px_16px_rgba(10,12,20,.04)]'
-            : ''
-        }`}
-      >
-        <Link to="/" className="text-[1.1rem] font-semibold tracking-[-0.02em] text-charcoal no-underline">
+      <header className="flex items-center justify-between px-[5rem] py-6" style={{ backgroundColor: '#F4F4F1' }}>
+        <Link to="/" className="text-[1.05rem] font-semibold tracking-[-0.02em] text-charcoal no-underline">
           berlintina<span className="text-terracotta">.</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/catalog" className="text-sm font-semibold tracking-[0.3px] text-warm-muted hover:text-charcoal transition no-underline">
-            {locale === 'de' ? 'Shows' : 'Shows'}
+        <nav className="hidden md:flex items-center gap-3">
+          <Link to="/catalog" className="text-sm font-medium border border-charcoal/25 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline">
+            Shows
           </Link>
-          <Link to="/about" className="text-sm font-semibold tracking-[0.3px] text-warm-muted hover:text-charcoal transition no-underline">
-            {locale === 'de' ? 'Kontakt' : 'Contact'}
-          </Link>
-          <Link to="/join" className="text-sm font-semibold tracking-[0.3px] text-warm-muted hover:text-charcoal transition no-underline">
-            {locale === 'de' ? 'Für Künstler' : 'For Artists'}
+          <Link to="/about" className="text-sm font-medium border border-charcoal/25 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline">
+            {locale === 'de' ? 'News' : 'News'}
           </Link>
           <a
             href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
-            className="text-sm font-medium bg-charcoal text-white px-5 py-2 rounded-[10px] hover:opacity-85 transition no-underline inline-flex items-center gap-1"
+            className="text-sm font-medium bg-charcoal text-white rounded-full hover:opacity-85 transition no-underline inline-flex items-center gap-1"
+            style={{ padding: '1.25rem 1.625rem' }}
           >
-            {locale === 'de' ? 'Act buchen ↗' : 'Book a Show ↗'}
+            {locale === 'de' ? 'Kontakt ↗' : 'Contact ↗'}
           </a>
           <LanguageToggle locale={locale} onChange={setLocale} />
         </nav>
@@ -97,27 +82,20 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
           <LanguageToggle locale={locale} onChange={setLocale} />
           <button
             onClick={() => setMobileMenuOpen((o) => !o)}
-            className="p-2 -mr-1 rounded-lg hover:bg-surface-alt"
+            className="p-2 -mr-1 rounded-lg"
             aria-label="Menu"
           >
-            <svg className="w-5 h-5 text-warm-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
             </svg>
           </button>
         </div>
 
-        {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-glass border-t border-warm-border px-6 py-4 space-y-1 md:hidden">
-            <Link to="/catalog" className="block py-2.5 text-sm text-warm-muted hover:text-charcoal transition">Shows</Link>
-            <Link to="/about" className="block py-2.5 text-sm text-warm-muted hover:text-charcoal transition">{locale === 'de' ? 'Kontakt' : 'Contact'}</Link>
-            <Link to="/join" className="block py-2.5 text-sm text-warm-muted hover:text-charcoal transition">{locale === 'de' ? 'Für Künstler' : 'For Artists'}</Link>
-            <a
-              href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
-              className="block py-2.5 text-sm font-medium text-charcoal"
-            >
-              {locale === 'de' ? 'Act buchen ↗' : 'Book a Show ↗'}
-            </a>
+          <div className="absolute top-full left-0 right-0 border-t border-warm-border px-[5rem] py-4 space-y-1 md:hidden z-50" style={{ backgroundColor: '#F4F4F1' }}>
+            <Link to="/catalog" className="block py-2.5 text-sm text-charcoal">Shows</Link>
+            <Link to="/about" className="block py-2.5 text-sm text-charcoal">News</Link>
+            <a href={`mailto:info@berlintina.de`} className="block py-2.5 text-sm font-medium text-charcoal">Kontakt ↗</a>
           </div>
         )}
       </header>
@@ -460,19 +438,26 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   useEffect(() => {
     const onScroll = () => {
       const hero = heroRef.current;
-      const track = sliderTrackRef.current;
-      if (!hero || !track) return;
+      if (!hero) return;
+      const vw = window.innerWidth;
+      const gap = 32; // 2rem at 16px base
+      const cardW = (vw - 2 * gap) / 3.1;
+      const N = filteredShows.length;
+      const trackW = N * cardW + (N - 1) * gap;
+      const maxShift = Math.max(0, trackW - vw);
       const heroTop = hero.offsetTop;
       const heroH = hero.offsetHeight;
       const scrolled = window.scrollY - heroTop;
-      const progress = Math.max(0, Math.min(1, scrolled / (heroH * 0.75)));
-      const containerW = track.parentElement?.offsetWidth ?? 0;
-      const maxShift = Math.max(0, track.scrollWidth - containerW);
+      const progress = Math.max(0, Math.min(1, scrolled / (heroH * 0.8)));
       sliderXVal.set(-progress * maxShift);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, [filteredShows.length]);
 
   const catPills = locale === 'de'
@@ -535,7 +520,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     {/* ── Hero ── */}
     <section
       ref={heroRef}
-      className="relative bg-[#f5f4f1] overflow-hidden pt-24 pb-0 min-h-screen flex flex-col"
+      className="relative overflow-hidden pb-0 min-h-screen flex flex-col"
+      style={{ backgroundColor: '#F4F4F1' }}
     >
       {/* Subtle noise texture */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
@@ -549,8 +535,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(3rem,6.5vw,7rem)] font-bold tracking-[-0.03em] leading-[0.93] shimmer-text flex-shrink-0"
-            style={{ '--shimmer-accent': '#6366f1', width: '90ch', maxWidth: '55vw' } as React.CSSProperties}
+            className="text-[clamp(3rem,6.5vw,7rem)] font-bold tracking-[-0.03em] leading-[0.93] flex-shrink-0"
+            style={{ color: '#1a1a6e', width: '90ch', maxWidth: '55vw' }}
           >
             {locale === 'de'
               ? <>Shows die<br />Köpfe drehen<br />und Herzen<br />gewinnen.</>
@@ -634,7 +620,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         {/* ── Under-slider text ── */}
         <div className="px-[5rem] py-12">
           <p className="text-base text-charcoal leading-relaxed max-w-[75ch]">
-            Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben fest an die Kraft von Live-Performances und echten menschlichen Emotionen. Jeder Act erzählt eine Geschichte und verleiht deinem Event Strahlkraft, Glaubwürdigkeit und eine besondere Energie. Bei uns findest du fertige Shows und handverlesene Künstler, die du direkt anfragen kannst. Auf Wunsch übernehmen wir die komplette Organisation für dich. Wir entwickeln und realisieren auch individuelle Shows und Performances, die genau zu deinem Event passen. Dafür bringen wir alles zusammen, was es braucht — von Künstlern über Konzept bis hin zu Kostüm und Maske. Begeistere dein Publikum wie nie zuvor.
+            Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben an die Kraft von Live-Performances und echten Emotionen. Bei uns findest du fertige Shows und ausgewählte Künstler für dein Event. Auf Wunsch gestalten und realisieren wir auch individuelle Performances – mit allem, was dazugehört: Konzept, Kostüm und Maske.
           </p>
         </div>
       </div>
