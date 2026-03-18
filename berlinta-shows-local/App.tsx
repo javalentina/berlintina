@@ -62,16 +62,16 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
         </Link>
 
         <nav className="hidden md:flex items-center gap-3">
-          <Link to="/catalog" className="text-sm font-medium border border-charcoal/25 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline">
+          <Link to="/catalog" className="border border-charcoal/20 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Shows
           </Link>
-          <Link to="/about" className="text-sm font-medium border border-charcoal/25 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline">
-            {locale === 'de' ? 'News' : 'News'}
+          <Link to="/about" className="border border-charcoal/20 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            News
           </Link>
           <a
             href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
-            className="text-sm font-medium bg-charcoal text-white rounded-full hover:opacity-85 transition no-underline inline-flex items-center gap-1"
-            style={{ padding: '1.25rem 1.625rem' }}
+            className="bg-charcoal text-white rounded-full hover:opacity-85 transition no-underline inline-flex items-center gap-1"
+            style={{ fontFamily: 'var(--font-display)', fontSize: '0.875rem', fontWeight: 700, padding: '0.6rem 1.25rem' }}
           >
             {locale === 'de' ? 'Kontakt ↗' : 'Contact ↗'}
           </a>
@@ -535,8 +535,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(3rem,6.5vw,7rem)] font-bold tracking-[-0.03em] leading-[0.93] flex-shrink-0"
-            style={{ color: '#1a1a6e', width: '90ch', maxWidth: '55vw' }}
+            className="text-[clamp(3rem,6.5vw,7rem)] font-bold leading-[0.93] flex-shrink-0 font-display"
+            style={{ color: '#141313', letterSpacing: '-0.04em', width: '90ch', maxWidth: '55vw' }}
           >
             {locale === 'de'
               ? <>Shows die<br />Köpfe drehen<br />und Herzen<br />gewinnen.</>
@@ -557,8 +557,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </p>
             <Link
               to="/catalog"
-              className="inline-flex items-center gap-2 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:opacity-85 transition w-fit"
-              style={{ padding: '1.25rem 1.625rem' }}
+              className="inline-flex items-center gap-2 bg-charcoal text-white rounded-full hover:opacity-85 transition w-fit active:translate-x-[2px] active:translate-y-[2px]"
+              style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.95rem', padding: '1rem 2rem' }}
             >
               {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-4 h-4" />
             </Link>
