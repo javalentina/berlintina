@@ -743,7 +743,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </p>
             <div className="flex flex-wrap gap-4">
               <Link to="/catalog" className="btn-primary">{locale === 'de' ? 'Shows entdecken' : 'Explore shows'}</Link>
-              <Link to="/join" className="btn-primary" style={{ borderColor: 'rgba(20,19,19,0.3)', color: '#666' }}>
+              <Link to="/join" className="btn-primary" style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted-foreground)' }}>
                 {locale === 'de' ? 'Für Künstler ↗' : 'Join as artist ↗'}
               </Link>
             </div>
