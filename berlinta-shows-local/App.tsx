@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
-import { Search, Sparkles, ArrowRight, X, Heart, ArrowUpRight, Star, CheckCircle2, Zap, Users, HeartHandshake } from 'lucide-react';
+import { Search, Sparkles, ArrowRight, X, ArrowUpRight } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Outlet, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
 import { Category, Show, CustomerBrief, ArtistStatus } from './types';
 import { VIBE_OPTIONS } from './constants';
@@ -366,6 +366,166 @@ const Datenschutz: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
   </div>
 );
 
+// --- AboutBanner ---
+const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
+  const lineWidth = useTransform(scrollYProgress, [0.1, 0.5], ['0%', '100%']);
+  const mainText = locale === 'de'
+    ? 'Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben an die Kraft von Live-Performances und echten Emotionen.'
+    : 'We are a community of extraordinary artists and creative talents. We believe in the power of live performances and real emotions.';
+  const words = mainText.split(' ');
+  return (
+    <section ref={sectionRef} className="pt-24 md:pt-32 pb-0 border-t border-foreground/10">
+      <div className="container grid grid-cols-12 gap-8">
+        <div className="col-span-12 md:col-span-4">
+          <motion.span className="label-style" initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+            00 / About
+          </motion.span>
+        </div>
+        <div className="col-span-12 md:col-span-8">
+          <p className="font-display text-2xl md:text-3xl font-bold text-foreground leading-snug max-w-[50ch]">
+            {words.map((word, i) => (
+              <span key={i} className="inline-block overflow-hidden mr-[0.3em]">
+                <motion.span className="inline-block" initial={{ y: '100%', opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1], delay: 0.1 + i * 0.03 }}>
+                  {word}
+                </motion.span>
+              </span>
+            ))}
+          </p>
+          <motion.div className="h-[2px] bg-accent mt-8 origin-left" style={{ width: lineWidth }} />
+          <motion.p className="body-text mt-8" initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1], delay: 0.3 }}>
+            {locale === 'de'
+              ? 'Bei uns findest du fertige Shows und ausgewählte Künstler für dein Event. Auf Wunsch gestalten und realisieren wir auch individuelle Performances – mit allem, was dazugehört: Konzept, Kostüm und Maske.'
+              : 'Here you find ready-made shows and selected artists for your event. On request we also design and realise individual performances – with everything included: concept, costume and make-up.'}
+          </motion.p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- StatsSection ---
+const StatsSection: React.FC = () => {
+  const stats = [
+    { value: 50, suffix: '+', label: 'Künstler' },
+    { value: 200, suffix: '+', label: 'Shows' },
+    { value: 98, suffix: '%', label: 'Rebooking Rate' },
+    { value: 12, suffix: '+', label: 'Jahre Erfahrung' },
+  ];
+  return (
+    <section className="py-20 md:py-28 border-y border-foreground/10">
+      <div className="container">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+          {stats.map((stat, i) => (
+            <motion.div key={stat.label} className="text-center" initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1], delay: i * 0.1 }}>
+              <div className="font-display text-5xl md:text-6xl lg:text-7xl font-black text-foreground mb-2">
+                {stat.value}{stat.suffix}
+              </div>
+              <span className="label-style">{stat.label}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- CTABanner ---
+const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
+  <section className="py-24 md:py-32">
+    <div className="container">
+      <motion.div
+        className="relative overflow-hidden bg-accent px-8 md:px-16 py-16 md:py-24 text-center"
+        initial={{ y: 40, opacity: 0, scale: 0.97 }}
+        whileInView={{ y: 0, opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+      >
+        <div className="absolute top-6 right-8 w-3 h-3 rounded-full bg-accent-foreground/20" />
+        <motion.p className="label-style text-accent-foreground/70 mb-6" initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.5 }}>
+          {locale === 'de' ? 'Bereit für etwas Außergewöhnliches?' : 'Ready for something extraordinary?'}
+        </motion.p>
+        <motion.h2
+          className="font-display text-4xl md:text-6xl lg:text-7xl font-black text-accent-foreground leading-[1.05] mb-8"
+          initial={{ y: 30, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
+        >
+          {locale === 'de' ? <>Lass uns deine<br />Show planen.</> : <>Let us plan your<br />show.</>}
+        </motion.h2>
+        <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.5 }}>
+          <Link to="/catalog" className="inline-flex items-center justify-center gap-2 bg-accent-foreground text-accent font-display font-bold text-lg px-8 py-4 rounded-full hover:scale-105 transition-transform duration-300">
+            {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-5 h-5" />
+          </Link>
+          <a href="https://wa.me/491608106880" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 border-2 border-accent-foreground/30 text-accent-foreground font-display font-bold text-lg px-8 py-4 rounded-full hover:border-accent-foreground/60 hover:scale-105 transition-all duration-300">
+            WhatsApp
+          </a>
+        </motion.div>
+      </motion.div>
+    </div>
+  </section>
+);
+
+// --- FeaturedArtistSection ---
+const FeaturedArtistSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
+  const { shows } = useShows();
+  const navigate = useNavigate();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const featured = shows.slice(0, 3);
+  const ease = [0.19, 1, 0.22, 1] as const;
+  if (featured.length === 0) return null;
+  const artist = featured[activeIndex];
+  return (
+    <section className="py-24 md:py-36 overflow-hidden border-t border-foreground/10">
+      <div className="container">
+        <motion.span className="label-style mb-6 block" initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, ease }}>
+          01 / {locale === 'de' ? 'Berlintinas Top-Acts' : "Berlintina's Top Acts"}
+        </motion.span>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-10 items-start">
+          {/* LEFT */}
+          <div className="md:col-span-5 flex flex-col justify-between min-h-[50vh]">
+            <div className="mb-8">
+              <span className="font-mono-ui text-sm text-muted-foreground tracking-widest">
+                {String(activeIndex + 1).padStart(2, '0')} / {String(featured.length).padStart(2, '0')}
+              </span>
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.div key={activeIndex} className="flex-1" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} transition={{ duration: 0.45, ease }}>
+                <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[0.95] mb-3">{artist.title}</h2>
+                <span className="label-style text-accent block mb-5">{artist.category}</span>
+                <p className="body-text max-w-[38ch] mb-8 text-muted-foreground">{artist.shortDescriptionFacts?.slice(0, 150) || ''}</p>
+                <button onClick={() => navigate(`/show/${artist.slug}`)} className="inline-flex items-center gap-2 bg-accent text-accent-foreground px-7 py-3 rounded-full font-semibold text-sm tracking-wide hover:opacity-90 transition-opacity">
+                  {locale === 'de' ? 'Show ansehen' : 'View show'} →
+                </button>
+              </motion.div>
+            </AnimatePresence>
+            <div className="flex gap-3 mt-10">
+              {featured.map((s, i) => (
+                <button key={i} onClick={() => setActiveIndex(i)} className={`relative w-20 h-20 md:w-24 md:h-24 overflow-hidden border-2 transition-all duration-300 ${i === activeIndex ? 'border-accent scale-105 shadow-lg' : 'border-transparent opacity-50 hover:opacity-80'}`} aria-label={`View ${s.title}`}>
+                  <img src={s.photoUrls?.[0] || ''} alt={s.title} className="w-full h-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* RIGHT */}
+          <div className="md:col-span-7 order-first md:order-last">
+            <AnimatePresence mode="wait">
+              <motion.div key={activeIndex} className="relative overflow-hidden" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.5, ease }}>
+                <img src={artist.photoUrls?.[0] || ''} alt={`${artist.title} — ${artist.category}`} className="w-full aspect-[3/4] md:aspect-[4/5] object-cover" loading="lazy" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background/70 to-transparent">
+                  <span className="label-style text-foreground/80">{artist.category}</span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 // --- Landing View ---
 const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const { shows, loading: showsLoading, error: showsError } = useShows();
@@ -595,14 +755,11 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </motion.div>
         </div>
 
-        {/* Under-slider text */}
-        <div className="container py-12 md:py-16">
-          <p className="body-text text-lg">
-            Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben an die Kraft von Live-Performances und echten Emotionen. Bei uns findest du fertige Shows und ausgewählte Künstler für dein Event. Auf Wunsch gestalten und realisieren wir auch individuelle Performances – mit allem, was dazugehört: Konzept, Kostüm und Maske.
-          </p>
-        </div>
       </div>
     </section>
+
+    {/* ── About section ── */}
+    <AboutBanner locale={locale} />
 
     {/* ── AI Recommendations — full width ── */}
     {hasResults && (
@@ -736,8 +893,11 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </section>
 
-      {/* ── Featured Slider ── */}
-      <FeaturedSlider locale={locale} />
+      {/* ── Stats ── */}
+      <StatsSection />
+
+      {/* ── Featured Artist ── */}
+      <FeaturedArtistSection locale={locale} />
 
       {/* ── Testimonials ── */}
       <section className="py-24 md:py-32 overflow-hidden border-t border-foreground/10">
@@ -849,6 +1009,9 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </div>
         </div>
       </section>
+
+      {/* ── CTA Banner ── */}
+      <CTABanner locale={locale} />
 
       {/* ── FAQ ── */}
       <section className="py-24 md:py-32 border-t border-foreground/10">
@@ -976,226 +1139,6 @@ function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-
-// --- Featured Slider ---
-const SLIDER_TABS = [
-  { key: 'all',     de: 'Alle',      en: 'All' },
-  { key: 'shows',   de: 'Shows',     en: 'Shows' },
-  { key: 'artists', de: 'Künstler',  en: 'Artists' },
-  { key: 'new',     de: 'Newcomer',  en: 'New Comers' },
-] as const;
-
-const CATEGORY_SHIMMER_SLIDER: Record<string, string> = {
-  CLASSICAL: '#9333ea', BAND: '#6366f1', ACROBATICS: '#16a34a', DANCE: '#db2777',
-};
-
-const FeaturedSlider: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
-  const { shows } = useShows();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<'all' | 'shows' | 'artists' | 'new'>('all');
-  const [idx, setIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
-
-  const jimJohn = {
-    id: 'jim-john', type: 'featured' as const,
-    image: '/images/jim-john.jpeg',
-    category: 'ACROBATICS',
-    title: 'Jim & John',
-    artist: locale === 'de' ? 'Berlintinas Top-Act' : "Berlintina's Top Act",
-    description: locale === 'de'
-      ? 'Bekannt aus Das Supertalent, America\'s Got Talent & Cirque du Soleil. 8 deutsche Meistertitel, Guinness-Weltrekord.'
-      : "As seen on Das Supertalent, America's Got Talent & Cirque du Soleil. 8 German championship titles, Guinness World Record.",
-    link: null as string | null,
-  };
-
-  const showSlides = shows.slice(0, 6).map(s => ({
-    id: s.id, type: 'show' as const,
-    image: s.photoUrls?.[0] || '',
-    category: s.category,
-    title: s.title,
-    artist: `${locale === 'de' ? 'von' : 'by'} ${s.artistName}`,
-    description: s.shortDescriptionFacts?.slice(0, 120) || '',
-    link: `/show/${s.slug}` as string | null,
-  }));
-
-  const allSlides = [jimJohn, ...showSlides];
-  const filtered =
-    tab === 'all' ? allSlides
-    : tab === 'shows' ? showSlides
-    : tab === 'artists' ? [jimJohn]
-    : showSlides.slice(-3);
-
-  const slides = filtered.length > 0 ? filtered : allSlides;
-  const clampedIdx = Math.min(idx, slides.length - 1);
-  const active = slides[clampedIdx];
-
-  useEffect(() => { setIdx(0); }, [tab]);
-
-  useEffect(() => {
-    if (paused || slides.length <= 1) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % slides.length), 5000);
-    return () => clearInterval(t);
-  }, [paused, slides.length]);
-
-  return (
-    <section
-      className="relative w-full overflow-hidden"
-      style={{ background: '#0d0d1a' }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
-
-        {/* Tabs */}
-        <div className="flex items-center gap-2 mb-10 flex-wrap">
-          {SLIDER_TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                tab === t.key
-                  ? 'bg-white/10 text-white border border-white/20'
-                  : 'text-white/35 hover:text-white/60 border border-transparent'
-              }`}
-            >
-              {locale === 'de' ? t.de : t.en}
-            </button>
-          ))}
-        </div>
-
-        {/* Headline — static gradient, no animation */}
-        <h2 className="text-[1.75rem] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-semibold tracking-[-0.04em] leading-[1.05] mb-3 gradient-text-static">
-          {locale === 'de' ? 'Berlintinas Top-Acts.' : "Berlintina's Top Acts."}
-        </h2>
-        <p className="text-white/40 text-base mb-8 max-w-xl">
-          {locale === 'de'
-            ? 'Persönlich kuratiert — jeder Act geprüft, jede Show außergewöhnlich.'
-            : 'Personally curated — every act vetted, every show extraordinary.'}
-        </p>
-
-        {/* CTA buttons */}
-        <div className="flex flex-wrap gap-3 mb-12">
-          <a
-            href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-charcoal text-sm font-bold rounded-2xl hover:opacity-90 transition shadow-lg"
-          >
-            <span>berlintina<span className="text-terracotta">.</span></span>
-            {locale === 'de' ? 'anfragen →' : 'enquire →'}
-          </a>
-          <Link
-            to="/join/start"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-semibold rounded-2xl hover:bg-white/10 transition"
-          >
-            {locale === 'de' ? 'Künstler werden ↗' : 'Join as artist ↗'}
-          </Link>
-        </div>
-
-        {/* 2-column: list left · image right */}
-        <div className="flex flex-col-reverse lg:flex-row gap-8 lg:gap-12 items-start">
-
-          {/* LEFT: show list */}
-          <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 space-y-2">
-            {slides.map((s, i) => {
-              const isActive = i === clampedIdx;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setIdx(i)}
-                  className={`w-full text-left rounded-2xl px-5 py-4 transition-all duration-300 ${
-                    isActive
-                      ? 'bg-white/8 border border-white/15'
-                      : 'border border-transparent hover:bg-white/4'
-                  }`}
-                  style={isActive ? { background: 'rgba(255,255,255,0.07)' } : {}}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 transition-colors ${isActive ? 'bg-terracotta' : 'bg-white/15'}`} />
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-sm font-semibold leading-snug mb-1 transition-colors ${isActive ? 'text-white' : 'text-white/40'}`}>
-                        {s.title}
-                      </p>
-                      <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-white/55' : 'text-white/20'}`}>
-                        {isActive ? s.description : s.artist}
-                      </p>
-                    </div>
-                    {isActive && (
-                      <ArrowUpRight className="w-4 h-4 text-white/30 flex-shrink-0 mt-0.5" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-
-            {/* CTA to catalog */}
-            <div className="pt-2">
-              <Link
-                to="/catalog"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-white/35 hover:text-white/70 transition px-5"
-              >
-                {locale === 'de' ? 'Alle Shows ansehen' : 'View all shows'} →
-              </Link>
-            </div>
-          </div>
-
-          {/* RIGHT: big image */}
-          <div className="flex-1 min-w-0">
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] shadow-2xl">
-              {active.image
-                ? (
-                  <img
-                    key={active.id}
-                    src={active.image}
-                    alt={active.title}
-                    className="w-full h-full object-cover transition-opacity duration-500"
-                  />
-                )
-                : <div className="w-full h-full bg-white/5 flex items-center justify-center text-white/20 text-sm">No image</div>
-              }
-              {/* Bottom overlay with info */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute bottom-5 left-6 right-6 flex items-end justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-1">{active.category}</p>
-                  <p className="text-white font-semibold text-lg leading-snug">{active.title}</p>
-                  <p className="text-white/50 text-sm">{active.artist}</p>
-                </div>
-                {active.link ? (
-                  <button
-                    onClick={() => navigate(active.link!)}
-                    className="flex-shrink-0 px-5 py-2.5 bg-white text-charcoal text-sm font-bold rounded-xl hover:opacity-90 transition ml-4"
-                  >
-                    {locale === 'de' ? 'Ansehen →' : 'View →'}
-                  </button>
-                ) : (
-                  <a
-                    href="https://wa.me/491608106880"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-shrink-0 px-5 py-2.5 bg-white text-charcoal text-sm font-bold rounded-xl hover:opacity-90 transition ml-4"
-                  >
-                    {locale === 'de' ? 'Anfragen →' : 'Book →'}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Progress dots */}
-            <div className="flex items-center gap-1.5 mt-4 px-1">
-              {slides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setIdx(i)}
-                  className={`rounded-full transition-all duration-300 ${i === clampedIdx ? 'w-6 h-1.5 bg-white/70' : 'w-1.5 h-1.5 bg-white/15 hover:bg-white/30'}`}
-                />
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-  );
-};
 
 // --- Join Landing View ---
 const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
