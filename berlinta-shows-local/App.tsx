@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
-import { motion, AnimatePresence, useScroll, useTransform, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { Search, Sparkles, ArrowRight, X, Heart, ArrowUpRight, Star, CheckCircle2, Zap, Users, HeartHandshake } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Outlet, useNavigate, useParams, Link, useLocation, Navigate } from 'react-router-dom';
 import { Category, Show, CustomerBrief, ArtistStatus } from './types';
@@ -54,50 +54,76 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F4F1' }}>
+    <div className="min-h-screen flex flex-col bg-background">
       {/* ── Navbar ── */}
-      <header className="flex items-center justify-between px-[5rem] py-6" style={{ backgroundColor: '#F4F4F1' }}>
-        <Link to="/" className="text-[1.05rem] font-semibold tracking-[-0.02em] text-charcoal no-underline">
-          berlintina<span className="text-terracotta">.</span>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-3">
-          <Link to="/catalog" className="border border-charcoal/20 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Shows
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-foreground/10">
+        <div className="container flex items-center justify-between h-16 md:h-20">
+          <Link to="/" className="font-display text-xl font-bold text-foreground no-underline">
+            berlintina<span className="text-accent">.</span>
           </Link>
-          <Link to="/about" className="border border-charcoal/20 text-charcoal rounded-full px-5 py-2 hover:border-charcoal transition no-underline" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            News
-          </Link>
-          <a
-            href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
-            className="bg-charcoal text-white rounded-full hover:opacity-85 transition no-underline inline-flex items-center gap-1"
-            style={{ fontFamily: 'var(--font-display)', fontSize: '0.875rem', fontWeight: 700, padding: '0.6rem 1.25rem' }}
-          >
-            {locale === 'de' ? 'Kontakt ↗' : 'Contact ↗'}
-          </a>
-          <LanguageToggle locale={locale} onChange={setLocale} />
-        </nav>
 
-        <div className="flex items-center gap-3 md:hidden">
-          <LanguageToggle locale={locale} onChange={setLocale} />
-          <button
-            onClick={() => setMobileMenuOpen((o) => !o)}
-            className="p-2 -mr-1 rounded-lg"
-            aria-label="Menu"
-          >
-            <svg className="w-5 h-5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
-            </svg>
-          </button>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="absolute top-full left-0 right-0 border-t border-warm-border px-[5rem] py-4 space-y-1 md:hidden z-50" style={{ backgroundColor: '#F4F4F1' }}>
-            <Link to="/catalog" className="block py-2.5 text-sm text-charcoal">Shows</Link>
-            <Link to="/about" className="block py-2.5 text-sm text-charcoal">News</Link>
-            <a href={`mailto:info@berlintina.de`} className="block py-2.5 text-sm font-medium text-charcoal">Kontakt ↗</a>
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link to="/catalog" className={`font-mono-ui text-xs uppercase tracking-widest transition-colors no-underline ${location.pathname === '/catalog' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+              Shows
+            </Link>
+            <Link to="/about" className={`font-mono-ui text-xs uppercase tracking-widest transition-colors no-underline ${location.pathname === '/about' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+              {locale === 'de' ? 'Über uns' : 'About'}
+            </Link>
+            <div className="flex items-center gap-1.5 ml-1">
+              <button
+                onClick={() => setLocale(locale === 'de' ? 'en' : 'de')}
+                className="font-mono-ui text-[10px] uppercase tracking-wider w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all"
+              >
+                {locale === 'de' ? 'EN' : 'DE'}
+              </button>
+            </div>
+            <Link
+              to="/join"
+              className="bg-accent text-accent-foreground font-display font-bold text-sm px-6 py-2.5 rounded-full hover:scale-105 transition-transform duration-300 no-underline"
+            >
+              {locale === 'de' ? 'Für Künstler' : 'For Artists'}
+            </Link>
           </div>
-        )}
+
+          {/* Mobile */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => setLocale(locale === 'de' ? 'en' : 'de')}
+              className="font-mono-ui text-[10px] uppercase tracking-wider w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground"
+            >
+              {locale === 'de' ? 'EN' : 'DE'}
+            </button>
+            <button onClick={() => setMobileMenuOpen(o => !o)} className="text-foreground p-2" aria-label="Menu">
+              <div className="w-6 flex flex-col gap-1.5">
+                <span className={`block h-[1.5px] bg-foreground transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-[7.5px]' : ''}`} />
+                <span className={`block h-[1.5px] bg-foreground transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`} />
+                <span className={`block h-[1.5px] bg-foreground transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-[7.5px]' : ''}`} />
+              </div>
+            </button>
+          </div>
+
+          {/* Mobile menu */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute top-full left-0 right-0 md:hidden overflow-hidden border-t border-foreground/10 bg-background"
+              >
+                <div className="container py-8 flex flex-col gap-6">
+                  <Link to="/catalog" onClick={() => setMobileMenuOpen(false)} className="font-mono-ui text-sm uppercase tracking-widest text-muted-foreground no-underline">Shows</Link>
+                  <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="font-mono-ui text-sm uppercase tracking-widest text-muted-foreground no-underline">{locale === 'de' ? 'Über uns' : 'About'}</Link>
+                  <Link to="/join" onClick={() => setMobileMenuOpen(false)} className="bg-accent text-accent-foreground font-display font-bold text-sm px-6 py-3 rounded-full text-center no-underline">
+                    {locale === 'de' ? 'Für Künstler' : 'For Artists'}
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </header>
 
       <main className="flex-grow">
@@ -105,42 +131,44 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
       </main>
 
       {/* ── Footer ── */}
-      {(
-        <footer className="bg-surface border-t border-warm-border px-6 py-10">
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-start justify-between gap-6 text-center sm:text-left">
-            {/* Brand */}
-            <div className="flex flex-col items-center sm:items-start gap-1">
-              <span className="text-[0.95rem] font-semibold tracking-[-0.02em] text-charcoal">
-                berlintina<span className="text-terracotta">.</span>
-              </span>
-              <p className="text-[0.72rem] text-warm-muted">
-                © 2026 Berlintina · {locale === 'de' ? 'Boutique Entertainment, Berlin' : 'Boutique entertainment, Berlin'}
-              </p>
-            </div>
-
-            {/* Contact */}
-            <div className="flex flex-col items-center sm:items-start gap-1.5">
-              <span className="text-[0.72rem] font-semibold uppercase tracking-wider text-warm-faint mb-0.5">
-                {locale === 'de' ? 'Kontakt' : 'Contact'}
-              </span>
-              <a href="tel:+4916081068880" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">+49 160 8106880</a>
-              <a href="mailto:info@berlintina.de" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">info@berlintina.de</a>
-              <a href="https://wa.me/4916081068880" target="_blank" rel="noopener noreferrer" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">WhatsApp</a>
-            </div>
-
-            {/* Links */}
-            <div className="flex flex-col items-center sm:items-start gap-1.5">
-              <span className="text-[0.72rem] font-semibold uppercase tracking-wider text-warm-faint mb-0.5">Links</span>
-              <a href="https://www.instagram.com/berlintina.shows" target="_blank" rel="noopener noreferrer" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition flex items-center gap-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                Instagram
-              </a>
-              <Link to="/impressum" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">Impressum</Link>
-              <Link to="/datenschutz" className="text-[0.75rem] text-warm-muted hover:text-charcoal transition">Datenschutz</Link>
+      <footer className="py-12 border-t border-foreground/10 bg-background">
+        <div className="container grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-4">
+            <Link to="/" className="font-display text-xl font-bold text-foreground no-underline">
+              berlintina<span className="text-accent">.</span>
+            </Link>
+            <p className="body-text text-sm mt-4">
+              Boutique artist agency.<br />Berlin, Germany.
+            </p>
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <span className="label-style mb-4 block">Navigate</span>
+            <div className="flex flex-col gap-3">
+              <Link to="/catalog" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Shows</Link>
+              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">{locale === 'de' ? 'Über uns' : 'About'}</Link>
+              <Link to="/join" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">{locale === 'de' ? 'Für Künstler' : 'For Artists'}</Link>
             </div>
           </div>
-        </footer>
-      )}
+          <div className="col-span-6 md:col-span-3">
+            <span className="label-style mb-4 block">Contact</span>
+            <div className="flex flex-col gap-3">
+              <a href="mailto:info@berlintina.de" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">info@berlintina.de</a>
+              <a href="https://wa.me/491608106880" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">WhatsApp</a>
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-3">
+            <span className="label-style mb-4 block">Legal</span>
+            <div className="flex flex-col gap-3">
+              <Link to="/datenschutz" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Datenschutz</Link>
+              <Link to="/impressum" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Impressum</Link>
+              <Link to="/join/start" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Künstler werden ↗</Link>
+            </div>
+          </div>
+        </div>
+        <div className="container mt-12 pt-8 border-t border-foreground/10">
+          <p className="label-style">© {new Date().getFullYear()} Berlintina. Alle Rechte vorbehalten.</p>
+        </div>
+      </footer>
     </div>
   );
 };
@@ -357,8 +385,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     target: heroRef,
     offset: ['start start', 'end start'],
   });
-  const sliderTrackRef = useRef<HTMLDivElement>(null);
-  const sliderXVal = useMotionValue(0);
+  const rawX = useTransform(heroScroll, [0, 1], [0, -800]);
+  const sliderXVal = useSpring(rawX, { stiffness: 100, damping: 30 });
 
   const recommendations = useMemo(() => {
     if (!rawRecommendations.length || !shows.length) return [];
@@ -435,30 +463,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     return defaultShows.filter((s) => s.category === activeCat);
   }, [defaultShows, activeCat]);
 
-  useEffect(() => {
-    const onScroll = () => {
-      const hero = heroRef.current;
-      if (!hero) return;
-      const vw = window.innerWidth;
-      const gap = 32; // 2rem at 16px base
-      const cardW = (vw - 2 * gap) / 3.1;
-      const N = filteredShows.length;
-      const trackW = N * cardW + (N - 1) * gap;
-      const maxShift = Math.max(0, trackW - vw);
-      const heroTop = hero.offsetTop;
-      const heroH = hero.offsetHeight;
-      const scrolled = window.scrollY - heroTop;
-      const progress = Math.max(0, Math.min(1, scrolled / (heroH * 0.8)));
-      sliderXVal.set(-progress * maxShift);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
-  }, [filteredShows.length]);
+  // slider scroll is handled by useSpring + useTransform above
 
   const catPills = locale === 'de'
     ? [
@@ -518,108 +523,81 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       }}
     />
     {/* ── Hero ── */}
-    <section
-      ref={heroRef}
-      className="relative overflow-hidden pb-0 min-h-screen flex flex-col"
-      style={{ backgroundColor: '#F4F4F1' }}
-    >
-      {/* Subtle noise texture */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+    <section ref={heroRef} className="relative bg-background">
+      <div className="flex flex-col pt-20">
+        {/* Text */}
+        <div className="container grid grid-cols-12 gap-8 items-end pt-8 md:pt-16 pb-8">
+          <motion.div className="col-span-12 md:col-span-7" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}>
+            <motion.span className="label-style mb-4 block" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
+              Boutique Artist Agency — Berlin
+            </motion.span>
+            <h1 className="heading-xl text-foreground leading-[0.9]">
+              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.2 }}>
+                {locale === 'de' ? 'Shows die' : 'Shows that'}
+              </motion.span>
+              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.35 }}>
+                {locale === 'de' ? 'Köpfe drehen' : 'turn heads'}
+              </motion.span>
+              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.5 }}>
+                {locale === 'de' ? 'und Herzen' : 'and conquer'}
+              </motion.span>
+              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.65 }}>
+                {locale === 'de' ? 'gewinnen' : 'hearts'}<span className="text-accent">.</span>
+              </motion.span>
+            </h1>
+          </motion.div>
 
-      <div className="relative z-10 flex-1 flex flex-col">
-        {/* ── Top: H1 left + description right — both bottom-aligned ── */}
-        <div className="flex items-end justify-between px-[5rem] pt-8 pb-10" style={{ gap: '5rem' }}>
-
-          {/* Left: Big shimmer H1 */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(3rem,6.5vw,7rem)] font-bold leading-[0.93] flex-shrink-0 font-display"
-            style={{ color: '#141313', letterSpacing: '-0.04em', width: '90ch', maxWidth: '55vw' }}
-          >
-            {locale === 'de'
-              ? <>Shows die<br />Köpfe drehen<br />und Herzen<br />gewinnen.</>
-              : <>Shows that<br />turn heads<br />and conquer<br />hearts.</>}
-          </motion.h1>
-
-          {/* Right: Description + CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col gap-6 pb-1"
-          >
-            <p className="text-base text-charcoal leading-relaxed font-light">
+          <motion.div className="col-span-12 md:col-span-5 pb-4" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.6 }}>
+            <p className="body-text mb-6">
               {locale === 'de'
                 ? 'Berlintina ist eine Boutique Artist Agentur — spezialisiert auf Live Show Acts für Events, Galas und private Anlässe.'
                 : 'Berlintina is a boutique artist agency — specialised in live show acts for events, galas and private occasions.'}
             </p>
-            <Link
-              to="/catalog"
-              className="inline-flex items-center gap-2 bg-charcoal text-white rounded-full hover:opacity-85 transition w-fit active:translate-x-[2px] active:translate-y-[2px]"
-              style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.95rem', padding: '1rem 2rem' }}
-            >
-              {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-wrap gap-4">
+              <Link to="/catalog" className="btn-primary">{locale === 'de' ? 'Shows entdecken' : 'Explore shows'}</Link>
+              <Link to="/join" className="btn-primary" style={{ borderColor: 'rgba(20,19,19,0.3)', color: '#666' }}>
+                {locale === 'de' ? 'Für Künstler ↗' : 'Join as artist ↗'}
+              </Link>
+            </div>
           </motion.div>
         </div>
 
-        {/* ── Show slider: scroll-driven, full width ── */}
-        <div className="mt-auto overflow-hidden">
-          {showsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="flex items-center gap-1.5">
-                {[0, 160, 320].map((d) => (
-                  <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
-                ))}
-              </div>
-            </div>
-          ) : filteredShows.length > 0 ? (
-            <motion.div
-              ref={sliderTrackRef}
-              style={{ x: sliderXVal, gap: '2rem' }}
-              className="flex will-change-transform"
-            >
-              {filteredShows.map((show) => (
-                <div
-                  key={show.id}
-                  onClick={() => navigate(`/show/${show.slug}`)}
-                  className="cursor-pointer group flex-shrink-0"
-                  style={{ width: 'calc((100vw - 4rem) / 3.1)' }}
-                >
-                  <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-surface-alt relative">
-                    <img
-                      src={show.photoUrls?.[0] || ''}
-                      alt={show.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    {/* Hover liquidglass overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
-                      <div style={{
-                        background: 'rgba(255,255,255,0.18)',
-                        backdropFilter: 'blur(18px) saturate(1.6)',
-                        WebkitBackdropFilter: 'blur(18px) saturate(1.6)',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.4)',
-                        borderRadius: '1rem',
-                        padding: '5rem',
-                        textAlign: 'center',
-                      }}>
-                        <p style={{ fontFamily: 'var(--font-display, inherit)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.35)', lineHeight: 1.25, marginBottom: '0.35rem' }}>{show.title}</p>
-                        <p style={{ fontFamily: 'var(--font-display, inherit)', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>{show.category}</p>
-                      </div>
-                    </div>
+        {/* Scroll slider */}
+        <div className="overflow-hidden mt-[15vh] pb-0">
+          <motion.div className="flex gap-6 pl-8 md:pl-16 w-full" style={{ x: sliderXVal }}>
+            {(showsLoading ? [] : filteredShows).map((show, i) => (
+              <motion.div
+                key={show.id}
+                className="group shrink-0 w-[70vw] md:w-[28vw] cursor-pointer"
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.8 + i * 0.08 }}
+                onClick={() => navigate(`/show/${show.slug}`)}
+              >
+                <div className="relative overflow-hidden border border-foreground/10">
+                  <img
+                    src={show.photoUrls?.[0] || ''}
+                    alt={show.title}
+                    className="w-full aspect-[3/4] object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <span className="absolute top-4 left-4 label-style bg-background/80 px-3 py-1 backdrop-blur-sm">
+                    {show.category}
+                  </span>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                    <h3 className="font-display text-xl font-bold text-foreground">{show.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{show.artistName}</p>
                   </div>
                 </div>
-              ))}
-            </motion.div>
-          ) : null}
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
 
-        {/* ── Under-slider text ── */}
-        <div className="px-[5rem] py-12">
-          <p className="text-base text-charcoal leading-relaxed max-w-[75ch]">
+        {/* Under-slider text */}
+        <div className="container py-12 md:py-16">
+          <p className="body-text text-lg">
             Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben an die Kraft von Live-Performances und echten Emotionen. Bei uns findest du fertige Shows und ausgewählte Künstler für dein Event. Auf Wunsch gestalten und realisieren wir auch individuelle Performances – mit allem, was dazugehört: Konzept, Kostüm und Maske.
           </p>
         </div>
@@ -2087,7 +2065,7 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   }, [hasMore, loading]);
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-12 sm:py-20">
+    <div className="pt-16 md:pt-20">
       <PageSEO
         title={locale === 'de' ? 'Alle Showacts & Künstler | Berlintina Berlin' : 'All Show Acts & Artists | Berlintina Berlin'}
         description={locale === 'de'
@@ -2101,123 +2079,138 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           description: 'Persönlich kuratierte Showacts und Künstler aus Berlin',
         }}
       />
-      {error && (
-        <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
-          {error}
-        </div>
-      )}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 sm:gap-12 mb-12 sm:mb-20">
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-2 tracking-tight">
-            {locale === 'de' ? 'Berliner Showacts — persönlich kuratiert' : 'Berlin Show Acts — personally curated'}
-          </h1>
-          <p className="text-warm-muted text-base mb-6 sm:mb-8">
-            {locale === 'de' ? 'Jeder Act wurde von Valiantsina persönlich ausgewählt.' : 'Every act was personally selected by Valiantsina.'}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {(['ALL', ...Object.values(Category)] as const).map(cat => (
-              <button key={cat} onClick={() => setFilter(cat)} className={`px-6 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all shadow-sm ${filter === cat ? 'bg-terracotta text-white' : 'bg-surface-alt text-warm-muted hover:text-charcoal'}`}>{cat}</button>
-            ))}
-          </div>
-        </div>
-        <input
-          type="text"
-          placeholder={locale === 'de' ? 'Künstler oder Show suchen…' : 'Search artist or show…'}
-          className="w-full md:w-96 px-6 py-4 rounded-xl bg-surface border border-warm-border focus:border-terracotta focus:outline-none transition text-sm font-semibold shadow-sm"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
 
-      {/* Grid area — only this part changes on filter/search */}
-      {loading && shows.length === 0 ? (
-        /* ── Search / loading animation ── */
-        <div className="py-24 flex flex-col items-center gap-6">
-          <div className="relative w-16 h-16">
-            {/* Spinning ring */}
-            <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '1.4s' }} viewBox="0 0 64 64" fill="none">
-              <circle cx="32" cy="32" r="28" stroke="#e8eaef" strokeWidth="4" />
-              <path d="M32 4 A28 28 0 0 1 60 32" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" />
-            </svg>
-            {/* Search icon in center */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-            </div>
+      <div className="flex flex-col md:flex-row min-h-screen">
+        {/* ── Left sidebar ── */}
+        <div className="md:w-[340px] md:flex-shrink-0 md:sticky md:top-[80px] md:h-[calc(100vh-80px)] md:overflow-y-auto border-b md:border-b-0 md:border-r border-border p-8 flex flex-col gap-8">
+          <div>
+            <span className="label-style mb-3 block">{locale === 'de' ? 'Alle Künstler' : 'All Artists'}</span>
+            <h1 className="heading-lg text-foreground">Shows<span className="text-accent">.</span></h1>
+            <p className="body-text text-sm mt-4">
+              {locale === 'de' ? 'Jeder Act wurde von Valiantsina persönlich ausgewählt.' : 'Every act was personally selected by Valiantsina.'}
+            </p>
           </div>
-          <p className="text-sm font-medium text-warm-muted tracking-wide">
-            {locale === 'de' ? 'Suche läuft…' : 'Searching…'}
-          </p>
-          {/* Skeleton cards */}
-          <div className="w-full masonry-col-lg mt-2">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="masonry-col-item rounded-2xl overflow-hidden bg-surface border border-warm-border">
-                <div className="aspect-[3/4] bg-surface-alt animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
-                <div className="p-4 space-y-2">
-                  <div className="h-3 bg-surface-alt rounded-full animate-pulse w-3/4" style={{ animationDelay: `${i * 80 + 60}ms` }} />
-                  <div className="h-2.5 bg-surface-alt rounded-full animate-pulse w-1/2" style={{ animationDelay: `${i * 80 + 120}ms` }} />
-                </div>
-              </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder={locale === 'de' ? 'Suchen…' : 'Search…'}
+              className="w-full pl-10 pr-4 py-3 border border-border bg-background text-foreground text-sm focus:outline-none focus:border-foreground transition placeholder:text-muted-foreground"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Filter pills */}
+          <div className="flex flex-wrap gap-2">
+            {(['ALL', ...Object.values(Category)] as const).map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-2 text-xs font-mono-ui uppercase tracking-wider border transition-all ${
+                  filter === cat
+                    ? 'border-accent bg-accent text-accent-foreground'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground'
+                }`}
+              >
+                {cat}
+              </button>
             ))}
           </div>
-        </div>
-      ) : !loading && !error && shows.length === 0 ? (
-        <div className="py-24 text-center">
-          <p className="text-warm-muted font-medium text-lg mb-4">{locale === 'de' ? 'Keine Shows gefunden.' : 'No shows found.'}</p>
-          <p className="text-warm-faint text-sm">{locale === 'de' ? 'Versuche andere Filter oder suche nach etwas anderem.' : 'Try different filters or search for something else.'}</p>
-        </div>
-      ) : (
-        <>
-          <div className="masonry-grid">
-            {shows.map(show => (
-              <div key={show.id} className="masonry-item">
-                <ShowCard show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} />
-              </div>
-            ))}
-          </div>
-          {/* Infinite scroll sentinel */}
-          <div ref={sentinelRef} className="h-16" />
-          {loading && (
-            <div className="py-8 text-center text-warm-faint text-sm font-medium">
-              {locale === 'de' ? 'Lade…' : 'Loading…'}
+
+          {/* Stats */}
+          {!loading && (
+            <div className="border-t border-border pt-6">
+              <p className="label-style">{totalCount} {locale === 'de' ? 'Shows gefunden' : 'shows found'}</p>
             </div>
           )}
-        </>
-      )}
 
-      {/* ── Weitere Acts auf Anfrage — Slider style ── */}
-      <section className="mt-20 relative w-full overflow-hidden" style={{ background: '#0d0d1a' }}>
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-14 sm:py-20">
-          <p className="text-white/30 text-xs font-semibold tracking-[0.2em] uppercase mb-6">
-            berlintina<span className="text-terracotta">.</span>
-          </p>
-          <h2 className="text-4xl sm:text-5xl md:text-[3.5rem] font-semibold tracking-[-0.04em] leading-[1.05] mb-3 gradient-text-static">
-            {locale === 'de' ? 'Weitere Acts auf Anfrage.' : 'More Acts on Request.'}
-          </h2>
-          <p className="text-white/40 text-base mb-8 max-w-xl">
-            {locale === 'de'
-              ? 'Valiantsina hat Zugang zu 50+ weiteren Berliner Künstlern — einfach beschreiben, was ihr sucht.'
-              : "Valiantsina has access to 50+ more Berlin artists — just describe what you're looking for."}
-          </p>
-          <div className="flex flex-wrap gap-3">
+          {/* Custom CTA */}
+          <div className="mt-auto border border-border p-6">
+            <span className="label-style mb-3 block">{locale === 'de' ? 'Etwas Individuelles?' : 'Something Custom?'}</span>
+            <p className="text-sm text-muted-foreground mb-4">
+              {locale === 'de'
+                ? 'Valiantsina hat Zugang zu 50+ weiteren Berliner Künstlern.'
+                : 'Valiantsina has access to 50+ more Berlin artists.'}
+            </p>
             <a
               href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-charcoal text-sm font-bold rounded-2xl hover:opacity-90 transition shadow-lg"
+              className="btn-primary text-sm w-full text-center block"
             >
-              <span>berlintina<span className="text-terracotta">.</span></span>
-              {locale === 'de' ? 'anfragen →' : 'enquire →'}
+              {locale === 'de' ? 'Anfragen →' : 'Enquire →'}
             </a>
-            <Link
-              to="/join/start"
-              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white text-sm font-semibold rounded-2xl hover:bg-white/10 transition"
-            >
-              {locale === 'de' ? 'Künstler werden ↗' : 'Join as artist ↗'}
-            </Link>
           </div>
         </div>
-      </section>
+
+        {/* ── Right grid ── */}
+        <div className="flex-1 p-6 md:p-8">
+          {error && (
+            <div className="mb-8 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+              {error}
+            </div>
+          )}
+
+          {loading && shows.length === 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="border border-border overflow-hidden">
+                  <div className="aspect-[4/5] bg-muted animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-muted rounded animate-pulse w-3/4" style={{ animationDelay: `${i * 80 + 60}ms` }} />
+                    <div className="h-2.5 bg-muted rounded animate-pulse w-1/2" style={{ animationDelay: `${i * 80 + 120}ms` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !loading && !error && shows.length === 0 ? (
+            <div className="py-24 text-center">
+              <p className="text-muted-foreground font-medium text-lg mb-4">{locale === 'de' ? 'Keine Shows gefunden.' : 'No shows found.'}</p>
+              <p className="text-sm text-muted-foreground">{locale === 'de' ? 'Versuche andere Filter oder suche nach etwas anderem.' : 'Try different filters or search for something else.'}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {shows.map((show) => (
+                  <div
+                    key={show.id}
+                    className="group cursor-pointer border border-border overflow-hidden"
+                    onClick={() => navigate(`/show/${show.slug}`)}
+                  >
+                    <div className="relative overflow-hidden aspect-[4/5]">
+                      <img
+                        src={show.photoUrls?.[0] || ''}
+                        alt={show.title}
+                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <span className="absolute top-4 left-4 label-style bg-background/80 px-3 py-1 backdrop-blur-sm">
+                        {show.category}
+                      </span>
+                      <div className="absolute top-4 right-4 w-8 h-8 bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <ArrowRight className="w-4 h-4 text-foreground" />
+                      </div>
+                    </div>
+                    <div className="p-4 border-t border-border">
+                      <h3 className="font-display font-bold text-foreground">{show.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{show.artistName}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="h-16" />
+              {loading && (
+                <div className="py-8 text-center text-muted-foreground text-sm font-medium">
+                  {locale === 'de' ? 'Lade…' : 'Loading…'}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

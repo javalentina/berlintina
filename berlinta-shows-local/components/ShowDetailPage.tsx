@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Show } from '../types';
-import { ArrowLeft, Star, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Users, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 
 // Set your WhatsApp number here (international format, no +, no spaces: e.g. '4917612345678')
 const WHATSAPP_NUMBER = (typeof import.meta !== 'undefined' && (import.meta as Record<string, unknown>).env)
@@ -34,33 +34,25 @@ function getVideoEmbedUrl(url: string, preview15s = false): string | null {
 function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl border border-warm-border overflow-hidden">
+    <div className="border-b border-border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full px-5 py-4 flex items-center justify-between text-left font-medium text-sm text-charcoal hover:bg-surface-alt transition-colors"
+        className="w-full px-0 py-5 flex items-center justify-between text-left font-medium text-sm text-foreground hover:text-muted-foreground transition-colors"
       >
         <span>{question}</span>
         {open
-          ? <ChevronUp className="w-4 h-4 text-warm-muted flex-shrink-0 ml-3" />
-          : <ChevronDown className="w-4 h-4 text-warm-muted flex-shrink-0 ml-3" />}
+          ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />
+          : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />}
       </button>
       {open && (
-        <div className="px-5 pb-4 pt-3 text-sm text-warm-muted whitespace-pre-line border-t border-warm-border bg-surface-alt">
+        <div className="pb-5 pt-1 text-sm text-muted-foreground whitespace-pre-line">
           {answer}
         </div>
       )}
     </div>
   );
 }
-
-/** Per-category shimmer accent color for the show title */
-const CATEGORY_SHIMMER: Record<string, string> = {
-  CLASSICAL: '#9333ea',   // violet — elegant
-  BAND:      '#6366f1',   // indigo — electric
-  ACROBATICS:'#16a34a',   // green  — energetic
-  DANCE:     '#db2777',   // pink   — expressive
-};
 
 const priceRangeFromShow = (show: Show): string => {
   if (show.priceType === 'POA') return '€€€';
@@ -90,13 +82,12 @@ export const ShowDetailPage: React.FC<Props> = ({
   onContactModeChange, onContactFormChange, onContactSubmit,
 }) => {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const photos = show.photoUrls || [];
-  const heroImage = show.photoUrls?.[0] || '';
   const videos = show.videoUrls || [];
   const videoEmbeds = videos.map(u => getVideoEmbedUrl(u, false)).filter((u): u is string => !!u);
   const videoPreviewUrl = videoEmbeds[0] ? getVideoEmbedUrl(videos[0], true) : null;
 
-  const priceRange = priceRangeFromShow(show);
   const priceLabel = show.priceType === 'POA'
     ? (locale === 'de' ? 'Auf Anfrage' : 'On request')
     : show.priceMin != null
@@ -135,7 +126,7 @@ export const ShowDetailPage: React.FC<Props> = ({
 
   const t = locale === 'de'
     ? {
-        back: 'Zurück', cta: 'Jetzt anfragen', book: 'Show anfragen',
+        back: '← Zurück zu Shows', cta: 'Jetzt anfragen', book: 'Show anfragen',
         duration: 'Dauer', cast: 'Besetzung', idealFor: 'Ideal für',
         outdoor: 'Outdoor', travel: 'Reise', languages: 'Sprache',
         about: 'Über die Show', whyItWorks: 'Warum es funktioniert',
@@ -160,9 +151,12 @@ export const ShowDetailPage: React.FC<Props> = ({
         steps: ['Anfrage senden (2 Min)', 'Antwort innerhalb von 24 Stunden', 'Direkt mit dem Künstler buchen — 0% Provision'],
         aboutArtist: 'Über die Künstler',
         artistBio: show.salesPitchText,
+        highlights: 'Highlights',
+        price: 'Preis',
+        kategorie: 'Kategorie',
       }
     : {
-        back: 'Back', cta: 'Request availability', book: 'Book This Show',
+        back: '← Back to Shows', cta: 'Request availability', book: 'Book This Show',
         duration: 'Duration', cast: 'Cast', idealFor: 'Best for',
         outdoor: 'Outdoor', travel: 'Travel', languages: 'Language',
         about: 'About this show', whyItWorks: 'Why it works',
@@ -187,6 +181,9 @@ export const ShowDetailPage: React.FC<Props> = ({
         steps: ['Send request (2 min)', 'Reply within 24 hours', 'Book directly with the artist — 0% commission'],
         aboutArtist: 'About the artist',
         artistBio: show.salesPitchText,
+        highlights: 'Highlights',
+        price: 'Price',
+        kategorie: 'Category',
       };
 
   const faqItems = [
@@ -198,169 +195,66 @@ export const ShowDetailPage: React.FC<Props> = ({
     show.faqTravel    && { q: t.faqTravel,   a: show.faqTravel },
   ].filter((x): x is { q: string; a: string } => !!x);
 
+  const activePhoto = photos[activePhotoIdx] || photos[0];
+
   return (
-    <div className="min-h-screen bg-parchment pb-28">
+    <div className="min-h-screen bg-background pb-28">
 
       {/* ── Back link ── */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-4">
+      <div className="container pt-20 sm:pt-24 pb-6">
         <Link
           to="/catalog"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-warm-muted hover:text-charcoal transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors no-underline"
         >
           <ArrowLeft className="w-4 h-4" />
           {t.back}
         </Link>
       </div>
 
-      {/* ── Hero image ── */}
-      {heroImage && (
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-10">
-          <div className="relative rounded-3xl overflow-hidden">
-            <img
-              src={heroImage}
-              alt={show.title}
-              className="w-full aspect-video sm:aspect-[21/9] md:aspect-[16/7] object-cover"
-            />
-            {/* Category badge */}
-            <div className="absolute bottom-4 left-4 flex gap-2">
-              <span className="bg-glass text-charcoal text-[11px] font-semibold tracking-wider uppercase px-3 py-1.5 rounded-full">
-                {show.category}
-              </span>
-              {show.durationMinutes && (
-                <span className="bg-glass text-charcoal text-[11px] font-semibold px-3 py-1.5 rounded-full">
-                  {show.durationMinutes} min
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Main 12-col grid ── */}
+      <div className="container">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
 
-      {/* ── Main content: 2-col ── */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] gap-10 lg:gap-14 items-start">
-
-          {/* ── LEFT: title + content ── */}
-          <div className="min-w-0">
-
-            {/* Title */}
-            <h1 className="text-[1.75rem] sm:text-5xl md:text-[4.5rem] font-semibold tracking-[-0.04em] leading-[1.05] mb-3">
-              <span
-                className="shimmer-text"
-                style={{ '--shimmer-accent': CATEGORY_SHIMMER[show.category] ?? '#6366f1' } as React.CSSProperties}
+          {/* ── LEFT: Image col (7 cols) ── */}
+          <div className="lg:col-span-7">
+            {/* Main image */}
+            {activePhoto && (
+              <div
+                className="relative overflow-hidden border border-border cursor-pointer mb-4"
+                onClick={() => setLightboxIndex(activePhotoIdx)}
               >
-                {show.title}
-              </span>
-            </h1>
-            <p className="text-base text-warm-muted mb-8">
-              {locale === 'de' ? 'von' : 'by'} <span className="font-medium text-charcoal">{show.artistName}</span>
-            </p>
-
-            {/* Stats pills */}
-            <div className="flex flex-wrap gap-2 mb-10">
-              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
-                <Star className="w-3.5 h-3.5 fill-charcoal text-charcoal" /> 5
-              </span>
-              {show.durationMinutes && (
-                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
-                  <Clock className="w-3.5 h-3.5" /> {show.durationMinutes} min
-                </span>
-              )}
-              {show.cast && (
-                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
-                  <Users className="w-3.5 h-3.5" /> {show.cast}
-                </span>
-              )}
-              <span className="inline-flex items-center px-4 py-2 rounded-full bg-surface-alt text-sm font-medium text-charcoal border border-warm-border">
-                {priceRange}
-              </span>
-              {priceLabel && (
-                <span className="inline-flex items-center px-4 py-2 rounded-full bg-terracotta-light text-sm font-semibold text-terracotta border border-terracotta/20">
-                  {priceLabel}
-                </span>
-              )}
-            </div>
-
-            {/* About this show */}
-            {show.shortDescriptionFacts && (
-              <section className="mb-10">
-                <h2 className="text-xl font-semibold text-charcoal mb-3">{t.about}</h2>
-                <p className="text-base text-charcoal leading-relaxed whitespace-pre-line">
-                  {show.shortDescriptionFacts}
-                </p>
-              </section>
+                <img
+                  src={activePhoto}
+                  alt={show.title}
+                  className="w-full aspect-[4/3] object-cover"
+                />
+              </div>
             )}
 
-            {/* Why it works / vibeTags checklist */}
-            {(show.vibeTags?.length ?? 0) > 0 && (
-              <section className="mb-10">
-                <h2 className="text-xl font-semibold text-charcoal mb-4">
-                  {locale === 'de' ? 'Was ist enthalten' : "What's Included"}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {show.vibeTags.slice(0, 6).map((tag, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-terracotta flex-shrink-0" />
-                      <span className="text-sm text-charcoal">{tag}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Ideal for / audience tags */}
-            {(show.idealFor || (show.vibeTags?.length ?? 0) > 0) && (
-              <section className="mb-10">
-                <h2 className="text-xl font-semibold text-charcoal mb-3">{t.idealFor}</h2>
-                <div className="flex flex-wrap gap-2">
-                  {(show.idealFor ? [show.idealFor] : show.vibeTags?.slice(0, 4) ?? []).map((tag, i) => (
-                    <span key={i} className="text-sm text-warm-muted bg-surface-alt px-4 py-2 rounded-full border border-warm-border">
-                      {tag}
-                    </span>
-                  ))}
-                  {show.audienceRange && (
-                    <span className="text-sm text-warm-muted bg-surface-alt px-4 py-2 rounded-full border border-warm-border">
-                      {show.audienceRange}
-                    </span>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* Artist bio */}
-            {show.salesPitchText && (
-              <section className="mb-10">
-                <h2 className="text-xl font-semibold text-charcoal mb-3">{t.aboutArtist}</h2>
-                <p className="text-base text-charcoal leading-relaxed whitespace-pre-line italic border-l-2 border-warm-border pl-4">
-                  {show.salesPitchText}
-                </p>
-              </section>
-            )}
-
-            {/* Gallery — no heading */}
+            {/* Thumbnail row */}
             {photos.length > 1 && (
-              <section className="mb-10">
-                <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
-                  <div className="flex gap-3 pb-2 px-4 sm:px-0" style={{ width: 'max-content' }}>
-                    {photos.map((url, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setLightboxIndex(i)}
-                        className="flex-shrink-0 w-56 sm:w-72 aspect-[4/3] overflow-hidden rounded-2xl focus:outline-none hover:scale-[1.02] transition-transform"
-                      >
-                        <img src={url} alt={`${show.title} — ${i + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </section>
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                {photos.map((url, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActivePhotoIdx(i)}
+                    className={`flex-shrink-0 w-20 h-16 overflow-hidden border transition-all ${
+                      i === activePhotoIdx
+                        ? 'border-accent scale-105'
+                        : 'border-border hover:border-foreground/30'
+                    }`}
+                  >
+                    <img src={url} alt={`${show.title} — ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
 
-            {/* Video — no heading */}
+            {/* Video */}
             {videoPreviewUrl && (
-              <section id="video" className="mb-10">
-                <div className="relative w-full aspect-video overflow-hidden rounded-2xl shadow-soft">
+              <div className="mt-8">
+                <div className="relative w-full aspect-video overflow-hidden border border-border">
                   <iframe
                     src={videoPreviewUrl}
                     className="absolute inset-0 w-full h-full"
@@ -370,7 +264,7 @@ export const ShowDetailPage: React.FC<Props> = ({
                   />
                 </div>
                 {videoEmbeds.length > 1 && (
-                  <div className="relative w-full aspect-video overflow-hidden rounded-2xl shadow-soft mt-4">
+                  <div className="relative w-full aspect-video overflow-hidden border border-border mt-4">
                     <iframe
                       src={videoEmbeds[1]}
                       className="absolute inset-0 w-full h-full"
@@ -380,124 +274,184 @@ export const ShowDetailPage: React.FC<Props> = ({
                     />
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* About the show */}
+            {show.shortDescriptionFacts && (
+              <section className="mt-10">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.about}</h2>
+                <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {show.shortDescriptionFacts}
+                </p>
+              </section>
+            )}
+
+            {/* Highlights / vibeTags */}
+            {(show.vibeTags?.length ?? 0) > 0 && (
+              <section className="mt-10">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.highlights}</h2>
+                <ul className="space-y-3">
+                  {show.vibeTags.slice(0, 6).map((tag, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0 mt-2" />
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Artist bio */}
+            {show.salesPitchText && (
+              <section className="mt-10">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.aboutArtist}</h2>
+                <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {show.salesPitchText}
+                </p>
               </section>
             )}
 
             {/* Testimonials */}
             {(show.testimonials?.length ?? 0) > 0 && (
-              <section className="mb-10">
-                <h2 className="text-xl font-semibold text-charcoal mb-4">
+              <section className="mt-10">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">
                   {locale === 'de' ? 'Stimmen' : 'What clients say'}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {show.testimonials!.map((test, i) => (
-                    <blockquote key={i} className="p-5 rounded-2xl bg-surface border border-warm-border shadow-soft">
-                      <p className="text-sm italic leading-relaxed text-charcoal mb-3">"{test.quote}"</p>
-                      <footer className="text-xs font-semibold text-warm-muted not-italic">— {test.name}</footer>
+                    <blockquote key={i} className="p-5 border border-border bg-card">
+                      <p className="text-sm italic leading-relaxed text-muted-foreground mb-3">"{test.quote}"</p>
+                      <footer className="text-xs font-semibold text-foreground not-italic">— {test.name}</footer>
                     </blockquote>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* FAQ — only shown when at least one answer exists */}
+            {/* FAQ */}
             {faqItems.length > 0 && (
-              <section id="faq" className="mb-10">
-                <h2 className="text-xl font-semibold text-charcoal mb-4">{t.faq}</h2>
-                <div className="space-y-2">
+              <section className="mt-10">
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.faq}</h2>
+                <div>
                   {faqItems.map((item, i) => (
                     <FAQAccordionItem key={i} question={item.q} answer={item.a} />
                   ))}
                 </div>
               </section>
             )}
-
           </div>
 
-          {/* ── RIGHT sidebar ── */}
-          <div className="lg:sticky lg:top-24">
-            <div className="bg-surface rounded-3xl border border-warm-border shadow-soft p-6">
+          {/* ── RIGHT: Info col (5 cols) ── */}
+          <div className="lg:col-span-5 lg:sticky lg:top-24">
 
-              <p className="text-xs font-bold uppercase tracking-widest text-terracotta mb-1">{t.interested}</p>
-              <h3 className="text-lg font-semibold text-charcoal tracking-tight leading-snug mb-1">
-                {show.title}
-              </h3>
-              <p className="text-sm text-warm-muted mb-5">{t.sidebarSub}</p>
+            {/* Category label */}
+            <span className="label-style text-accent mb-3 block">{show.category}</span>
 
-              {/* Price */}
-              {priceLabel && (
-                <div className="mb-5 px-4 py-3 bg-surface-alt rounded-2xl border border-warm-border">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-warm-muted mb-0.5">
-                    {locale === 'de' ? 'Preis' : 'Price'}
+            {/* Title */}
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[0.95] mb-4">
+              {show.title}
+            </h1>
+
+            {/* Artist */}
+            <p className="text-base text-muted-foreground mb-8">
+              {locale === 'de' ? 'von' : 'by'} <span className="font-medium text-foreground">{show.artistName}</span>
+            </p>
+
+            {/* Meta row */}
+            <div className="border-t border-b border-border py-5 flex flex-wrap gap-6 mb-8">
+              {show.durationMinutes && (
+                <div>
+                  <p className="label-style mb-1">{t.duration}</p>
+                  <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> {show.durationMinutes} min
                   </p>
-                  <p className="text-base font-semibold text-charcoal">{priceLabel}</p>
                 </div>
               )}
-
-              {/* Quick facts */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {show.durationMinutes && (
-                  <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.duration}</p>
-                    <p className="text-sm font-semibold text-charcoal">{show.durationMinutes} min</p>
-                  </div>
-                )}
-                {(show.languageOptions || []).length > 0 && (
-                  <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.languages}</p>
-                    <p className="text-sm font-semibold text-charcoal">{(show.languageOptions || []).join(', ')}</p>
-                  </div>
-                )}
-                <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.outdoor}</p>
-                  <p className="text-sm font-semibold text-charcoal">{show.faqOutdoor || t.onRequest}</p>
+              <div>
+                <p className="label-style mb-1">{t.kategorie}</p>
+                <p className="text-sm font-medium text-foreground">{show.category}</p>
+              </div>
+              {show.cast && (
+                <div>
+                  <p className="label-style mb-1">{t.cast}</p>
+                  <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" /> {show.cast}
+                  </p>
                 </div>
-                <div className="px-3 py-2.5 bg-surface-alt rounded-xl border border-warm-border">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-warm-faint mb-0.5">{t.travel}</p>
-                  <p className="text-sm font-semibold text-charcoal">{show.faqTravel || t.onRequest}</p>
+              )}
+              {(show.languageOptions || []).length > 0 && (
+                <div>
+                  <p className="label-style mb-1">{t.languages}</p>
+                  <p className="text-sm font-medium text-foreground">{(show.languageOptions || []).join(', ')}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Price */}
+            {priceLabel && (
+              <div className="mb-8 p-5 border border-border">
+                <p className="label-style mb-1">{t.price}</p>
+                <p className="font-display text-2xl font-bold text-foreground">{priceLabel}</p>
+              </div>
+            )}
+
+            {/* CTA */}
+            <button
+              onClick={openContact}
+              className="w-full bg-accent text-accent-foreground font-semibold rounded-full px-8 py-3.5 hover:opacity-90 transition-opacity mb-4"
+            >
+              {t.requestQuote}
+            </button>
+
+            {waLink(show.title, locale) && (
+              <a
+                href={waLink(show.title, locale)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 mb-5 no-underline"
+              >
+                <WhatsAppIcon />
+                {locale === 'de' ? 'Per WhatsApp anfragen' : 'Ask via WhatsApp'}
+              </a>
+            )}
+
+            <p className="text-xs text-center text-muted-foreground leading-snug">{t.trustLine}</p>
+
+            {/* Ideal for / audience tags */}
+            {(show.idealFor || (show.vibeTags?.length ?? 0) > 0) && (
+              <div className="mt-8 pt-6 border-t border-border">
+                <p className="label-style mb-3">{t.idealFor}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(show.idealFor ? [show.idealFor] : show.vibeTags?.slice(0, 4) ?? []).map((tag, i) => (
+                    <span key={i} className="text-xs text-muted-foreground border border-border px-3 py-1.5">
+                      {tag}
+                    </span>
+                  ))}
+                  {show.audienceRange && (
+                    <span className="text-xs text-muted-foreground border border-border px-3 py-1.5">
+                      {show.audienceRange}
+                    </span>
+                  )}
                 </div>
               </div>
+            )}
 
-              {/* CTA */}
-              <button
-                onClick={openContact}
-                className="w-full py-3.5 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:bg-charcoal/90 transition-colors shadow-soft mb-3"
-              >
-                {t.requestQuote}
-              </button>
-
-              {waLink(show.title, locale) && (
-                <a
-                  href={waLink(show.title, locale)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 border border-warm-border rounded-2xl text-sm font-medium text-charcoal hover:bg-surface-alt transition-colors flex items-center justify-center gap-2 mb-4"
-                >
-                  <WhatsAppIcon />
-                  {locale === 'de' ? 'Per WhatsApp anfragen' : 'Ask via WhatsApp'}
-                </a>
-              )}
-
-              <p className="text-[11px] text-center text-warm-faint leading-snug">{t.trustLine}</p>
-
-              {/* Vibe tags */}
-              {(show.vibeTags?.length ?? 0) > 0 && (
-                <div className="mt-5 pt-4 border-t border-warm-border">
-                  <div className="flex flex-wrap gap-1.5">
-                    {show.vibeTags.slice(0, 5).map((tag, i) => (
-                      <span key={i} className="text-[10px] text-warm-muted bg-surface-alt px-2.5 py-1 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Outdoor & Travel quick info */}
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="border border-border p-4">
+                <p className="label-style mb-1">{t.outdoor}</p>
+                <p className="text-sm font-medium text-foreground">{show.faqOutdoor || t.onRequest}</p>
+              </div>
+              <div className="border border-border p-4">
+                <p className="label-style mb-1">{t.travel}</p>
+                <p className="text-sm font-medium text-foreground">{show.faqTravel || t.onRequest}</p>
+              </div>
             </div>
           </div>
 
         </div>
       </div>
-
 
       {/* ── Lightbox ── */}
       {lightboxIndex !== null && (
@@ -506,7 +460,7 @@ export const ShowDetailPage: React.FC<Props> = ({
           onClick={() => setLightboxIndex(null)}
         >
           <button
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-2xl z-10"
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-white text-2xl z-10 hover:opacity-70 transition"
             onClick={() => setLightboxIndex(null)}
           >×</button>
           {photos.length > 1 && (
@@ -514,19 +468,19 @@ export const ShowDetailPage: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === 0 ? photos.length - 1 : i! - 1)); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white z-10 hover:opacity-70 transition"
               >←</button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === photos.length - 1 ? 0 : i! + 1)); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white z-10 hover:opacity-70 transition"
               >→</button>
             </>
           )}
           <img
             src={photos[lightboxIndex]}
             alt=""
-            className="max-w-full max-h-[90vh] object-contain rounded-2xl"
+            className="max-w-full max-h-[90vh] object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -539,34 +493,34 @@ export const ShowDetailPage: React.FC<Props> = ({
           onClick={() => onContactModeChange('options')}
         >
           <div
-            className="w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl"
+            className="w-full sm:max-w-md bg-background border border-border p-6 sm:p-8 shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
             {contactMode === 'form' && (
               <>
-                <div className="w-8 h-1 rounded-full bg-terracotta mb-5" />
-                <h3 className="text-xl font-semibold text-charcoal mb-1">{t.greetTitle}</h3>
-                <p className="text-sm text-warm-muted mb-5">{t.greetSub}</p>
+                <div className="w-8 h-1 bg-accent mb-5" />
+                <h3 className="font-display text-xl font-bold text-foreground mb-1">{t.greetTitle}</h3>
+                <p className="text-sm text-muted-foreground mb-5">{t.greetSub}</p>
                 {/* Steps */}
-                <div className="mb-6 p-4 rounded-2xl bg-surface-alt space-y-2.5">
+                <div className="mb-6 p-4 border border-border space-y-2.5">
                   {t.steps.map((step, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <span className="w-5 h-5 rounded-full bg-terracotta flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">{i + 1}</span>
-                      <span className="text-xs font-medium text-charcoal">{step}</span>
+                      <span className="w-5 h-5 rounded-full bg-accent flex items-center justify-center text-[10px] font-black text-accent-foreground flex-shrink-0">{i + 1}</span>
+                      <span className="text-xs font-medium text-foreground">{step}</span>
                     </div>
                   ))}
                 </div>
                 <form onSubmit={onContactSubmit} className="space-y-4">
                   {contactError && <p className="text-sm text-red-600 font-medium">{contactError}</p>}
-                  <input type="text" required placeholder={t.name} value={contactForm.name} onChange={(e) => onContactFormChange({ ...contactForm, name: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition" />
-                  <input type="email" required placeholder={t.email} value={contactForm.email} onChange={(e) => onContactFormChange({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition" />
-                  <input type="text" placeholder={t.eventDate} value={contactForm.eventDate} onChange={(e) => onContactFormChange({ ...contactForm, eventDate: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition" />
-                  <textarea placeholder={t.formPlaceholder} rows={3} value={contactForm.message} onChange={(e) => onContactFormChange({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 border border-warm-border rounded-2xl text-base text-charcoal bg-surface focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition resize-y" />
+                  <input type="text" required placeholder={t.name} value={contactForm.name} onChange={(e) => onContactFormChange({ ...contactForm, name: e.target.value })} className="w-full px-4 py-3 border border-border text-base text-foreground bg-background focus:outline-none focus:border-foreground transition" />
+                  <input type="email" required placeholder={t.email} value={contactForm.email} onChange={(e) => onContactFormChange({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 border border-border text-base text-foreground bg-background focus:outline-none focus:border-foreground transition" />
+                  <input type="text" placeholder={t.eventDate} value={contactForm.eventDate} onChange={(e) => onContactFormChange({ ...contactForm, eventDate: e.target.value })} className="w-full px-4 py-3 border border-border text-base text-foreground bg-background focus:outline-none focus:border-foreground transition" />
+                  <textarea placeholder={t.formPlaceholder} rows={3} value={contactForm.message} onChange={(e) => onContactFormChange({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 border border-border text-base text-foreground bg-background focus:outline-none focus:border-foreground transition resize-y" />
                   <div className="flex gap-3 pt-2">
-                    <button type="submit" disabled={contactSubmitting} className="flex-1 py-4 bg-charcoal text-white text-sm font-semibold rounded-2xl hover:bg-charcoal/90 disabled:opacity-50 transition">
+                    <button type="submit" disabled={contactSubmitting} className="flex-1 py-4 bg-accent text-accent-foreground text-sm font-semibold rounded-full hover:opacity-90 disabled:opacity-50 transition">
                       {contactSubmitting ? t.sending : t.sendRequest}
                     </button>
-                    <button type="button" onClick={() => onContactModeChange('options')} className="px-6 py-4 border border-warm-border text-warm-muted font-semibold text-sm rounded-2xl hover:bg-surface-alt transition">
+                    <button type="button" onClick={() => onContactModeChange('options')} className="px-6 py-4 border border-border text-muted-foreground font-semibold text-sm hover:bg-muted transition">
                       {t.cancel}
                     </button>
                   </div>
@@ -575,9 +529,9 @@ export const ShowDetailPage: React.FC<Props> = ({
             )}
             {contactMode === 'success' && (
               <div className="text-center py-6">
-                <div className="w-16 h-16 rounded-full bg-terracotta/10 flex items-center justify-center text-2xl font-semibold text-terracotta mx-auto mb-4">✓</div>
-                <p className="text-lg font-medium text-charcoal mb-4">{t.thanks}</p>
-                <button type="button" onClick={() => onContactModeChange('options')} className="text-sm font-semibold text-warm-muted">{t.another}</button>
+                <div className="w-16 h-16 border border-accent flex items-center justify-center text-2xl font-semibold text-accent mx-auto mb-4">✓</div>
+                <p className="text-lg font-medium text-foreground mb-4">{t.thanks}</p>
+                <button type="button" onClick={() => onContactModeChange('options')} className="text-sm font-semibold text-muted-foreground">{t.another}</button>
               </div>
             )}
           </div>
@@ -585,20 +539,20 @@ export const ShowDetailPage: React.FC<Props> = ({
       )}
 
       {/* ── Sticky footer ── */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-warm-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border">
+        <div className="container py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-2 h-2 rounded-full bg-terracotta flex-shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
             <div className="min-w-0">
-              <p className="font-semibold truncate text-sm text-charcoal">{show.title}</p>
-              <div className="flex items-center gap-2 text-xs text-warm-muted">
-                <span>{show.durationMinutes} min</span>
-                <span>·</span>
+              <p className="font-semibold truncate text-sm text-foreground">{show.title}</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {show.durationMinutes && <span>{show.durationMinutes} min</span>}
+                {show.durationMinutes && <span>·</span>}
                 <span>{show.category}</span>
                 {priceLabel && (
                   <>
                     <span>·</span>
-                    <span className="font-semibold text-terracotta">{priceLabel}</span>
+                    <span className="font-semibold text-accent">{priceLabel}</span>
                   </>
                 )}
               </div>
@@ -610,7 +564,7 @@ export const ShowDetailPage: React.FC<Props> = ({
                 href={waLink(show.title, locale)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 flex items-center justify-center border border-warm-border rounded-2xl text-green-600 hover:bg-surface-alt transition"
+                className="p-3 flex items-center justify-center border border-border text-green-600 hover:bg-muted transition no-underline"
                 title="WhatsApp"
               >
                 <WhatsAppIcon />
@@ -618,7 +572,7 @@ export const ShowDetailPage: React.FC<Props> = ({
             )}
             <button
               onClick={openContact}
-              className="px-4 sm:px-6 py-3 bg-charcoal text-white font-semibold text-sm rounded-2xl hover:bg-charcoal/90 transition"
+              className="px-4 sm:px-6 py-3 bg-accent text-accent-foreground font-semibold text-sm rounded-full hover:opacity-90 transition"
             >
               {t.cta}
             </button>
