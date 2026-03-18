@@ -15,25 +15,49 @@ function isGenericAnswer(text: string, locale: string): boolean {
   return generic.some(g => lower.includes(g));
 }
 
-/** Try to find answer in show text (FAQ, facts, pitch) */
+/** Try to find answer in show text (FAQ, facts, pitch) — matches any word of the query */
 function findInShowText(show: Show, question: string, locale: string): string | null {
-  const q = question.toLowerCase().trim();
+  const words = question.toLowerCase().trim().split(/\s+/).filter(w => w.length >= 2);
+  if (words.length === 0) return null;
+
+  // FAQ fields with keyword triggers — matched against any query word
   const faqMap: { keywords: string[]; value?: string }[] = [
-    { keywords: ['outdoor', 'draußen', 'außen', 'open air'], value: show.faqOutdoor },
-    { keywords: ['bühne', 'stage', 'fläche', 'space', 'größe', 'size'], value: show.faqStage },
-    { keywords: ['sprache', 'language', 'deutsch', 'englisch', 'english'], value: show.faqLanguage },
-    { keywords: ['anpassen', 'branding', 'theme', 'custom'], value: show.faqCustom },
-    { keywords: ['reise', 'travel', 'anreise', 'kommen'], value: show.faqTravel },
+    { keywords: ['outdoor', 'draußen', 'außen', 'open', 'air', 'außerhalb', 'outside'], value: show.faqOutdoor },
+    { keywords: ['bühne', 'stage', 'fläche', 'space', 'größe', 'size', 'platz', 'floor', 'bühnengröße'], value: show.faqStage },
+    { keywords: ['sprache', 'language', 'deutsch', 'englisch', 'english', 'french', 'sprachlos', 'wortlos'], value: show.faqLanguage },
+    { keywords: ['anpassen', 'branding', 'theme', 'custom', 'individuell', 'ändern', 'modify', 'logo'], value: show.faqCustom },
+    { keywords: ['reise', 'travel', 'anreise', 'kommen', 'fahren', 'come', 'reach', 'available', 'verfügbar'], value: show.faqTravel },
+    { keywords: ['aufbau', 'abbau', 'soundcheck', 'timing', 'dauer', 'duration', 'how', 'long', 'lange', 'zeit', 'time'], value: show.timingsShort },
+    { keywords: ['veranstalter', 'promoter', 'braucht', 'need', 'needs', 'requirement', 'technical', 'technisch', 'rider'], value: (show as Record<string, unknown>).faqPromoterNeeds as string | undefined },
   ];
+
   for (const { keywords, value } of faqMap) {
-    if (keywords.some(k => q.includes(k)) && value && !isGenericAnswer(value, locale)) {
+    if (words.some(w => keywords.some(k => k.includes(w) || w.includes(k))) && value && !isGenericAnswer(value, locale)) {
       return value;
     }
   }
-  const allText = [show.shortDescriptionFacts, show.salesPitchText].filter(Boolean).join(' ').toLowerCase();
-  if (allText && q.length >= 4 && allText.includes(q.slice(0, Math.min(10, q.length)))) {
-    return null;
+
+  // Full-text search: score each text block by how many query words it contains
+  const blocks: string[] = [
+    show.shortDescriptionFacts,
+    show.salesPitchText,
+    (show.vibeTags ?? []).join(', '),
+    (show.extractedTags ?? []).join(', '),
+  ].filter((t): t is string => !!t && t.trim().length > 0);
+
+  let best: { text: string; score: number } | null = null;
+  for (const text of blocks) {
+    const lower = text.toLowerCase();
+    const score = words.filter(w => lower.includes(w)).length;
+    if (score > 0 && (!best || score > best.score)) {
+      best = { text, score };
+    }
   }
+
+  if (best && !isGenericAnswer(best.text, locale)) {
+    return best.text.length > 320 ? best.text.slice(0, 320) + '…' : best.text;
+  }
+
   return null;
 }
 
@@ -91,28 +115,28 @@ const ShowQAWidget: React.FC<{ show: Show; locale: 'de' | 'en' }> = ({ show, loc
   };
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-6">
-      <h3 className="font-bold text-sm mb-3">{locale === 'de' ? 'Frage zur Show' : 'Ask about this show'}</h3>
+    <div className="bg-card border border-border p-6">
+      <h3 className="font-display font-bold text-sm text-foreground mb-3">{locale === 'de' ? 'Frage zur Show' : 'Ask about this show'}</h3>
       <input
         type="text"
         placeholder={locale === 'de' ? 'z. B. Outdoor möglich?' : 'e.g. Can they play outdoors?'}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm mb-3 focus:outline-none focus:border-black"
+        className="w-full px-4 py-3 border border-border bg-background text-foreground text-sm mb-3 focus:outline-none focus:border-foreground transition"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
       />
-      <button onClick={handleAsk} disabled={loading} className="w-full py-3 bg-[#f1f1ef] rounded-xl font-bold text-xs hover:bg-gray-200 transition disabled:opacity-50">
+      <button onClick={handleAsk} disabled={loading} className="w-full py-3 bg-secondary text-foreground font-bold text-xs hover:bg-muted transition disabled:opacity-50">
         {loading ? '…' : (locale === 'de' ? 'Fragen' : 'Ask')}
       </button>
       {answer && (
         <div className="mt-4">
-          <p className="text-sm text-gray-600 whitespace-pre-line">{answer}</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">{answer}</p>
           {needsEmail && !emailSent && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-500 mb-2">{locale === 'de' ? 'Deine E-Mail (für Rückmeldung):' : 'Your email (for reply):'}</p>
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground mb-2">{locale === 'de' ? 'Deine E-Mail (für Rückmeldung):' : 'Your email (for reply):'}</p>
               <div className="flex gap-2">
-                <input type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <button onClick={handleEmailSubmit} disabled={!email.includes('@')} className="px-4 py-2 bg-black text-white rounded-lg text-xs font-bold hover:opacity-90 disabled:opacity-50">
+                <input type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 px-3 py-2 border border-border bg-background text-foreground text-sm focus:outline-none focus:border-foreground transition" />
+                <button onClick={handleEmailSubmit} disabled={!email.includes('@')} className="px-4 py-2 bg-foreground text-background text-xs font-bold hover:opacity-90 disabled:opacity-50">
                   {locale === 'de' ? 'Senden' : 'Send'}
                 </button>
               </div>
@@ -214,7 +238,7 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   if (detailLoading || (showsLoading && !show)) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-32 text-center text-gray-500 font-medium">
+      <div className="max-w-6xl mx-auto px-4 py-32 text-center text-muted-foreground font-medium">
         {locale === 'de' ? 'Lade Show…' : 'Loading show…'}
       </div>
     );
@@ -223,13 +247,13 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     return (
       <div className="max-w-6xl mx-auto px-4 py-32 text-center">
         <p className="text-amber-600 font-medium mb-4">{detailError}</p>
-        <button onClick={() => navigate(-1)} className="px-6 py-2 bg-gray-100 rounded-xl font-medium hover:bg-gray-200">
+        <button onClick={() => navigate(-1)} className="px-6 py-2 bg-muted text-foreground font-medium hover:opacity-80 transition">
           Zurück
         </button>
       </div>
     );
   }
-  if (!show) return <div className="p-20 text-center font-bold text-gray-300">Show nicht gefunden.</div>;
+  if (!show) return <div className="p-20 text-center font-bold text-muted-foreground">Show nicht gefunden.</div>;
 
   const showDescription = (show.salesPitchText || show.shortDescriptionFacts || '').slice(0, 160);
   const priceMin = show.priceMin ?? show.priceMax;
