@@ -30,12 +30,38 @@
   --color-highlight: #FF8000;
 }
 
+/* ── Dark mode overrides ── */
+html.dark {
+  --color-background: #111110;
+  --color-foreground: #F7F5F2;
+  --color-card: #1C1B1A;
+  --color-card-foreground: #F7F5F2;
+  --color-primary: #F7F5F2;
+  --color-primary-foreground: #111110;
+  --color-secondary: #2A2928;
+  --color-secondary-foreground: #F7F5F2;
+  --color-muted: #2A2928;
+  --color-muted-foreground: #999999;
+  --color-accent: #FF8000;
+  --color-accent-foreground: #ffffff;
+  --color-border: rgba(247,245,242,0.1);
+  --color-input: rgba(247,245,242,0.1);
+  --color-parchment: #111110;
+  --color-surface: #1C1B1A;
+  --color-surface-alt: #2A2928;
+  --color-charcoal: #F7F5F2;
+  --color-warm-muted: #999999;
+  --color-warm-faint: #666666;
+  --color-warm-border: rgba(247,245,242,0.1);
+  --color-terracotta-light: rgba(255,128,0,0.12);
+}
+
 html {
   -webkit-tap-highlight-color: transparent;
-  background-color: #F7F5F2;
+  background-color: var(--color-background);
 }
 body {
-  background-color: #F7F5F2;
+  background-color: var(--color-background);
   font-family: var(--font-body, 'Hanken Grotesk', sans-serif);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
