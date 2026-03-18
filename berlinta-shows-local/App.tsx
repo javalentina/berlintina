@@ -199,8 +199,8 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal mb-6 sm:mb-8 tracking-tight">
           {locale === 'de' ? 'Hallo, ich bin Valiantsina.' : "Hi, I'm Valiantsina."}
         </h1>
-        <div className="max-w-3xl text-left space-y-6 text-warm-muted text-lg leading-relaxed font-medium">
-          <p className="text-charcoal font-semibold text-xl">
+        <div className="max-w-3xl text-left space-y-6 text-muted-foreground text-lg leading-relaxed">
+          <p className="text-foreground font-display font-bold text-xl">
             {locale === 'de' ? 'Berlintina bin ich — Valiantsina.' : 'Berlintina is me — Valiantsina.'}
           </p>
           <p>
@@ -218,14 +218,14 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               ? 'Jeder Künstler auf dieser Seite wurde von mir persönlich ausgewählt. Ich begleite Sie durch den gesamten Buchungsprozess — von der ersten Anfrage bis zur Unterschrift unter den Vertrag.'
               : 'Every artist on this site has been personally selected by me. I guide you through the entire booking process — from your first enquiry to the signed contract.'}
           </p>
-          <div className="bg-surface-alt p-8 rounded-3xl border border-warm-border mt-6">
-            <p className="text-charcoal font-semibold italic">
+          <div className="border-l-2 border-accent pl-6 mt-6">
+            <p className="text-foreground font-display font-bold italic">
               {locale === 'de' ? 'Berlintina ist kein Algorithmus. Berlintina bin ich.' : "Berlintina isn't an algorithm. Berlintina is me."}
             </p>
           </div>
-          <div className="pt-8 border-t border-warm-border mt-8">
+          <div className="pt-8 border-t border-foreground/10 mt-8">
             <p className="mt-4">
-              <Link to="/blog" className="text-sm font-semibold text-terracotta underline underline-offset-4 hover:opacity-70 transition">
+              <Link to="/blog" className="text-sm font-display font-bold text-accent underline underline-offset-4 hover:opacity-70 transition">
                 {locale === 'de' ? 'Zum Blog →' : 'Read the Blog →'}
               </Link>
             </p>
@@ -233,10 +233,10 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 justify-center items-center mb-32">
-        <Link to="/catalog" className="px-10 py-5 bg-terracotta text-white rounded-2xl font-semibold text-sm shadow-lg hover:bg-terracotta-dark transition">
+        <Link to="/catalog" className="btn-accent">
           {locale === 'de' ? 'Shows entdecken' : 'Discover Shows'}
         </Link>
-        <Link to="/join" className="px-10 py-5 border-2 border-warm-border rounded-2xl font-semibold text-sm text-warm-muted hover:text-charcoal hover:border-charcoal transition">
+        <Link to="/join" className="btn-primary">
           {locale === 'de' ? 'Künstler werden' : 'Become an Artist'}
         </Link>
       </div>
@@ -606,31 +606,31 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
     {/* ── AI Recommendations — full width ── */}
     {hasResults && (
-      <div ref={resultsRef} className="w-full border-t border-warm-border scroll-mt-20">
-        <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur-sm border-b border-warm-border py-3 px-4 sm:px-6 shadow-soft">
+      <div ref={resultsRef} className="w-full border-t border-foreground/10 scroll-mt-20">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-foreground/10 py-3 px-4 sm:px-6">
           <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) sendMessage(query.trim()); }} className="max-w-2xl mx-auto flex gap-2">
             <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-faint pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <input
                 type="search"
                 placeholder={locale === 'de' ? 'Neue Suche…' : 'New search…'}
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-warm-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-charcoal/10 focus:border-charcoal/30 placeholder:text-warm-faint font-light text-charcoal"
+                className="w-full pl-9 pr-4 py-2.5 border border-foreground/10 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/30 placeholder:text-muted-foreground text-foreground"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
-            <button type="submit" disabled={loading} className="px-5 py-2.5 rounded-xl bg-charcoal text-white font-medium text-sm hover:opacity-85 transition disabled:opacity-50 whitespace-nowrap">
+            <button type="submit" disabled={loading} className="btn-primary text-sm disabled:opacity-50 whitespace-nowrap">
               {loading ? '…' : (locale === 'de' ? 'Suchen' : 'Search')}
             </button>
           </form>
         </div>
-        <div className="w-full py-12 px-4 sm:px-6" style={{ background: 'linear-gradient(180deg,hsl(0 0% 100%) 0%,hsl(220 20% 98.5%) 100%)' }}>
+        <div className="w-full py-12 px-4 sm:px-6 bg-background">
           <div className="masonry-col">
             {recommendations.map(({ show, why }) => (
               <div key={show.id} className="masonry-col-item">
                 <ShowCard show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} />
                 {why.length > 0 && (
-                  <ul className="mt-2 text-xs text-warm-faint list-disc list-inside px-1">
+                  <ul className="mt-2 text-xs text-muted-foreground list-disc list-inside px-1">
                     {why.map((w, i) => <li key={i}>{w}</li>)}
                   </ul>
                 )}
@@ -644,16 +644,15 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     {/* ══ Default sections ══ */}
     {!hasResults && (<>
 
-      {/* ── Roster — 100% width masonry ── */}
-      <section className="w-full py-16 md:py-24 bg-noise" style={{ background: 'linear-gradient(180deg,hsl(0 0% 100%) 0%,hsl(220 20% 98.5%) 100%)' }}>
-        <div className="w-full px-4" style={{ position: 'relative' }}>
-          {/* noise overlay handled by bg-noise pseudo */}
-          <div className="masonry-col-lg">
+      {/* ── Roster — masonry grid ── */}
+      <section className="py-16 md:py-24 bg-background border-t border-foreground/10">
+        <div className="container">
+          <div className="masonry-grid">
             {showsLoading ? (
-              <div className="col-span-full flex items-center justify-center py-20">
+              <div className="flex items-center justify-center py-20">
                 <div className="flex items-center gap-1.5">
                   {[0, 160, 320].map((d) => (
-                    <span key={d} className="typing-dot w-2 h-2 rounded-full bg-charcoal/30 inline-block" style={{ animationDelay: `${d}ms` }} />
+                    <span key={d} className="typing-dot w-2 h-2 rounded-full bg-foreground/30 inline-block" style={{ animationDelay: `${d}ms` }} />
                   ))}
                 </div>
               </div>
@@ -667,9 +666,9 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             <div className="mt-12 text-center">
               <Link
                 to="/catalog"
-                className="inline-flex items-center gap-2 font-medium text-sm text-charcoal bg-surface border border-warm-border px-8 py-3.5 rounded-xl hover:shadow-card-hover hover:border-charcoal/20 transition"
+                className="btn-primary inline-flex items-center gap-2"
               >
-                {locale === 'de' ? 'Mehr laden' : 'Load more'} <ArrowRight className="w-4 h-4" />
+                {locale === 'de' ? 'Alle Shows' : 'All shows'} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           )}
@@ -677,66 +676,62 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </section>
 
       {/* ── Why section ── */}
-      <section className="relative py-20 md:py-28 bg-surface overflow-hidden">
-        {/* Center orb */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'hsla(250,100%,65%,.03)', filter: 'blur(120px)' }} />
-        {/* Noise texture */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.015]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
-
-        <div className="relative z-10 max-w-[860px] mx-auto px-6">
-          <div className="text-center mb-16 rounded-3xl px-8 py-10 mx-auto max-w-[520px]"
-            style={{
-              background: 'rgba(248,250,252,0.45)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              border: '1px solid rgba(15,23,42,0.06)',
-            }}
-          >
-            <span className="block text-[0.7rem] font-medium text-warm-muted uppercase tracking-[0.15em] mb-3">
-              {locale === 'de' ? 'Warum Berlintina' : 'Why Berlintina'}
-            </span>
-            <h2 className="text-[clamp(1.9rem,4vw,3rem)] font-semibold tracking-[-0.04em] text-charcoal leading-[1.1] mb-4">
-              {locale === 'de'
-                ? <>Kein Marktplatz.<br /><span className="shimmer-text">Eine Boutique-Agentur.</span></>
-                : <>Not a marketplace.<br /><span className="shimmer-text">A boutique agency.</span></>}
-            </h2>
-            <p className="text-base text-warm-muted font-light max-w-[380px] mx-auto leading-relaxed">
-              {locale === 'de'
-                ? 'Ich liste keine hundert Acts. Ich vertrete die Außergewöhnlichen.'
-                : "We don't list hundreds of acts. We represent the exceptional ones."}
-            </p>
+      <section className="py-24 md:py-32 border-t border-foreground/10">
+        <div className="container grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-4">
+            <motion.span
+              className="label-style"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              02 / {locale === 'de' ? 'Warum Berlintina' : 'Why Berlintina'}
+            </motion.span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {([
-              { Icon: CheckCircle2, title: locale === 'de' ? 'Persönlich kuratiert' : 'Personally Curated', text: locale === 'de' ? 'Jeder Künstler wurde von mir handverlesen. Kein Algorithmus — echte Expertise.' : 'Every performer is handpicked by our team. No algorithms — real expertise.' },
-              { Icon: Zap, title: locale === 'de' ? 'Schnell & einfach' : 'Fast & Simple', text: locale === 'de' ? 'Eine Anfrage, ein Kontakt. Ich kümmere mich um Casting, Logistik und Verträge.' : 'One inquiry, one contact. We handle casting, logistics, and contracts.' },
-              { Icon: Users, title: locale === 'de' ? 'Für jeden Anlass' : 'For Every Occasion', text: locale === 'de' ? 'Corporate Galas, Festivals, Hochzeiten — ich kenne die richtige Besetzung.' : 'Corporate galas, festivals, weddings, product launches — we\'ve seen it all.' },
-              { Icon: HeartHandshake, title: locale === 'de' ? 'Künstler-zuerst' : 'Artist-First', text: locale === 'de' ? 'Ich stehe hinter jedem meiner Künstler. Glückliche Künstler liefern unvergessliche Shows.' : 'We invest in our artists like family. Happy artists deliver unforgettable shows.' },
-            ] as const).map((card, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.4, delay: i * 0.05 + 0.05 }}
-                className="group rounded-2xl p-6 flex flex-col gap-4 cursor-default transition-all duration-500 hover:-translate-y-[5px]"
-                style={{
-                  background: 'rgba(248,250,252,0.55)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(15,23,42,0.08)',
-                  boxShadow: '0 2px 8px rgba(15,23,42,0.04), 0 0 0 0.5px rgba(15,23,42,0.04)',
-                }}
-                whileHover={{ boxShadow: '0 12px 32px rgba(15,23,42,0.10), 0 0 0 0.5px rgba(15,23,42,0.06)' }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
-                  style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.15)' }}>
-                  <card.Icon className="w-5 h-5 text-terracotta" />
-                </div>
-                <h3 className="text-[0.9rem] font-semibold text-charcoal leading-snug tracking-[-0.015em]">{card.title}</h3>
-                <p className="text-[0.85rem] text-warm-muted font-light leading-relaxed flex-1">{card.text}</p>
-              </motion.div>
-            ))}
+          <div className="col-span-12 md:col-span-8">
+            <motion.h2
+              className="heading-lg mb-4"
+              initial={{ y: 30, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            >
+              {locale === 'de' ? <>Kein Marktplatz.<br />Eine Boutique-Agentur.</> : <>Not a marketplace.<br />A boutique agency.</>}
+            </motion.h2>
+            <motion.p
+              className="body-text mb-16"
+              initial={{ y: 20, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
+            >
+              {locale === 'de' ? 'Ich liste keine hundert Acts. Ich vertrete die Außergewöhnlichen.' : "We don't list hundreds of acts. We represent the exceptional ones."}
+            </motion.p>
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              {([
+                { title: locale === 'de' ? 'Persönlich kuratiert' : 'Personally Curated', text: locale === 'de' ? 'Jeder Künstler wurde von mir handverlesen. Kein Algorithmus — echte Expertise.' : 'Every performer is handpicked by our team. No algorithms — real expertise.' },
+                { title: locale === 'de' ? 'Schnell & einfach' : 'Fast & Simple', text: locale === 'de' ? 'Eine Anfrage, ein Kontakt. Ich kümmere mich um Casting, Logistik und Verträge.' : 'One inquiry, one contact. We handle casting, logistics, and contracts.' },
+                { title: locale === 'de' ? 'Für jeden Anlass' : 'For Every Occasion', text: locale === 'de' ? 'Corporate Galas, Festivals, Hochzeiten — ich kenne die richtige Besetzung.' : "Corporate galas, festivals, weddings, product launches — we've seen it all." },
+                { title: locale === 'de' ? 'Künstler-zuerst' : 'Artist-First', text: locale === 'de' ? 'Ich stehe hinter jedem meiner Künstler. Glückliche Künstler liefern unvergessliche Shows.' : 'We invest in our artists like family. Happy artists deliver unforgettable shows.' },
+              ]).map((card, i) => (
+                <motion.div
+                  key={i}
+                  variants={{ hidden: { y: 40, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 30 } } }}
+                  className="group"
+                >
+                  <span className="label-style mb-4 block">0{i + 1}</span>
+                  <h3 className="font-display text-2xl font-bold text-foreground mb-3 group-hover:text-accent transition-colors duration-300">{card.title}</h3>
+                  <p className="body-text text-base">{card.text}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </div>
       </section>
@@ -745,94 +740,131 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <FeaturedSlider locale={locale} />
 
       {/* ── Testimonials ── */}
-      <section className="py-20 bg-surface-alt border-t border-warm-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-charcoal mb-3 text-center">
-            {locale === 'de' ? 'Was Kunden sagen' : 'What clients say'}
-          </h2>
-          <p className="text-warm-muted text-center mb-12 font-light">
-            {locale === 'de' ? 'Persönlich kuratiert. Professionell vermittelt.' : 'Personally curated. Professionally arranged.'}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: locale === 'de'
-                  ? '"Valiantsina hat für unsere Gala genau den richtigen Act gefunden — schnell, unkompliziert, perfekt. Wir buchen wieder."'
-                  : '"Valiantsina found exactly the right act for our gala — fast, straightforward, perfect. We\'ll book again."',
-                name: 'Sophie K.',
-                role: locale === 'de' ? 'Eventmanagerin, Berlin' : 'Event Manager, Berlin',
-              },
-              {
-                quote: locale === 'de'
-                  ? '"Unsere Hochzeitsgesellschaft war begeistert. Der Cello-Act war eine Überraschung, die noch Monate danach erwähnt wird."'
-                  : '"Our wedding guests were blown away. The cello act was a surprise that people still talk about months later."',
-                name: 'Markus & Lena',
-                role: locale === 'de' ? 'Hochzeitspaar, Potsdam' : 'Wedding couple, Potsdam',
-              },
-              {
-                quote: locale === 'de'
-                  ? '"Als Künstlerin schätze ich die persönliche Betreuung sehr. Berlintina vermittelt nur Anfragen, die wirklich passen."'
-                  : '"As an artist I really appreciate the personal attention. Berlintina only passes on enquiries that are a genuine match."',
-                name: 'Alina V.',
-                role: locale === 'de' ? 'Sängerin & Performerin' : 'Singer & Performer',
-              },
-            ].map((t, i) => (
-              <div key={i} className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-400 hover:-translate-y-1" style={{ background: 'rgba(248,250,252,0.6)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
-                <div className="flex gap-1">
-                  {[0,1,2,3,4].map(s => (
-                    <svg key={s} className="w-4 h-4 text-terracotta" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  ))}
-                </div>
-                <p className="text-sm text-warm-muted font-light leading-relaxed italic flex-1">{t.quote}</p>
-                <div>
-                  <p className="text-sm font-semibold text-charcoal">{t.name}</p>
-                  <p className="text-xs text-warm-faint">{t.role}</p>
-                </div>
-              </div>
-            ))}
+      <section className="py-24 md:py-32 overflow-hidden border-t border-foreground/10">
+        <div className="container grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-4">
+            <motion.span
+              className="label-style"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              03 / Testimonials
+            </motion.span>
           </div>
+          <div className="col-span-12 md:col-span-8">
+            <motion.h2
+              className="heading-lg mb-4"
+              initial={{ y: 30, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            >
+              {locale === 'de' ? 'Was Kunden sagen.' : 'What clients say.'}
+            </motion.h2>
+            <p className="body-text mb-16">
+              {locale === 'de' ? 'Persönlich kuratiert. Professionell vermittelt.' : 'Personally curated. Professionally arranged.'}
+            </p>
+          </div>
+        </div>
+        <div className="container grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              quote: locale === 'de'
+                ? 'Valiantsina hat für unsere Gala genau den richtigen Act gefunden — schnell, unkompliziert, perfekt. Wir buchen wieder.'
+                : "Valiantsina found exactly the right act for our gala — fast, straightforward, perfect. We'll book again.",
+              name: 'Sophie K.',
+              role: locale === 'de' ? 'Eventmanagerin, Berlin' : 'Event Manager, Berlin',
+            },
+            {
+              quote: locale === 'de'
+                ? 'Unsere Hochzeitsgesellschaft war begeistert. Der Cello-Act war eine Überraschung, die noch Monate danach erwähnt wird.'
+                : 'Our wedding guests were blown away. The cello act was a surprise that people still talk about months later.',
+              name: 'Markus & Lena',
+              role: locale === 'de' ? 'Hochzeitspaar, Potsdam' : 'Wedding couple, Potsdam',
+            },
+            {
+              quote: locale === 'de'
+                ? 'Als Künstlerin schätze ich die persönliche Betreuung sehr. Berlintina vermittelt nur Anfragen, die wirklich passen.'
+                : 'As an artist I really appreciate the personal attention. Berlintina only passes on enquiries that are a genuine match.',
+              name: 'Alina V.',
+              role: locale === 'de' ? 'Sängerin & Performerin' : 'Singer & Performer',
+            },
+          ].map((t, i) => (
+            <motion.blockquote
+              key={t.name}
+              initial={{ y: 40, opacity: 0, rotate: 1 }}
+              whileInView={{ y: 0, opacity: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30, delay: i * 0.12 }}
+              whileHover={{ y: -4, transition: { duration: 0.3 } }}
+              className="border-l-2 border-accent pl-6 cursor-default"
+            >
+              <p className="text-lg text-foreground leading-relaxed mb-6 font-body">
+                "{t.quote}"
+              </p>
+              <footer>
+                <cite className="not-italic font-display font-bold text-foreground block">{t.name}</cite>
+                <span className="label-style mt-1 block">{t.role}</span>
+              </footer>
+            </motion.blockquote>
+          ))}
         </div>
       </section>
 
       {/* ── Pricing Transparency ── */}
-      <section className="py-16 bg-surface border-t border-warm-border">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-charcoal mb-3">
-            {locale === 'de' ? 'Was kostet eine Buchung?' : 'What does a booking cost?'}
-          </h2>
-          <p className="text-warm-muted font-light mb-10">
-            {locale === 'de' ? 'Keine versteckten Gebühren. Transparenz von Anfang an.' : 'No hidden fees. Transparent from the start.'}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {[
-              { tier: locale === 'de' ? 'Solo-Acts' : 'Solo Acts', price: locale === 'de' ? 'ab 800 €' : 'from €800', desc: locale === 'de' ? 'Musiker, Sänger, Akrobatik' : 'Musicians, singers, acrobatics' },
-              { tier: locale === 'de' ? 'Premium-Acts' : 'Premium Acts', price: locale === 'de' ? '1.500–4.000 €' : '€1,500–4,000', desc: locale === 'de' ? 'Ensemble, Tanz, Live-Bands' : 'Ensembles, dance, live bands' },
-              { tier: locale === 'de' ? 'Exklusive Shows' : 'Exclusive Shows', price: locale === 'de' ? 'Auf Anfrage' : 'On request', desc: locale === 'de' ? 'Maßgeschneiderte Produktionen' : 'Bespoke productions' },
-            ].map((p, i) => (
-              <div key={i} className={`rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover ${i === 1 ? 'border-terracotta bg-terracotta-light' : 'border-warm-border bg-surface-alt'}`}>
-                <p className="text-xs font-semibold uppercase tracking-wider text-warm-faint mb-1">{p.tier}</p>
-                <p className={`text-2xl font-bold tracking-tight mb-1 ${i === 1 ? 'text-terracotta' : 'text-charcoal'}`}>{p.price}</p>
-                <p className="text-sm text-warm-muted font-light">{p.desc}</p>
-              </div>
-            ))}
+      <section className="py-24 md:py-32 border-t border-foreground/10">
+        <div className="container grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-4">
+            <span className="label-style">
+              04 / {locale === 'de' ? 'Preise' : 'Pricing'}
+            </span>
           </div>
-          <p className="text-xs text-warm-faint">
-            {locale === 'de'
-              ? 'Anfrage kostenlos · Vermittlungsgebühr 15–20 % des Künstlerhonorars · Angebot innerhalb von 24 h'
-              : 'Enquiry free · Agency fee 15–20% of artist fee · Quote within 24 hours'}
-          </p>
+          <div className="col-span-12 md:col-span-8">
+            <h2 className="heading-lg mb-4">
+              {locale === 'de' ? 'Was kostet eine Buchung?' : 'What does a booking cost?'}
+            </h2>
+            <p className="body-text mb-12">
+              {locale === 'de' ? 'Keine versteckten Gebühren. Transparenz von Anfang an.' : 'No hidden fees. Transparent from the start.'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              {[
+                { tier: locale === 'de' ? 'Solo-Acts' : 'Solo Acts', price: locale === 'de' ? 'ab 800 €' : 'from €800', desc: locale === 'de' ? 'Musiker, Sänger, Akrobatik' : 'Musicians, singers, acrobatics' },
+                { tier: locale === 'de' ? 'Premium-Acts' : 'Premium Acts', price: locale === 'de' ? '1.500–4.000 €' : '€1,500–4,000', desc: locale === 'de' ? 'Ensemble, Tanz, Live-Bands' : 'Ensembles, dance, live bands' },
+                { tier: locale === 'de' ? 'Exklusive Shows' : 'Exclusive Shows', price: locale === 'de' ? 'Auf Anfrage' : 'On request', desc: locale === 'de' ? 'Maßgeschneiderte Produktionen' : 'Bespoke productions' },
+              ].map((p, i) => (
+                <div key={i} className={`border p-5 text-left transition-all duration-300 hover:-translate-y-1 ${i === 1 ? 'border-accent bg-accent/5' : 'border-foreground/10 bg-background'}`}>
+                  <p className="label-style mb-2">{p.tier}</p>
+                  <p className={`font-display text-2xl font-bold tracking-tight mb-1 ${i === 1 ? 'text-accent' : 'text-foreground'}`}>{p.price}</p>
+                  <p className="text-sm text-muted-foreground">{p.desc}</p>
+                </div>
+              ))}
+            </div>
+            <p className="label-style">
+              {locale === 'de'
+                ? 'Anfrage kostenlos · Vermittlungsgebühr 15–20 % des Künstlerhonorars · Angebot innerhalb von 24 h'
+                : 'Enquiry free · Agency fee 15–20% of artist fee · Quote within 24 hours'}
+            </p>
+          </div>
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <div className="py-20 bg-surface border-t border-warm-border">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-charcoal mb-3 text-center">
-            {locale === 'de' ? 'Häufige Fragen' : 'Frequently asked questions'}
-          </h2>
-          <p className="text-warm-muted text-center mb-12 font-light">
-            {locale === 'de' ? 'Antworten auf die wichtigsten Fragen.' : 'Answers to the most common questions.'}
-          </p>
+      <section className="py-24 md:py-32 border-t border-foreground/10">
+        <div className="container grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-4">
+            <span className="label-style">
+              05 / FAQ
+            </span>
+          </div>
+          <div className="col-span-12 md:col-span-8">
+            <h2 className="heading-lg mb-4">
+              {locale === 'de' ? 'Häufige Fragen.' : 'Frequently asked questions.'}
+            </h2>
+            <p className="body-text mb-12">
+              {locale === 'de' ? 'Antworten auf die wichtigsten Fragen.' : 'Answers to the most common questions.'}
+            </p>
           <div className="space-y-0">
             {(locale === 'de' ? [
               { q: 'Wie funktioniert die Buchung?', a: 'Sie beschreiben Ihr Event — Anlass, Datum, Budget, Stil. Ich suche persönlich den passenden Act aus meinem kuratierten Netzwerk heraus und sende Ihnen innerhalb von 24 Stunden konkrete Vorschläge. Bei Interesse stelle ich den Kontakt her und begleite Sie bis zur finalen Buchung.' },
@@ -849,23 +881,24 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               { q: 'How are artists selected for Berlintina?', a: "Every artist on Berlintina has been personally selected by me. I've either seen their show live, or they've been recommended by trusted contacts. No automatic listings — only vetted quality." },
               { q: "What if I can't find a suitable act?", a: "Then I keep searching. My network extends beyond the website. Tell me what you're looking for — I'll find a solution." },
             ]).map((item, i) => (
-              <div key={i} className="border-b border-warm-border">
+              <div key={i} className="border-b border-foreground/10">
                 <button
                   type="button"
                   onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                  className="w-full text-left py-5 flex items-center justify-between gap-4 text-charcoal font-medium hover:text-warm-muted transition text-sm"
+                  className="w-full text-left py-5 flex items-center justify-between gap-4 text-foreground font-display font-bold hover:text-accent transition text-base"
                 >
                   <span>{item.q}</span>
                   <span className={`text-2xl font-light flex-shrink-0 transition-transform duration-200 ${faqOpen === i ? 'rotate-45' : ''}`}>+</span>
                 </button>
                 {faqOpen === i && (
-                  <div className="pb-5 text-warm-muted text-sm font-light leading-relaxed">{item.a}</div>
+                  <div className="pb-5 body-text text-base">{item.a}</div>
                 )}
               </div>
             ))}
           </div>
+          </div>
         </div>
-      </div>
+      </section>
 
     </>)}
 </>
