@@ -437,7 +437,8 @@ const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     : 'We are a community of extraordinary artists and creative talents. We believe in the power of live performances and real emotions.';
   const words = mainText.split(' ');
   return (
-    <section ref={sectionRef} className="pt-24 md:pt-32 pb-0 border-t border-foreground/10">
+    <>
+    <section id="about" ref={sectionRef} className="pt-24 md:pt-32 pb-0">
       <div className="container grid grid-cols-12 gap-8">
         <div className="col-span-12 md:col-span-4">
           <motion.span className="label-style" initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
@@ -474,19 +475,22 @@ const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </div>
           </motion.div>
 
-          {/* YouTube video */}
-          <motion.div className="relative w-full mt-10 overflow-hidden border border-foreground/10" style={{ paddingBottom: '56.25%' }} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.5 }}>
-            <iframe
-              src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1"
-              title="Berlintina – Live Show Acts Berlin"
-              className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </motion.div>
         </div>
       </div>
     </section>
+    {/* ── Video — full width ── */}
+    <section id="video">
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+        <iframe
+          src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0"
+          title="Berlintina – Live Show Acts Berlin"
+          className="absolute inset-0 w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    </section>
+    </>
   );
 };
 
@@ -528,11 +532,11 @@ const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
         transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
       >
         <div className="absolute top-6 right-8 w-3 h-3 rounded-full bg-accent-foreground/20" />
-        <motion.p className="label-style text-accent-foreground/70 mb-6" initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.5 }}>
+        <motion.p className="label-style mb-6" style={{ color: 'rgba(255,255,255,0.75)' }} initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.5 }}>
           {locale === 'de' ? 'Bereit für etwas Außergewöhnliches?' : 'Ready for something extraordinary?'}
         </motion.p>
         <motion.h2
-          className="font-display text-4xl md:text-6xl lg:text-7xl font-black text-accent-foreground leading-[1.05] mb-8"
+          className="font-display text-4xl md:text-6xl lg:text-7xl font-black leading-[1.05] mb-8" style={{ color: '#ffffff' }}
           initial={{ y: 30, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
           viewport={{ once: true }}
@@ -544,7 +548,7 @@ const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
           <Link to="/catalog" className="inline-flex items-center justify-center gap-2 bg-accent-foreground text-accent font-display font-bold text-lg px-8 py-4 rounded-full hover:scale-105 transition-transform duration-300">
             {locale === 'de' ? 'Shows entdecken' : 'Explore shows'} <ArrowRight className="w-5 h-5" />
           </Link>
-          <a href="https://wa.me/491608106880" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 border-2 border-accent-foreground/30 text-accent-foreground font-display font-bold text-lg px-8 py-4 rounded-full hover:border-accent-foreground/60 hover:scale-105 transition-all duration-300">
+          <a href="https://wa.me/491608106880" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 border-2 border-white/40 font-display font-bold text-lg px-8 py-4 rounded-full hover:border-white hover:scale-105 transition-all duration-300" style={{ color: '#ffffff' }}>
             WhatsApp
           </a>
         </motion.div>
@@ -563,7 +567,7 @@ const FeaturedArtistSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) =>
   if (featured.length === 0) return null;
   const artist = featured[activeIndex];
   return (
-    <section className="py-24 md:py-36 overflow-hidden border-t border-foreground/10">
+    <section id="featured" className="py-24 md:py-36 overflow-hidden">
       <div className="container">
         <motion.span className="label-style mb-6 block" initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, ease }}>
           01 / {locale === 'de' ? 'Berlintinas Top-Acts' : "Berlintina's Top Acts"}
@@ -823,7 +827,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                   <img
                     src={show.photoUrls?.[0] || ''}
                     alt={show.title}
-                    className="w-full aspect-[3/4] object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    className="w-full aspect-[3/4] object-cover transition-all duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -887,7 +891,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     {!hasResults && (<>
 
       {/* ── Roster — masonry grid ── */}
-      <section className="py-16 md:py-24 bg-background border-t border-foreground/10">
+      <section id="roster" className="py-16 md:py-24 bg-background">
         <div className="container">
           <div className="masonry-grid">
             {showsLoading ? (
@@ -918,7 +922,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </section>
 
       {/* ── Why section ── */}
-      <section className="py-24 md:py-32 border-t border-foreground/10">
+      <section id="why" className="py-24 md:py-32">
         <div className="container grid grid-cols-12 gap-8">
           <div className="col-span-12 md:col-span-4">
             <motion.span
@@ -985,7 +989,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <FeaturedArtistSection locale={locale} />
 
       {/* ── Testimonials ── */}
-      <section className="py-24 md:py-32 overflow-hidden border-t border-foreground/10">
+      <section id="testimonials" className="py-24 md:py-32 overflow-hidden">
         <div className="container grid grid-cols-12 gap-8">
           <div className="col-span-12 md:col-span-4">
             <motion.span
@@ -1059,7 +1063,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </section>
 
       {/* ── Pricing Transparency ── */}
-      <section className="py-24 md:py-32 border-t border-foreground/10">
+      <section id="pricing" className="py-24 md:py-32">
         <div className="container grid grid-cols-12 gap-8">
           <div className="col-span-12 md:col-span-4">
             <span className="label-style">
@@ -1075,42 +1079,32 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               {[
-                { tier: locale === 'de' ? 'Solo-Acts' : 'Solo Acts', price: locale === 'de' ? 'ab 800 €' : 'from €800', desc: locale === 'de' ? 'Musiker, Sänger, Akrobatik' : 'Musicians, singers, acrobatics' },
-                { tier: locale === 'de' ? 'Premium-Acts' : 'Premium Acts', price: locale === 'de' ? '1.500–4.000 €' : '€1,500–4,000', desc: locale === 'de' ? 'Ensemble, Tanz, Live-Bands' : 'Ensembles, dance, live bands' },
-                { tier: locale === 'de' ? 'Exklusive Shows' : 'Exclusive Shows', price: locale === 'de' ? 'Auf Anfrage' : 'On request', desc: locale === 'de' ? 'Maßgeschneiderte Produktionen' : 'Bespoke productions' },
+                {
+                  label: locale === 'de' ? 'SELBST BUCHEN' : 'BOOK YOURSELF',
+                  price: locale === 'de' ? 'Keine Agenturgebühr' : 'No agency fee',
+                  desc: locale === 'de' ? 'Direkt-Kontakt zum Künstler. Anfrage über Berlintina ist kostenlos.' : 'Direct contact with the artist. Enquiry via Berlintina is free.',
+                  accent: false,
+                },
+                {
+                  label: locale === 'de' ? 'WIR ÜBERNEHMEN ALLES' : 'FULL SERVICE',
+                  price: '15–20 %',
+                  desc: locale === 'de' ? 'Persönliche Beratung, Casting, Vertragsabwicklung & Koordination.' : 'Personal consulting, casting, contract handling & coordination.',
+                  accent: true,
+                },
+                {
+                  label: locale === 'de' ? 'EXKLUSIV' : 'EXCLUSIVE',
+                  price: locale === 'de' ? 'Auf Anfrage' : 'On request',
+                  desc: locale === 'de' ? 'Maßgeschneiderte Produktionen & individuelle Performances.' : 'Bespoke productions & individual performances.',
+                  accent: false,
+                },
               ].map((p, i) => (
-                <div key={i} className={`border p-5 text-left transition-all duration-300 hover:-translate-y-1 ${i === 1 ? 'border-accent bg-accent/5' : 'border-foreground/10 bg-background'}`}>
-                  <p className="label-style mb-2">{p.tier}</p>
-                  <p className={`font-display text-2xl font-bold tracking-tight mb-1 ${i === 1 ? 'text-accent' : 'text-foreground'}`}>{p.price}</p>
+                <div key={i} className={`border p-6 text-left transition-all duration-300 hover:-translate-y-1 ${p.accent ? 'border-accent bg-accent/5' : 'border-foreground/10 bg-background'}`}>
+                  <p className={`label-style mb-3 ${p.accent ? 'text-accent' : ''}`}>{p.label}</p>
+                  <p className={`font-display text-2xl font-bold tracking-tight mb-2 ${p.accent ? 'text-accent' : 'text-foreground'}`}>{p.price}</p>
                   <p className="text-sm text-muted-foreground">{p.desc}</p>
                 </div>
               ))}
             </div>
-
-            {/* Booking model cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              {/* Model A: self-book */}
-              <div className="border border-foreground/10 bg-background p-6">
-                <p className="label-style mb-3">{locale === 'de' ? 'Selbst buchen' : 'Book yourself'}</p>
-                <p className="font-display text-xl font-bold text-foreground mb-2">{locale === 'de' ? 'Keine Agenturgebühr' : 'No agency fee'}</p>
-                <ul className="text-sm text-muted-foreground space-y-1.5">
-                  <li>✓ {locale === 'de' ? 'Direkt-Kontakt zum Künstler' : 'Direct contact with artist'}</li>
-                  <li>✓ {locale === 'de' ? 'Eigene Vertragsverhandlung' : 'Negotiate contracts yourself'}</li>
-                  <li>✓ {locale === 'de' ? 'Anfrage über Berlintina kostenlos' : 'Enquiry via Berlintina is free'}</li>
-                </ul>
-              </div>
-              {/* Model B: full service */}
-              <div className="border border-accent bg-accent/5 p-6">
-                <p className="label-style mb-3 text-accent">{locale === 'de' ? 'Wir übernehmen alles ✓' : 'We handle everything ✓'}</p>
-                <p className="font-display text-xl font-bold text-accent mb-2">15–20 %</p>
-                <ul className="text-sm text-muted-foreground space-y-1.5">
-                  <li>✓ {locale === 'de' ? 'Persönliche Beratung & Curation' : 'Personal consulting & curation'}</li>
-                  <li>✓ {locale === 'de' ? 'Vertragsabwicklung & Koordination' : 'Contract handling & coordination'}</li>
-                  <li>✓ {locale === 'de' ? 'Angebot innerhalb von 24 h' : 'Quote within 24 hours'}</li>
-                </ul>
-              </div>
-            </div>
-
             <p className="label-style">
               {locale === 'de'
                 ? 'ANFRAGE KOSTENLOS · DIREKT-KONTAKT ERLAUBT · GEBÜHR NUR BEI FULL-SERVICE · ANGEBOT INNERHALB VON 24 H'
@@ -1124,7 +1118,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <CTABanner locale={locale} />
 
       {/* ── FAQ ── */}
-      <section className="py-24 md:py-32 border-t border-foreground/10">
+      <section id="faq" className="py-24 md:py-32">
         <div className="container grid grid-cols-12 gap-8">
           <div className="col-span-12 md:col-span-4">
             <span className="label-style">

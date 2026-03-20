@@ -36,7 +36,7 @@ export const ShowCard: React.FC<Props> = ({ show, locale, onViewDetails, index =
             src={imageUrl}
             alt={show.title}
             loading="lazy"
-            className="w-full object-cover transition-all duration-700 grayscale group-hover:grayscale-0 group-hover:scale-105"
+            className="w-full object-cover transition-all duration-700 group-hover:scale-105"
           />
 
           {/* Hover overlay with title/category */}
