@@ -99,12 +99,22 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
                 )}
               </button>
             </div>
-            <Link
-              to="/join"
-              className="bg-accent text-accent-foreground font-display font-bold text-sm px-6 py-2.5 rounded-full hover:scale-105 transition-transform duration-300 no-underline"
-            >
-              {locale === 'de' ? 'Für Künstler' : 'For Artists'}
-            </Link>
+            <div className="flex items-center gap-3">
+              <a
+                href={`https://wa.me/491608106880?text=${encodeURIComponent(locale === 'de' ? 'Hallo, ich möchte eine Show buchen.' : 'Hi, I would like to book a show.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-accent text-accent-foreground font-display font-bold text-sm px-6 py-2.5 rounded-full hover:scale-105 transition-transform duration-300 no-underline"
+              >
+                {locale === 'de' ? 'Jetzt anfragen' : 'Enquire now'}
+              </a>
+              <Link
+                to="/join"
+                className="font-mono-ui text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors no-underline"
+              >
+                {locale === 'de' ? 'Für Künstler ↗' : 'For Artists ↗'}
+              </Link>
+            </div>
           </div>
 
           {/* Mobile */}
@@ -144,8 +154,17 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
                 <div className="container py-8 flex flex-col gap-6">
                   <Link to="/catalog" onClick={() => setMobileMenuOpen(false)} className="font-mono-ui text-sm uppercase tracking-widest text-muted-foreground no-underline">Shows</Link>
                   <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="font-mono-ui text-sm uppercase tracking-widest text-muted-foreground no-underline">{locale === 'de' ? 'Über uns' : 'About'}</Link>
-                  <Link to="/join" onClick={() => setMobileMenuOpen(false)} className="bg-accent text-accent-foreground font-display font-bold text-sm px-6 py-3 rounded-full text-center no-underline">
-                    {locale === 'de' ? 'Für Künstler' : 'For Artists'}
+                  <a
+                    href={`https://wa.me/491608106880?text=${encodeURIComponent(locale === 'de' ? 'Hallo, ich möchte eine Show buchen.' : 'Hi, I would like to book a show.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="bg-accent text-accent-foreground font-display font-bold text-sm px-6 py-3 rounded-full text-center no-underline"
+                  >
+                    {locale === 'de' ? 'Jetzt anfragen' : 'Enquire now'}
+                  </a>
+                  <Link to="/join" onClick={() => setMobileMenuOpen(false)} className="font-mono-ui text-sm text-muted-foreground no-underline">
+                    {locale === 'de' ? 'Für Künstler ↗' : 'For Artists ↗'}
                   </Link>
                 </div>
               </motion.div>
@@ -197,6 +216,20 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
           <p className="label-style">© {new Date().getFullYear()} Berlintina. Alle Rechte vorbehalten.</p>
         </div>
       </footer>
+
+      {/* ── Floating WhatsApp ── */}
+      <a
+        href={`https://wa.me/491608106880?text=${encodeURIComponent(locale === 'de' ? 'Hallo, ich interessiere mich für eine Show-Buchung.' : 'Hi, I am interested in booking a show.')}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="WhatsApp"
+        className="whatsapp-float"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="26" height="26">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.555 4.122 1.528 5.856L.057 23.882a.5.5 0 0 0 .61.61l6.026-1.471A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.805 9.805 0 0 1-5.013-1.374l-.36-.214-3.724.909.936-3.617-.235-.372A9.796 9.796 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+        </svg>
+      </a>
     </div>
   );
 };
@@ -427,6 +460,30 @@ const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               ? 'Bei uns findest du fertige Shows und ausgewählte Künstler für dein Event. Auf Wunsch gestalten und realisieren wir auch individuelle Performances – mit allem, was dazugehört: Konzept, Kostüm und Maske.'
               : 'Here you find ready-made shows and selected artists for your event. On request we also design and realise individual performances – with everything included: concept, costume and make-up.'}
           </motion.p>
+
+          {/* Founder card */}
+          <motion.div className="flex items-center gap-5 mt-10 flex-wrap" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}>
+            <img src="/images/valiantsina.png" alt="Valiantsina Förster" className="w-20 h-20 rounded-full object-cover object-top flex-shrink-0 border border-foreground/10" />
+            <div>
+              <p className="font-display font-bold text-foreground mb-1">Valiantsina Förster</p>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[44ch]">
+                {locale === 'de'
+                  ? 'Ich bin Valiantsina — Gründerin von Berlintina und seit über 12 Jahren fest verwurzelt in der Berliner Kunst- und Eventszene. Wenn du buchst, sprichst du direkt mit mir — kein Call-Center, keine Zwischenhändler.'
+                  : "I'm Valiantsina — founder of Berlintina and rooted in Berlin's arts scene for over 12 years. When you book, you speak directly with me — no call centres, no middlemen."}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* YouTube video */}
+          <motion.div className="relative w-full mt-10 overflow-hidden border border-foreground/10" style={{ paddingBottom: '56.25%' }} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.5 }}>
+            <iframe
+              src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1"
+              title="Berlintina – Live Show Acts Berlin"
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </motion.div>
         </div>
       </div>
     </section>
@@ -1029,10 +1086,35 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 </div>
               ))}
             </div>
+
+            {/* Booking model cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              {/* Model A: self-book */}
+              <div className="border border-foreground/10 bg-background p-6">
+                <p className="label-style mb-3">{locale === 'de' ? 'Selbst buchen' : 'Book yourself'}</p>
+                <p className="font-display text-xl font-bold text-foreground mb-2">{locale === 'de' ? 'Keine Agenturgebühr' : 'No agency fee'}</p>
+                <ul className="text-sm text-muted-foreground space-y-1.5">
+                  <li>✓ {locale === 'de' ? 'Direkt-Kontakt zum Künstler' : 'Direct contact with artist'}</li>
+                  <li>✓ {locale === 'de' ? 'Eigene Vertragsverhandlung' : 'Negotiate contracts yourself'}</li>
+                  <li>✓ {locale === 'de' ? 'Anfrage über Berlintina kostenlos' : 'Enquiry via Berlintina is free'}</li>
+                </ul>
+              </div>
+              {/* Model B: full service */}
+              <div className="border border-accent bg-accent/5 p-6">
+                <p className="label-style mb-3 text-accent">{locale === 'de' ? 'Wir übernehmen alles ✓' : 'We handle everything ✓'}</p>
+                <p className="font-display text-xl font-bold text-accent mb-2">15–20 %</p>
+                <ul className="text-sm text-muted-foreground space-y-1.5">
+                  <li>✓ {locale === 'de' ? 'Persönliche Beratung & Curation' : 'Personal consulting & curation'}</li>
+                  <li>✓ {locale === 'de' ? 'Vertragsabwicklung & Koordination' : 'Contract handling & coordination'}</li>
+                  <li>✓ {locale === 'de' ? 'Angebot innerhalb von 24 h' : 'Quote within 24 hours'}</li>
+                </ul>
+              </div>
+            </div>
+
             <p className="label-style">
               {locale === 'de'
-                ? 'Anfrage kostenlos · Vermittlungsgebühr 15–20 % des Künstlerhonorars · Angebot innerhalb von 24 h'
-                : 'Enquiry free · Agency fee 15–20% of artist fee · Quote within 24 hours'}
+                ? 'ANFRAGE KOSTENLOS · DIREKT-KONTAKT ERLAUBT · GEBÜHR NUR BEI FULL-SERVICE · ANGEBOT INNERHALB VON 24 H'
+                : 'ENQUIRY FREE · DIRECT CONTACT ALLOWED · FEE ONLY FOR FULL-SERVICE · QUOTE WITHIN 24 H'}
             </p>
           </div>
         </div>
@@ -1353,7 +1435,7 @@ const ShowPreview: React.FC<{ draft: Record<string, unknown>; photoFile: File | 
     );
   };
 
-  const previewShimmer = CATEGORY_SHIMMER_SLIDER[genre?.toUpperCase()] ?? accent;
+  const previewShimmer = PREVIEW_ACCENT[genre?.toUpperCase()] ?? accent;
 
   if (fullWidth) {
     return (
