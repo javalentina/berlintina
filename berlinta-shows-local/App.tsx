@@ -74,10 +74,10 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/catalog" className={`font-mono-ui text-xs uppercase tracking-widest transition-colors no-underline ${location.pathname === '/catalog' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+            <Link to="/catalog" className={`font-mono-ui text-xs uppercase tracking-widest transition-all no-underline relative after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:bg-current after:transition-all after:duration-300 ${location.pathname === '/catalog' ? 'text-accent after:w-full' : 'text-muted-foreground hover:text-foreground after:w-0 hover:after:w-full'}`}>
               Shows
             </Link>
-            <Link to="/about" className={`font-mono-ui text-xs uppercase tracking-widest transition-colors no-underline ${location.pathname === '/about' ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+            <Link to="/about" className={`font-mono-ui text-xs uppercase tracking-widest transition-all no-underline relative after:absolute after:bottom-[-2px] after:left-0 after:h-[1.5px] after:bg-current after:transition-all after:duration-300 ${location.pathname === '/about' ? 'text-accent after:w-full' : 'text-muted-foreground hover:text-foreground after:w-0 hover:after:w-full'}`}>
               {locale === 'de' ? 'Über uns' : 'About'}
             </Link>
             <div className="flex items-center gap-1.5 ml-1">
@@ -457,16 +457,18 @@ const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </div>
     </section>
-    {/* ── Video — full width ── */}
+    {/* ── Video — same width/height as CTA block ── */}
     <section id="video" className="py-24 md:py-32 overflow-hidden">
-      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-        <iframe
-          src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0"
-          title="Berlintina – Live Show Acts Berlin"
-          className="absolute inset-0 w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+      <div className="container">
+        <div className="relative w-full aspect-video overflow-hidden">
+          <iframe
+            src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0"
+            title="Berlintina – Live Show Acts Berlin"
+            className="absolute inset-0 w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
       </div>
     </section>
     </>
@@ -501,7 +503,7 @@ const StatsSection: React.FC = () => {
 
 // --- CTABanner ---
 const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
-  <section className="py-24 md:py-32 overflow-hidden">
+  <section id="call-to-action" className="py-24 md:py-32 overflow-hidden">
     <div className="container">
       <motion.div
         className="relative overflow-hidden bg-accent px-8 md:px-16 py-16 md:py-24 text-center"
@@ -760,16 +762,16 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               Boutique Artist Agency — Berlin
             </motion.span>
             <h1 className="heading-xl text-foreground leading-[0.9]">
-              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.2 }}>
+              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.2 }}>
                 {locale === 'de' ? 'Shows die' : 'Shows that'}
               </motion.span>
-              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.35 }}>
+              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.35 }}>
                 {locale === 'de' ? 'Köpfe drehen' : 'turn heads'}
               </motion.span>
-              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.5 }}>
+              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.5 }}>
                 {locale === 'de' ? 'und Herzen' : 'and conquer'}
               </motion.span>
-              <motion.span className="block overflow-hidden" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.65 }}>
+              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.65 }}>
                 {locale === 'de' ? 'gewinnen' : 'hearts'}<span className="text-accent">.</span>
               </motion.span>
             </h1>
