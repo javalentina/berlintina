@@ -108,12 +108,6 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
               >
                 {locale === 'de' ? 'Jetzt anfragen' : 'Enquire now'}
               </a>
-              <Link
-                to="/join"
-                className="font-mono-ui text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors no-underline"
-              >
-                {locale === 'de' ? 'Für Künstler ↗' : 'For Artists ↗'}
-              </Link>
             </div>
           </div>
 
@@ -163,9 +157,6 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
                   >
                     {locale === 'de' ? 'Jetzt anfragen' : 'Enquire now'}
                   </a>
-                  <Link to="/join" onClick={() => setMobileMenuOpen(false)} className="font-mono-ui text-sm text-muted-foreground no-underline">
-                    {locale === 'de' ? 'Für Künstler ↗' : 'For Artists ↗'}
-                  </Link>
                 </div>
               </motion.div>
             )}
@@ -462,24 +453,12 @@ const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               : 'Here you find ready-made shows and selected artists for your event. On request we also design and realise individual performances – with everything included: concept, costume and make-up.'}
           </motion.p>
 
-          {/* Founder card */}
-          <motion.div className="flex items-center gap-5 mt-10 flex-wrap" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}>
-            <img src="/images/valiantsina.png" alt="Valiantsina Förster" className="w-20 h-20 rounded-full object-cover object-top flex-shrink-0 border border-foreground/10" />
-            <div>
-              <p className="font-display font-bold text-foreground mb-1">Valiantsina Förster</p>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[44ch]">
-                {locale === 'de'
-                  ? 'Ich bin Valiantsina — Gründerin von Berlintina und seit über 12 Jahren fest verwurzelt in der Berliner Kunst- und Eventszene. Wenn du buchst, sprichst du direkt mit mir — kein Call-Center, keine Zwischenhändler.'
-                  : "I'm Valiantsina — founder of Berlintina and rooted in Berlin's arts scene for over 12 years. When you book, you speak directly with me — no call centres, no middlemen."}
-              </p>
-            </div>
-          </motion.div>
 
         </div>
       </div>
     </section>
     {/* ── Video — full width ── */}
-    <section id="video">
+    <section id="video" className="py-24 md:py-32 overflow-hidden">
       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <iframe
           src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0"
@@ -522,12 +501,12 @@ const StatsSection: React.FC = () => {
 
 // --- CTABanner ---
 const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
-  <section className="py-24 md:py-32">
+  <section className="py-24 md:py-32 overflow-hidden">
     <div className="container">
       <motion.div
         className="relative overflow-hidden bg-accent px-8 md:px-16 py-16 md:py-24 text-center"
-        initial={{ y: 40, opacity: 0, scale: 0.97 }}
-        whileInView={{ y: 0, opacity: 1, scale: 1 }}
+        initial={{ y: 40, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
       >
@@ -1158,7 +1137,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                   <span className={`text-2xl font-light flex-shrink-0 transition-transform duration-200 ${faqOpen === i ? 'rotate-45' : ''}`}>+</span>
                 </button>
                 {faqOpen === i && (
-                  <div className="pb-5 body-text text-base">{item.a}</div>
+                  <div className="pb-5 body-text text-base max-w-none">{item.a}</div>
                 )}
               </div>
             ))}
