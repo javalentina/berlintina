@@ -1697,6 +1697,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const [pendingVideoUrl, setPendingVideoUrl] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const [resolvingToken, setResolvingToken] = useState(true);
   const [returnArtist, setReturnArtist] = useState<ResolveArtistResponse | null>(null);
@@ -1704,10 +1705,11 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const [showMediaInput, setShowMediaInput] = useState(false);
   const [lastNextSlot, setLastNextSlot] = useState<string | null>(null);
 
-  // Scroll page to top on mount
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); }, []);
-
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
   useEffect(() => { scrollToBottom(); }, [messages, loading]);
 
   useEffect(() => {
@@ -1937,7 +1939,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
 
         {/* Messages */}
-        <div className="flex-grow overflow-y-auto px-4 py-4 space-y-3 flex flex-col">
+        <div ref={messagesContainerRef} className="flex-grow overflow-y-auto px-4 py-4 space-y-3 flex flex-col">
           {resolvingToken && messages.length === 0 && (
             <div className="flex-grow flex items-center justify-center">
               <div className="flex items-center gap-1.5">
