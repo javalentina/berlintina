@@ -31,10 +31,93 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING_REVIEW: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
-  CHANGES_REQUESTED: 'Changes requested',
+  CHANGES_REQUESTED: 'Changes',
+};
+const STATUS_COLORS: Record<string, string> = {
+  PENDING_REVIEW: 'bg-amber-100 text-amber-800',
+  APPROVED: 'bg-green-100 text-green-800',
+  REJECTED: 'bg-red-100 text-red-700',
+  CHANGES_REQUESTED: 'bg-blue-100 text-blue-800',
 };
 
-// --- Login ---
+// ── Sidebar layout ────────────────────────────────────────────────────────────
+const AdminLayout: React.FC<{ children: React.ReactNode; active?: string }> = ({ children, active }) => {
+  const navigate = useNavigate();
+  const nav = [
+    { key: 'submissions', label: 'Submissions', icon: '📥', to: '/admin/submissions' },
+    { key: 'shows',       label: 'Shows',       icon: '🎭', to: '/admin/shows' },
+    { key: 'blog',        label: 'Blog',        icon: '✍️', to: '/admin/blog' },
+  ];
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside className="w-56 flex-shrink-0 bg-gray-900 text-white flex flex-col sticky top-0 h-screen">
+        <div className="px-5 py-5 border-b border-white/10">
+          <span className="font-bold text-sm tracking-tight">berlintina<span className="text-orange-400">.</span> admin</span>
+        </div>
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {nav.map((n) => (
+            <button
+              key={n.key}
+              onClick={() => navigate(n.to)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                active === n.key ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'
+              }`}
+            >
+              <span>{n.icon}</span>
+              <span>{n.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="px-3 py-4 border-t border-white/10 space-y-1">
+          <a href="/" target="_blank" rel="noopener" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-white/70 transition-colors">
+            ↗ View site
+          </a>
+          <button
+            onClick={() => { adminLogout(); window.location.href = '/admin'; }}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-red-400 transition-colors text-left"
+          >
+            ⎋ Logout
+          </button>
+        </div>
+      </aside>
+      {/* Main */}
+      <main className="flex-1 min-w-0 overflow-auto">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+// ── Section wrapper ───────────────────────────────────────────────────────────
+const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = true }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white mb-4">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-3.5 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+      >
+        <span className="text-xs font-bold uppercase tracking-widest text-gray-500">{title}</span>
+        <span className="text-gray-400 text-sm">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && <div className="px-5 py-4 space-y-3">{children}</div>}
+    </div>
+  );
+};
+
+// ── Field helpers ─────────────────────────────────────────────────────────────
+const Field: React.FC<{ label: string; children: React.ReactNode; half?: boolean }> = ({ label, children, half }) => (
+  <div className={half ? '' : ''}>
+    <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
+    {children}
+  </div>
+);
+const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white';
+const textareaCls = `${inputCls} resize-y`;
+
+// ── Login ─────────────────────────────────────────────────────────────────────
 export const AdminLogin: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,163 +126,39 @@ export const AdminLogin: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
     e.preventDefault();
     setError(null);
     setLoading(true);
-    try {
-      await adminLogin(password);
-      onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed.');
-    } finally {
-      setLoading(false);
-    }
+    try { await adminLogin(password); onSuccess(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Login failed.'); }
+    finally { setLoading(false); }
   };
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white rounded-2xl border border-gray-100 shadow-xl p-8">
-        <h2 className="text-xl font-bold mb-6 tracking-tight">Admin Login</h2>
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-        <input type="password" placeholder="Password" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-black" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
-        <button type="submit" disabled={loading || !password} className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm hover:opacity-90 transition disabled:opacity-50">Login</button>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8">
+        <div className="mb-6">
+          <span className="font-bold text-lg">berlintina<span className="text-orange-500">.</span></span>
+          <p className="text-gray-500 text-sm mt-1">Admin access</p>
+        </div>
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        <input type="password" placeholder="Password" className={inputCls + ' mb-4'} value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
+        <button type="submit" disabled={loading || !password} className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition disabled:opacity-50">
+          {loading ? 'Logging in…' : 'Login'}
+        </button>
       </form>
     </div>
   );
 };
 
-// --- Inline submission row ---
-const SubmissionRow: React.FC<{ sub: Submission; onRefresh: () => void }> = ({ sub, onRefresh }) => {
-  const [open, setOpen] = useState(false);
-  const [full, setFull] = useState<Submission | null>(null);
-  const [fetching, setFetching] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDesc, setEditDesc] = useState('');
-  const [editPitch, setEditPitch] = useState('');
-  const [editBio, setEditBio] = useState('');
-  const [notes, setNotes] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-
-  const toggle = async () => {
-    if (!open && !full) {
-      setFetching(true);
-      try {
-        const s = await adminGetSubmission(sub.id);
-        setFull(s);
-        setEditTitle(s.show_title || '');
-        setEditDesc(s.short_description_facts || '');
-        setEditPitch(s.sales_pitch_text || '');
-        setEditBio((s as Record<string, unknown>).artist_bio as string || '');
-      } finally { setFetching(false); }
-    }
-    setOpen(o => !o);
-  };
-
-  const doAction = async (fn: () => Promise<unknown>, label: string) => {
-    if (!window.confirm(`${label}?`)) return;
-    setActionLoading(true);
-    setError(null);
-    try {
-      await fn();
-      setDone(true);
-      onRefresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed');
-    } finally { setActionLoading(false); }
-  };
-
-  const isPending = sub.status === 'PENDING_REVIEW';
-  const photos = full && Array.isArray(full.photo_urls) ? full.photo_urls as string[] : [];
-
-  const statusColor: Record<string, string> = {
-    PENDING_REVIEW: 'bg-amber-100 text-amber-800',
-    APPROVED: 'bg-green-100 text-green-700',
-    REJECTED: 'bg-red-100 text-red-700',
-    CHANGES_REQUESTED: 'bg-blue-100 text-blue-700',
-  };
-
-  return (
-    <div className={`bg-white rounded-xl border overflow-hidden transition ${done ? 'opacity-40' : 'border-gray-200'}`}>
-      {/* Collapsed header */}
-      <button onClick={toggle} className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition text-left gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-sm text-gray-900 truncate">{sub.show_title || '(no title)'}</h3>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor[sub.status] || 'bg-gray-100 text-gray-500'}`}>{STATUS_LABELS[sub.status] || sub.status}</span>
-          </div>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">{sub.submitter_email}</p>
-        </div>
-        <svg className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-      </button>
-
-      {/* Expanded detail */}
-      {open && (
-        <div className="border-t border-gray-100 p-5 space-y-4 bg-gray-50">
-          {fetching && <p className="text-sm text-gray-400">Loading…</p>}
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-          {full && (
-            <>
-              {/* Photo */}
-              {photos[0] && <img src={photos[0]} alt="" className="w-full max-h-52 object-cover rounded-xl" />}
-
-              {/* Meta grid */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500">
-                <div><span className="font-semibold text-gray-700">Artist:</span> {(full as Record<string, unknown>).artist_name as string || '—'}</div>
-                <div><span className="font-semibold text-gray-700">Genre:</span> {(full as Record<string, unknown>).artist_genre as string || '—'}</div>
-                <div><span className="font-semibold text-gray-700">Duration:</span> {(full as Record<string, unknown>).duration_minutes ? `${(full as Record<string, unknown>).duration_minutes} min` : '—'}</div>
-                <div><span className="font-semibold text-gray-700">Price:</span> {(full as Record<string, unknown>).price_text as string || '—'}</div>
-              </div>
-
-              {/* Editable fields */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Title</label>
-                <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-3">Description</label>
-                <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10 resize-y" />
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-3">Sales pitch</label>
-                <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10 resize-y" />
-              </div>
-
-              {/* Notes field for reject/changes */}
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Notes (for Reject / Request Changes)</label>
-                <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional message to artist…" className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button
-                  onClick={() => doAction(() => adminApprove(full.id, { title: editTitle.trim() || undefined, short_description_facts: editDesc.trim() || undefined, sales_pitch_text: editPitch.trim() || undefined }), 'Approve & Publish')}
-                  disabled={actionLoading}
-                  className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm transition disabled:opacity-50"
-                >
-                  ✓ Approve & Publish
-                </button>
-                {isPending && (
-                  <>
-                    <button onClick={() => doAction(() => adminRequestChanges(full.id, notes), 'Request Changes')} disabled={actionLoading} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-sm transition disabled:opacity-50">
-                      Request Changes
-                    </button>
-                    <button onClick={() => doAction(() => adminReject(full.id, notes), 'Reject')} disabled={actionLoading} className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-sm transition disabled:opacity-50">
-                      Reject
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// --- Dashboard: Submissions + Shows in one view ---
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 export const AdminDashboard: React.FC = () => {
   const location = useLocation();
   const pathShows = location.pathname.includes('/shows') && !location.pathname.match(/\/shows\/[^/]+$/);
-  const [tab, setTab] = useState<'submissions' | 'shows'>(pathShows ? 'shows' : 'submissions');
-  useEffect(() => { setTab(pathShows ? 'shows' : 'submissions'); }, [pathShows]);
+  const pathBlog  = location.pathname.includes('/blog');
+  const defaultTab = pathShows ? 'shows' : pathBlog ? 'blog' : 'submissions';
+  const [tab, setTab] = useState<'submissions' | 'shows' | 'blog'>(defaultTab as 'submissions' | 'shows' | 'blog');
+  useEffect(() => { setTab(defaultTab as 'submissions' | 'shows' | 'blog'); }, [defaultTab]);
+
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [shows, setShows] = useState<AdminShowListItem[]>([]);
+  const [posts, setPosts] = useState<AdminBlogPostSummary[]>([]);
   const [filter, setFilter] = useState('PENDING_REVIEW');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -209,89 +168,167 @@ export const AdminDashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     if (tab === 'submissions') {
-      adminGetSubmissions(filter || undefined).then(({ submissions: data }) => {
-        setSubmissions(data);
-        setLoading(false);
-      }).catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed');
-        setLoading(false);
-      });
+      adminGetSubmissions(filter || undefined)
+        .then(({ submissions: d }) => setSubmissions(d))
+        .catch((e) => setError(e.message))
+        .finally(() => setLoading(false));
+    } else if (tab === 'shows') {
+      adminGetShows()
+        .then(({ shows: d }) => setShows(d))
+        .catch((e) => setError(e.message))
+        .finally(() => setLoading(false));
     } else {
-      adminGetShows().then(({ shows: data }) => {
-        setShows(data);
-        setLoading(false);
-      }).catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed');
-        setLoading(false);
-      });
+      adminListBlogPosts()
+        .then(({ posts: p }) => setPosts(p || []))
+        .catch((e) => setError(e.message))
+        .finally(() => setLoading(false));
     }
   };
+  useEffect(() => { load(); }, [tab, filter]);
 
-  useEffect(() => load(), [tab, filter]);
+  const tabs = [
+    { key: 'submissions', label: 'Submissions', icon: '📥' },
+    { key: 'shows',       label: 'Shows',       icon: '🎭' },
+    { key: 'blog',        label: 'Blog',        icon: '✍️' },
+  ];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-        <button onClick={() => { adminLogout(); window.location.href = '/#/admin'; }} className="text-sm font-bold text-gray-400 hover:text-black">Logout</button>
-      </div>
-
-      {/* Tab bar */}
-      <div className="flex gap-2 mb-6">
-        <Link to="/admin/submissions" className={`px-4 py-2 rounded-xl text-sm font-bold ${tab === 'submissions' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>Submissions</Link>
-        <Link to="/admin/shows" className={`px-4 py-2 rounded-xl text-sm font-bold ${tab === 'shows' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>Published Shows</Link>
-      </div>
-
-      {/* Status filter — submissions only */}
-      {tab === 'submissions' && (
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {[
-            { key: 'PENDING_REVIEW', label: 'Pending' },
-            { key: '', label: 'All' },
-            { key: 'APPROVED', label: 'Approved' },
-            { key: 'REJECTED', label: 'Rejected' },
-            { key: 'CHANGES_REQUESTED', label: 'Changes' },
-          ].map(({ key, label }) => (
-            <button key={key || 'all'} onClick={() => setFilter(key)} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${filter === key ? 'bg-black text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
-          ))}
-          <button onClick={load} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-500 hover:bg-gray-200">↻ Refresh</button>
+    <AdminLayout active={tab}>
+      <div className="px-8 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+          {tab === 'blog' && (
+            <button onClick={() => navigate('/admin/blog/new')} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition">
+              + New Post
+            </button>
+          )}
+          <button onClick={load} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 transition">↻ Refresh</button>
         </div>
-      )}
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {/* Tab bar */}
+        <div className="flex gap-1 mb-6 border-b border-gray-200 pb-0">
+          {tabs.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key as 'submissions' | 'shows' | 'blog')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+                tab === key
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-400 hover:text-gray-700'
+              }`}
+            >
+              <span>{icon}</span> {label}
+            </button>
+          ))}
+        </div>
 
-      {loading ? (
-        <p className="text-gray-400 text-sm">Loading…</p>
-      ) : tab === 'submissions' ? (
-        submissions.length === 0
-          ? <p className="text-gray-400 text-sm">No submissions for this filter.</p>
-          : (
-            <div className="space-y-2">
-              {submissions.map((s) => (
-                <SubmissionRow key={s.id} sub={s} onRefresh={load} />
-              ))}
-            </div>
-          )
-      ) : (
-        shows.length === 0 ? <p className="text-gray-400 text-sm">No published shows.</p> : (
-          <div className="space-y-2">
-            {shows.map((s) => (
-              <div key={s.id} className="p-4 bg-white rounded-xl border border-gray-200 flex justify-between items-center hover:shadow-sm transition">
-                <div>
-                  <h3 className="font-semibold text-sm">{s.title}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">{s.artist_name}</p>
-                </div>
-                <button onClick={() => navigate(`/admin/shows/${s.id}`)} className="px-4 py-2 bg-black text-white rounded-lg text-xs font-bold">Edit</button>
-              </div>
+        {/* Status filter — submissions */}
+        {tab === 'submissions' && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {[
+              { key: 'PENDING_REVIEW', label: 'Pending', color: 'amber' },
+              { key: '', label: 'All', color: 'gray' },
+              { key: 'APPROVED', label: 'Approved', color: 'green' },
+              { key: 'REJECTED', label: 'Rejected', color: 'red' },
+              { key: 'CHANGES_REQUESTED', label: 'Changes requested', color: 'blue' },
+            ].map(({ key, label }) => (
+              <button
+                key={key || 'all'}
+                onClick={() => setFilter(key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition ${
+                  filter === key ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-400'
+                }`}
+              >
+                {label}
+              </button>
             ))}
           </div>
-        )
-      )}
-    </div>
+        )}
+
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        {loading ? (
+          <div className="py-20 text-center text-gray-400 text-sm">Loading…</div>
+        ) : tab === 'submissions' ? (
+          submissions.length === 0
+            ? <div className="py-20 text-center text-gray-400 text-sm">No submissions for this filter.</div>
+            : <div className="space-y-3">
+                {submissions.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => navigate(`/admin/submissions/${s.id}`)}
+                    className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-gray-400 hover:shadow-sm transition"
+                  >
+                    {(s as { photo_urls?: string[] }).photo_urls?.[0] && (
+                      <img src={(s as { photo_urls?: string[] }).photo_urls![0]} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-semibold text-sm text-gray-900 truncate">{s.show_title || '—'}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 ${STATUS_COLORS[s.status] || 'bg-gray-100 text-gray-600'}`}>
+                          {STATUS_LABELS[s.status] || s.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400">{s.submitter_email} {s.artist_genre ? `· ${s.artist_genre}` : ''}</p>
+                    </div>
+                    <span className="text-gray-300 text-sm flex-shrink-0">›</span>
+                  </div>
+                ))}
+              </div>
+        ) : tab === 'shows' ? (
+          shows.length === 0
+            ? <div className="py-20 text-center text-gray-400 text-sm">No published shows.</div>
+            : <div className="space-y-3">
+                {shows.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => navigate(`/admin/shows/${s.id}`)}
+                    className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-gray-400 hover:shadow-sm transition"
+                  >
+                    {(s as { photo_urls?: string[] }).photo_urls?.[0] ? (
+                      <img src={(s as { photo_urls?: string[] }).photo_urls![0]} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-xl">🎭</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 truncate">{s.title}</p>
+                      <p className="text-xs text-gray-400">{s.artist_name}</p>
+                    </div>
+                    <span className="text-gray-300 text-sm flex-shrink-0">›</span>
+                  </div>
+                ))}
+              </div>
+        ) : (
+          /* Blog tab */
+          posts.length === 0
+            ? <div className="py-20 text-center text-gray-400 text-sm">No blog posts yet.</div>
+            : <div className="space-y-3">
+                {posts.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => navigate(`/admin/blog/${p.id}`)}
+                    className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-gray-400 hover:shadow-sm transition"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-semibold text-sm text-gray-900 truncate">{p.title_de || '—'}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 ${p.published_at ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                          {p.published_at ? 'Published' : 'Draft'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400">{p.published_at ? new Date(p.published_at).toLocaleDateString('de-DE') : 'Not published'}</p>
+                    </div>
+                    <span className="text-gray-300 text-sm flex-shrink-0">›</span>
+                  </div>
+                ))}
+              </div>
+        )}
+      </div>
+    </AdminLayout>
   );
 };
 
-// --- Submission Detail: Simple view + 3 actions ---
+// ── Submission Detail ─────────────────────────────────────────────────────────
 export const AdminSubmissionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -300,91 +337,113 @@ export const AdminSubmissionDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [notes, setNotes] = useState('');
-  const [showEdit, setShowEdit] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editPitch, setEditPitch] = useState('');
 
   useEffect(() => {
     if (!id) return;
-    adminGetSubmission(id).then((s) => {
-      setSub(s);
-      setEditTitle(s.show_title || '');
-      setEditDesc(s.short_description_facts || '');
-      setEditPitch(s.sales_pitch_text || '');
-    }).catch((err) => setError(err instanceof Error ? err.message : 'Failed')).finally(() => setLoading(false));
+    adminGetSubmission(id)
+      .then((s) => { setSub(s); setEditTitle(s.show_title || ''); setEditDesc(s.short_description_facts || ''); setEditPitch(s.sales_pitch_text || ''); })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, [id]);
 
   const doAction = async (fn: () => Promise<unknown>) => {
     setActionLoading(true);
     setError(null);
-    try {
-      await fn();
-      navigate('/admin/submissions');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed');
-    } finally {
-      setActionLoading(false);
-    }
+    try { await fn(); navigate('/admin/submissions'); }
+    catch (e) { setError((e as Error).message || 'Action failed'); }
+    finally { setActionLoading(false); }
   };
 
-  const approve = async () => {
-    if (!sub) return;
+  const approve = () => {
+    if (!sub) return Promise.resolve();
     const overrides: AdminApproveOverrides = {
       title: editTitle.trim() || undefined,
       short_description_facts: editDesc.trim() || undefined,
       sales_pitch_text: editPitch.trim() || undefined,
     };
-    await adminApprove(sub.id, overrides);
+    return adminApprove(sub.id, overrides);
   };
 
-  if (loading || !sub) return <div className="max-w-2xl mx-auto px-4 py-12"><p className="text-gray-500">{loading ? 'Loading…' : 'Not found.'}</p></div>;
+  if (loading || !sub) return (
+    <AdminLayout active="submissions">
+      <div className="px-8 py-6 text-gray-400 text-sm">{loading ? 'Loading…' : 'Not found.'}</div>
+    </AdminLayout>
+  );
 
   const isPending = sub.status === 'PENDING_REVIEW';
-  const photos = Array.isArray(sub.photo_urls) ? sub.photo_urls : [];
+  const photos: string[] = Array.isArray(sub.photo_urls) ? (sub.photo_urls as string[]) : [];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <Link to="/admin/submissions" className="text-sm font-bold text-gray-500 hover:text-black mb-6 inline-block">← Back</Link>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+    <AdminLayout active="submissions">
+      <div className="px-8 py-6 max-w-3xl">
+        <button onClick={() => navigate('/admin/submissions')} className="text-sm font-semibold text-gray-400 hover:text-gray-900 mb-5 inline-flex items-center gap-1 transition">
+          ← Back to submissions
+        </button>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">{sub.show_title}</h2>
-          <span className={`px-3 py-1 rounded-lg text-xs font-bold ${isPending ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{STATUS_LABELS[sub.status] || sub.status}</span>
-        </div>
-        <p className="text-sm text-gray-600 mb-2">{sub.submitter_email}</p>
-        {sub.artist_genre && <p className="text-sm text-gray-500 mb-2">{sub.artist_genre}</p>}
-        <p className="text-gray-600 text-sm leading-relaxed">{sub.short_description_facts}</p>
-        {photos[0] && <img src={photos[0]} alt="" className="mt-4 w-full max-h-48 object-cover rounded-xl" />}
-      </div>
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
-      {isPending && (
-        <>
-          <button onClick={() => setShowEdit(!showEdit)} className="text-sm font-bold text-gray-500 hover:text-black mb-4">
-            {showEdit ? 'Hide edits' : 'Edit before approving'}
-          </button>
-          {showEdit && (
-            <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-3">
-              <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" className="w-full px-4 py-2 rounded-lg border border-gray-200 text-sm" />
-              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Description" rows={2} className="w-full px-4 py-2 rounded-lg border border-gray-200 text-sm" />
-              <textarea value={editPitch} onChange={(e) => setEditPitch(e.target.value)} placeholder="Sales pitch" rows={1} className="w-full px-4 py-2 rounded-lg border border-gray-200 text-sm" />
+        {/* Header card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <h2 className="text-xl font-bold text-gray-900">{sub.show_title}</h2>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex-shrink-0 ${STATUS_COLORS[sub.status] || 'bg-gray-100 text-gray-600'}`}>
+              {STATUS_LABELS[sub.status] || sub.status}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm text-gray-500 mb-4">
+            <div><span className="text-xs font-bold text-gray-400 block mb-0.5">EMAIL</span>{sub.submitter_email || '—'}</div>
+            <div><span className="text-xs font-bold text-gray-400 block mb-0.5">GENRE</span>{sub.artist_genre || '—'}</div>
+            <div><span className="text-xs font-bold text-gray-400 block mb-0.5">ARTIST</span>{(sub as Record<string, unknown>).artist_name as string || '—'}</div>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">{sub.short_description_facts}</p>
+          {photos.length > 0 && (
+            <div className="flex gap-2 mt-4 flex-wrap">
+              {photos.map((url, i) => <img key={i} src={url} alt="" className="w-24 h-24 object-cover rounded-lg border border-gray-100" />)}
             </div>
           )}
+        </div>
 
-          <div className="flex flex-wrap gap-3 mb-4">
-            <button onClick={() => doAction(approve)} disabled={actionLoading} className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold text-sm">Approve & Publish</button>
-            <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-sm">Reject</button>
-            <button onClick={() => doAction(() => adminRequestChanges(sub.id, notes))} disabled={actionLoading} className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold text-sm">Request Changes</button>
-          </div>
-          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes (for Reject / Request Changes)" className="w-full px-4 py-2 rounded-xl border border-gray-200 text-sm" />
-        </>
-      )}
-    </div>
+        {/* Edit before approving */}
+        {isPending && (
+          <>
+            <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Edit before approving</p>
+              <Field label="Title">
+                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Description">
+                <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3} className={textareaCls} />
+              </Field>
+              <Field label="Sales pitch">
+                <textarea value={editPitch} onChange={(e) => setEditPitch(e.target.value)} rows={2} className={textareaCls} />
+              </Field>
+              <Field label="Notes (for reject / request changes)">
+                <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder="Optional…" />
+              </Field>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => doAction(approve)} disabled={actionLoading} className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
+                ✓ Approve & Publish
+              </button>
+              <button onClick={() => doAction(() => adminRequestChanges(sub.id, notes))} disabled={actionLoading} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-50 transition">
+                ↩ Request Changes
+              </button>
+              <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
+                ✕ Reject
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </AdminLayout>
   );
 };
 
-// --- Show Edit: Compact form ---
+// ── Show Edit ─────────────────────────────────────────────────────────────────
 export const AdminShowEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -392,20 +451,23 @@ export const AdminShowEdit: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // fields
   const [title, setTitle] = useState('');
   const [artistName, setArtistName] = useState('');
   const [desc, setDesc] = useState('');
   const [pitch, setPitch] = useState('');
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [videoUrls, setVideoUrls] = useState<string[]>([]);
-  const [newPhoto, setNewPhoto] = useState('');
-  const [newVideo, setNewVideo] = useState('');
   const [cast, setCast] = useState('');
   const [idealFor, setIdealFor] = useState('');
   const [placement, setPlacement] = useState('');
   const [audienceRange, setAudienceRange] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [newPhoto, setNewPhoto] = useState('');
+  const [newVideo, setNewVideo] = useState('');
   const [stageMin, setStageMin] = useState('');
   const [stageIdeal, setStageIdeal] = useState('');
   const [ceilingMin, setCeilingMin] = useState('');
@@ -429,7 +491,7 @@ export const AdminShowEdit: React.FC = () => {
       setDesc(s.short_description_facts || '');
       setPitch(s.sales_pitch_text || '');
       setDuration(s.duration_minutes != null ? String(s.duration_minutes) : '');
-      setPrice(s.price_min != null && s.price_max != null ? `${s.price_min}–${s.price_max}` : (s.price_min != null ? `ab ${s.price_min}` : ''));
+      setPrice(s.price_min != null && s.price_max != null ? `${s.price_min}–${s.price_max}` : s.price_min != null ? `ab ${s.price_min}` : '');
       setPhotoUrls(Array.isArray(s.photo_urls) ? [...s.photo_urls] : []);
       setVideoUrls(Array.isArray(s.video_urls) ? [...s.video_urls] : []);
       setCast(s.cast || '');
@@ -449,22 +511,24 @@ export const AdminShowEdit: React.FC = () => {
       setFaqCustom(s.faq_custom || '');
       setFaqTravel(s.faq_travel || '');
       setTestimonials(Array.isArray(s.testimonials) && s.testimonials.length ? [...s.testimonials] : []);
-    }).catch((err) => setError(err instanceof Error ? err.message : 'Failed')).finally(() => setLoading(false));
+    }).catch((e) => setError(e.message)).finally(() => setLoading(false));
   }, [id]);
 
-  const addPhoto = () => { if (newPhoto.trim()) { setPhotoUrls((u) => [...u, newPhoto.trim()]); setNewPhoto(''); } };
-  const addVideo = () => { if (newVideo.trim()) { setVideoUrls((u) => [...u, newVideo.trim()]); setNewVideo(''); } };
-  const removePhoto = (i: number) => setPhotoUrls((u) => u.filter((_, j) => j !== i));
-  const removeVideo = (i: number) => setVideoUrls((u) => u.filter((_, j) => j !== i));
-  const addTestimonial = () => setTestimonials((t) => [...t, { quote: '', name: '' }]);
-  const removeTestimonial = (i: number) => setTestimonials((t) => t.filter((_, j) => j !== i));
+  const addPhoto = () => { if (newPhoto.trim()) { setPhotoUrls(u => [...u, newPhoto.trim()]); setNewPhoto(''); } };
+  const addVideo = () => { if (newVideo.trim()) { setVideoUrls(u => [...u, newVideo.trim()]); setNewVideo(''); } };
+  const removePhoto = (i: number) => setPhotoUrls(u => u.filter((_, j) => j !== i));
+  const removeVideo = (i: number) => setVideoUrls(u => u.filter((_, j) => j !== i));
+  const movePhoto = (i: number, dir: -1 | 1) => {
+    setPhotoUrls(u => { const a = [...u]; const j = i + dir; if (j < 0 || j >= a.length) return a; [a[i], a[j]] = [a[j], a[i]]; return a; });
+  };
+  const addTestimonial = () => setTestimonials(t => [...t, { quote: '', name: '' }]);
+  const removeTestimonial = (i: number) => setTestimonials(t => t.filter((_, j) => j !== i));
   const updateTestimonial = (i: number, field: 'quote' | 'name', value: string) =>
-    setTestimonials((t) => t.map((x, j) => j === i ? { ...x, [field]: value } : x));
+    setTestimonials(t => t.map((x, j) => j === i ? { ...x, [field]: value } : x));
 
   const handleSave = async () => {
     if (!id) return;
-    setSaving(true);
-    setError(null);
+    setSaving(true); setError(null);
     try {
       await adminUpdateShow(id, {
         title: title.trim() || undefined,
@@ -486,7 +550,7 @@ export const AdminShowEdit: React.FC = () => {
         light_short: lightShort.trim() || undefined,
         timings_short: timingsShort.trim() || undefined,
         rider_pdf_url: riderPdfUrl.trim() || undefined,
-        testimonials: testimonials.filter((t) => t.quote.trim() || t.name.trim()).length ? testimonials : undefined,
+        testimonials: testimonials.filter(t => t.quote.trim() || t.name.trim()).length ? testimonials : undefined,
         faq_outdoor: faqOutdoor.trim() || undefined,
         faq_stage: faqStage.trim() || undefined,
         faq_language: faqLanguage.trim() || undefined,
@@ -494,104 +558,172 @@ export const AdminShowEdit: React.FC = () => {
         faq_travel: faqTravel.trim() || undefined,
         notify_artist: false,
       });
-      navigate('/admin/shows');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
-    } finally {
-      setSaving(false);
-    }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) { setError((e as Error).message || 'Save failed'); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async () => {
-    if (!id || !window.confirm('Delete this show?')) return;
+    if (!id || !window.confirm('Delete this show? This cannot be undone.')) return;
     setSaving(true);
-    try {
-      await adminDeleteShow(id);
-      navigate('/admin/shows');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed');
-    } finally {
-      setSaving(false);
-    }
+    try { await adminDeleteShow(id); navigate('/admin/shows'); }
+    catch (e) { setError((e as Error).message || 'Delete failed'); setSaving(false); }
   };
 
-  if (loading || !show) return <div className="max-w-2xl mx-auto px-4 py-12"><p className="text-gray-500">{loading ? 'Loading…' : 'Not found.'}</p></div>;
+  if (loading || !show) return (
+    <AdminLayout active="shows">
+      <div className="px-8 py-6 text-gray-400 text-sm">{loading ? 'Loading…' : 'Not found.'}</div>
+    </AdminLayout>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <Link to="/admin/shows" className="text-sm font-bold text-gray-500 hover:text-black mb-6 inline-block">← Back</Link>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+    <AdminLayout active="shows">
+      <div className="px-8 py-6 max-w-3xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <button onClick={() => navigate('/admin/shows')} className="text-sm font-semibold text-gray-400 hover:text-gray-900 inline-flex items-center gap-1 transition mb-1">
+              ← Shows
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">{show.title}</h1>
+          </div>
+          <div className="flex gap-2">
+            {show.slug && (
+              <a href={`/show/${show.slug}`} target="_blank" rel="noopener" className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 transition">
+                ↗ View
+              </a>
+            )}
+            <button onClick={handleSave} disabled={saving} className={`px-5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-50 ${saved ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'}`}>
+              {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
+            </button>
+          </div>
+        </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-6 space-y-4">
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">Title</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">Artist</label><input type="text" value={artistName} onChange={(e) => setArtistName(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">Description</label><textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">Pitch</label><textarea value={pitch} onChange={(e) => setPitch(e.target.value)} rows={1} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-xs font-bold text-gray-500 mb-1">Duration (min)</label><input type="text" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-          <div><label className="block text-xs font-bold text-gray-500 mb-1">Price</label><input type="text" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="800–1200 or ab 800" /></div>
-        </div>
-        <div className="border-t border-gray-100 pt-4 mt-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Key facts</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Cast</label><input type="text" value={cast} onChange={(e) => setCast(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="e.g. 2 performers" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Ideal for</label><input type="text" value={idealFor} onChange={(e) => setIdealFor(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="corporate, galas, festivals" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Placement</label><input type="text" value={placement} onChange={(e) => setPlacement(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="Opener / nach Pause / Finale" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Audience range</label><input type="text" value={audienceRange} onChange={(e) => setAudienceRange(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="50–2,000+" /></div>
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+
+        {/* ── Basic info ── */}
+        <Section title="Basic Info">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Title">
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Artist name">
+              <input type="text" value={artistName} onChange={(e) => setArtistName(e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Duration (minutes)">
+              <input type="text" value={duration} onChange={(e) => setDuration(e.target.value)} className={inputCls} placeholder="e.g. 45" />
+            </Field>
+            <Field label="Price">
+              <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} placeholder="800–1200 or ab 800" />
+            </Field>
           </div>
-        </div>
-        <div className="border-t border-gray-100 pt-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tech & highlights</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Stage min</label><input type="text" value={stageMin} onChange={(e) => setStageMin(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="6×4 m" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Stage ideal</label><input type="text" value={stageIdeal} onChange={(e) => setStageIdeal(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="8×6 m" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Ceiling min</label><input type="text" value={ceilingMin} onChange={(e) => setCeilingMin(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="3.5 m+" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Sound</label><input type="text" value={soundShort} onChange={(e) => setSoundShort(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Light</label><input type="text" value={lightShort} onChange={(e) => setLightShort(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Timings</label><input type="text" value={timingsShort} onChange={(e) => setTimingsShort(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="Load-in 30–60 min, Strike 15–30 min" /></div>
-            <div className="sm:col-span-2"><label className="block text-xs font-bold text-gray-500 mb-1">Rider PDF URL</label><input type="url" value={riderPdfUrl} onChange={(e) => setRiderPdfUrl(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" placeholder="https://…" /></div>
+          <Field label="Short description / facts">
+            <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className={textareaCls} />
+          </Field>
+          <Field label="Sales pitch">
+            <textarea value={pitch} onChange={(e) => setPitch(e.target.value)} rows={2} className={textareaCls} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Cast">
+              <input type="text" value={cast} onChange={(e) => setCast(e.target.value)} className={inputCls} placeholder="e.g. 2 performers" />
+            </Field>
+            <Field label="Audience range">
+              <input type="text" value={audienceRange} onChange={(e) => setAudienceRange(e.target.value)} className={inputCls} placeholder="50–2,000+" />
+            </Field>
+            <Field label="Ideal for">
+              <input type="text" value={idealFor} onChange={(e) => setIdealFor(e.target.value)} className={inputCls} placeholder="corporate, galas, festivals" />
+            </Field>
+            <Field label="Placement">
+              <input type="text" value={placement} onChange={(e) => setPlacement(e.target.value)} className={inputCls} placeholder="Opener / Finale" />
+            </Field>
           </div>
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-500 mb-1">Photos</label>
-          {photoUrls.map((url, i) => <div key={i} className="flex items-center gap-2 mb-1"><img src={url} alt="" className="w-10 h-10 object-cover rounded" /><span className="flex-1 truncate text-xs">{url}</span><button type="button" onClick={() => removePhoto(i)} className="text-red-600 text-xs">×</button></div>)}
-          <div className="flex gap-2 mt-2"><input type="url" value={newPhoto} onChange={(e) => setNewPhoto(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())} className="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="https://…" /><button type="button" onClick={addPhoto} className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold">Add</button></div>
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-500 mb-1">Videos</label>
-          {videoUrls.map((url, i) => <div key={i} className="flex items-center gap-2 mb-1"><span className="flex-1 truncate text-xs">{url}</span><button type="button" onClick={() => removeVideo(i)} className="text-red-600 text-xs">×</button></div>)}
-          <div className="flex gap-2 mt-2"><input type="url" value={newVideo} onChange={(e) => setNewVideo(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addVideo())} className="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="https://…" /><button type="button" onClick={addVideo} className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold">Add</button></div>
-        </div>
-        <div className="border-t border-gray-100 pt-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">FAQ</h4>
-          <div className="space-y-2">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Outdoor möglich?</label><input type="text" value={faqOutdoor} onChange={(e) => setFaqOutdoor(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Wie groß muss die Bühne sein?</label><input type="text" value={faqStage} onChange={(e) => setFaqStage(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Ist die Show sprachabhängig?</label><input type="text" value={faqLanguage} onChange={(e) => setFaqLanguage(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Kann man die Show anpassen?</label><input type="text" value={faqCustom} onChange={(e) => setFaqCustom(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">Reist ihr an?</label><input type="text" value={faqTravel} onChange={(e) => setFaqTravel(e.target.value)} className="w-full px-4 py-2 rounded-lg border text-sm" /></div>
+        </Section>
+
+        {/* ── Media ── */}
+        <Section title="Photos & Videos">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-2">Photos <span className="text-gray-300 font-normal">(first = cover)</span></p>
+            {photoUrls.map((url, i) => (
+              <div key={i} className="flex items-center gap-2 mb-2 bg-gray-50 rounded-lg p-2">
+                <img src={url} alt="" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+                <span className="flex-1 truncate text-xs text-gray-500">{url}</span>
+                <button type="button" onClick={() => movePhoto(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-700 disabled:opacity-20 text-sm px-1">↑</button>
+                <button type="button" onClick={() => movePhoto(i, 1)} disabled={i === photoUrls.length - 1} className="text-gray-400 hover:text-gray-700 disabled:opacity-20 text-sm px-1">↓</button>
+                <button type="button" onClick={() => removePhoto(i)} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button>
+              </div>
+            ))}
+            <div className="flex gap-2 mt-1">
+              <input type="url" value={newPhoto} onChange={(e) => setNewPhoto(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())} className={inputCls} placeholder="https://…" />
+              <button type="button" onClick={addPhoto} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold whitespace-nowrap">Add</button>
+            </div>
           </div>
-        </div>
-        <div className="border-t border-gray-100 pt-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Testimonials</h4>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-2">Videos</p>
+            {videoUrls.map((url, i) => (
+              <div key={i} className="flex items-center gap-2 mb-2 bg-gray-50 rounded-lg p-2">
+                <span className="flex-1 truncate text-xs text-gray-500">{url}</span>
+                <button type="button" onClick={() => removeVideo(i)} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button>
+              </div>
+            ))}
+            <div className="flex gap-2 mt-1">
+              <input type="url" value={newVideo} onChange={(e) => setNewVideo(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addVideo())} className={inputCls} placeholder="https://youtube.com/…" />
+              <button type="button" onClick={addVideo} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold whitespace-nowrap">Add</button>
+            </div>
+          </div>
+        </Section>
+
+        {/* ── FAQ ── */}
+        <Section title="FAQ">
+          <Field label="Outdoor möglich?"><input type="text" value={faqOutdoor} onChange={(e) => setFaqOutdoor(e.target.value)} className={inputCls} /></Field>
+          <Field label="Bühnengröße?"><input type="text" value={faqStage} onChange={(e) => setFaqStage(e.target.value)} className={inputCls} /></Field>
+          <Field label="Sprachabhängig?"><input type="text" value={faqLanguage} onChange={(e) => setFaqLanguage(e.target.value)} className={inputCls} /></Field>
+          <Field label="Anpassbar / Branding?"><input type="text" value={faqCustom} onChange={(e) => setFaqCustom(e.target.value)} className={inputCls} /></Field>
+          <Field label="Anreise?"><input type="text" value={faqTravel} onChange={(e) => setFaqTravel(e.target.value)} className={inputCls} /></Field>
+        </Section>
+
+        {/* ── Technical ── */}
+        <Section title="Technical Rider" defaultOpen={false}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Stage min"><input type="text" value={stageMin} onChange={(e) => setStageMin(e.target.value)} className={inputCls} placeholder="6×4 m" /></Field>
+            <Field label="Stage ideal"><input type="text" value={stageIdeal} onChange={(e) => setStageIdeal(e.target.value)} className={inputCls} placeholder="8×6 m" /></Field>
+            <Field label="Ceiling min"><input type="text" value={ceilingMin} onChange={(e) => setCeilingMin(e.target.value)} className={inputCls} placeholder="3.5 m+" /></Field>
+            <Field label="Timings"><input type="text" value={timingsShort} onChange={(e) => setTimingsShort(e.target.value)} className={inputCls} placeholder="Load-in 30 min, Strike 15 min" /></Field>
+            <Field label="Sound"><input type="text" value={soundShort} onChange={(e) => setSoundShort(e.target.value)} className={inputCls} /></Field>
+            <Field label="Light"><input type="text" value={lightShort} onChange={(e) => setLightShort(e.target.value)} className={inputCls} /></Field>
+          </div>
+          <Field label="Rider PDF URL"><input type="url" value={riderPdfUrl} onChange={(e) => setRiderPdfUrl(e.target.value)} className={inputCls} placeholder="https://…" /></Field>
+        </Section>
+
+        {/* ── Testimonials ── */}
+        <Section title="Testimonials" defaultOpen={false}>
           {testimonials.map((t, i) => (
-            <div key={i} className="mb-3 p-3 bg-gray-50 rounded-lg">
-              <textarea value={t.quote} onChange={(e) => updateTestimonial(i, 'quote', e.target.value)} rows={2} className="w-full px-3 py-2 rounded border text-sm mb-2" placeholder="Quote" />
-              <div className="flex gap-2"><input type="text" value={t.name} onChange={(e) => updateTestimonial(i, 'name', e.target.value)} className="flex-1 px-3 py-2 rounded border text-sm" placeholder="— Name" /><button type="button" onClick={() => removeTestimonial(i)} className="text-red-600 text-xs">×</button></div>
+            <div key={i} className="bg-gray-50 rounded-lg p-3 mb-2 space-y-2">
+              <textarea value={t.quote} onChange={(e) => updateTestimonial(i, 'quote', e.target.value)} rows={2} className={textareaCls} placeholder="Quote…" />
+              <div className="flex gap-2">
+                <input type="text" value={t.name} onChange={(e) => updateTestimonial(i, 'name', e.target.value)} className={inputCls + ' flex-1'} placeholder="— Name, Title" />
+                <button type="button" onClick={() => removeTestimonial(i)} className="text-red-400 hover:text-red-600 text-sm px-2">✕</button>
+              </div>
             </div>
           ))}
-          <button type="button" onClick={addTestimonial} className="text-xs font-bold text-gray-500 hover:text-black">+ Add testimonial</button>
-        </div>
-        <div className="flex gap-3 pt-4">
-          <button onClick={handleSave} disabled={saving} className="px-6 py-3 bg-black text-white rounded-xl font-bold text-sm">Save</button>
-          <button onClick={handleDelete} disabled={saving} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-sm">Delete</button>
+          <button type="button" onClick={addTestimonial} className="text-xs font-bold text-gray-500 hover:text-gray-900 transition">+ Add testimonial</button>
+        </Section>
+
+        {/* Bottom actions */}
+        <div className="flex gap-3 pt-2">
+          <button onClick={handleSave} disabled={saving} className={`px-6 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50 ${saved ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'}`}>
+            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
+          </button>
+          <button onClick={handleDelete} disabled={saving} className="px-6 py-3 border border-red-200 text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 transition disabled:opacity-50 ml-auto">
+            Delete show
+          </button>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
-// --- Admin Blog: List ---
+// ── Blog List ─────────────────────────────────────────────────────────────────
 export const AdminBlogList: React.FC = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<AdminBlogPostSummary[]>([]);
@@ -601,66 +733,46 @@ export const AdminBlogList: React.FC = () => {
   useEffect(() => {
     adminListBlogPosts()
       .then(({ posts: p }) => setPosts(p || []))
-      .catch((e) => setError(e.message || 'Failed'))
+      .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-8 text-gray-500">Loading blog posts…</div>;
-  if (error) return <div className="p-8 text-red-600">{error}</div>;
-
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Blog Posts</h1>
-        <button
-          onClick={() => navigate('/admin/blog/new')}
-          className="px-5 py-2.5 bg-black text-white rounded-xl text-sm font-bold hover:opacity-90 transition"
-        >
-          + New Post
-        </button>
-      </div>
-      {posts.length === 0 ? (
-        <p className="text-gray-500 text-sm">No posts yet. Create your first one!</p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-left text-xs text-gray-400 font-bold uppercase tracking-widest">
-              <th className="pb-3 pr-4">Title (DE)</th>
-              <th className="pb-3 pr-4">Status</th>
-              <th className="pb-3 pr-4">Published</th>
-              <th className="pb-3" />
-            </tr>
-          </thead>
-          <tbody>
+    <AdminLayout active="blog">
+      <div className="px-8 py-6 max-w-3xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-bold text-gray-900">Blog Posts</h1>
+          <button onClick={() => navigate('/admin/blog/new')} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition">
+            + New Post
+          </button>
+        </div>
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        {loading ? <div className="py-20 text-center text-gray-400 text-sm">Loading…</div> : posts.length === 0 ? (
+          <div className="py-20 text-center text-gray-400 text-sm">No posts yet.</div>
+        ) : (
+          <div className="space-y-3">
             {posts.map((p) => (
-              <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td className="py-3 pr-4 font-medium text-gray-900">{p.title_de || '—'}</td>
-                <td className="py-3 pr-4">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${p.published_at ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {p.published_at ? 'Published' : 'Draft'}
-                  </span>
-                </td>
-                <td className="py-3 pr-4 text-gray-400 text-xs">
-                  {p.published_at ? new Date(p.published_at).toLocaleDateString('de-DE') : '—'}
-                </td>
-                <td className="py-3 text-right">
-                  <button
-                    onClick={() => navigate(`/admin/blog/${p.id}`)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100 transition"
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
+              <div key={p.id} onClick={() => navigate(`/admin/blog/${p.id}`)} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-gray-400 hover:shadow-sm transition">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-semibold text-sm text-gray-900 truncate">{p.title_de || '—'}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 ${p.published_at ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {p.published_at ? 'Published' : 'Draft'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400">{p.published_at ? new Date(p.published_at).toLocaleDateString('de-DE') : 'Not published'}</p>
+                </div>
+                <span className="text-gray-300 text-sm">›</span>
+              </div>
             ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </AdminLayout>
   );
 };
 
-// --- Admin Blog: Editor ---
+// ── Blog Editor ───────────────────────────────────────────────────────────────
 export const AdminBlogEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -671,21 +783,12 @@ export const AdminBlogEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<AdminBlogPostPayload>({
-    slug: '',
-    title_de: '',
-    title_en: '',
-    excerpt_de: '',
-    excerpt_en: '',
-    content_de: '',
-    content_en: '',
-    cover_image_url: '',
-    published_at: null,
+    slug: '', title_de: '', title_en: '', excerpt_de: '', excerpt_en: '',
+    content_de: '', content_en: '', cover_image_url: '', published_at: null,
   });
 
   useEffect(() => {
     if (isNew) return;
-    // For existing posts, we load via adminListBlogPosts and find by id
-    // (no separate adminGetBlogPost needed — list has full data for now)
     adminListBlogPosts().then(({ posts }) => {
       const post = posts.find((p) => p.id === id);
       if (post) {
@@ -704,143 +807,117 @@ export const AdminBlogEditor: React.FC = () => {
     }).catch(() => setError('Failed to load post.'));
   }, [id, isNew]);
 
-  const autoSlug = (title: string) =>
-    title.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const autoSlug = (t: string) =>
+    t.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-  const set = (key: keyof AdminBlogPostPayload, value: string | null) =>
-    setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: keyof AdminBlogPostPayload, value: string | null) => setForm(f => ({ ...f, [key]: value }));
 
   const handleSave = async (publishNow = false) => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
+    setSaving(true); setError(null); setSuccess(null);
     try {
-      const payload: AdminBlogPostPayload = {
-        ...form,
-        published_at: publishNow ? new Date().toISOString() : (form.published_at || null),
-      };
+      const payload: AdminBlogPostPayload = { ...form, published_at: publishNow ? new Date().toISOString() : (form.published_at || null) };
       if (!payload.slug) payload.slug = autoSlug(payload.title_de || '');
-      let result;
       if (isNew) {
-        result = await adminCreateBlogPost(payload);
+        const result = await adminCreateBlogPost(payload);
         navigate(`/admin/blog/${result.post.id}`, { replace: true });
       } else {
         await adminUpdateBlogPost(id!, payload);
       }
       setSuccess(publishNow ? 'Published!' : 'Saved!');
       setTimeout(() => setSuccess(null), 3000);
-    } catch (e: unknown) {
-      setError((e as Error).message || 'Save failed.');
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { setError((e as Error).message || 'Save failed.'); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async () => {
     if (!id || isNew || !confirm('Delete this post permanently?')) return;
     setDeleting(true);
-    try {
-      await adminDeleteBlogPost(id);
-      navigate('/admin/blog');
-    } catch (e: unknown) {
-      setError((e as Error).message || 'Delete failed.');
-      setDeleting(false);
-    }
+    try { await adminDeleteBlogPost(id); navigate('/admin/blog'); }
+    catch (e) { setError((e as Error).message || 'Delete failed.'); setDeleting(false); }
   };
 
-  const inputCls = 'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white font-medium';
-  const textareaCls = `${inputCls} resize-y`;
-
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate('/admin/blog')} className="text-sm text-gray-400 hover:text-black transition">← Blog</button>
-        <h1 className="text-2xl font-bold tracking-tight">{isNew ? 'New Post' : 'Edit Post'}</h1>
-      </div>
-
-      {error && <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">{error}</div>}
-      {success && <div className="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">{success}</div>}
-
-      <div className="space-y-6">
-        {/* Slug */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">URL Slug</label>
+    <AdminLayout active="blog">
+      <div className="px-8 py-6 max-w-4xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <button onClick={() => navigate('/admin/blog')} className="text-sm font-semibold text-gray-400 hover:text-gray-900 inline-flex items-center gap-1 transition mb-1">
+              ← Blog
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">{isNew ? 'New Post' : 'Edit Post'}</h1>
+          </div>
           <div className="flex gap-2">
-            <input className={inputCls} value={form.slug || ''} onChange={(e) => set('slug', e.target.value)} placeholder="mein-artikel-titel" />
-            <button type="button" onClick={() => set('slug', autoSlug(form.title_de || ''))} className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 whitespace-nowrap">
-              Auto from DE title
+            <button onClick={() => handleSave(false)} disabled={saving} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition">
+              {saving ? 'Saving…' : 'Save Draft'}
+            </button>
+            <button onClick={() => handleSave(true)} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition">
+              Publish
             </button>
           </div>
         </div>
 
-        {/* Titles */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Title (DE) *</label>
-            <input className={inputCls} value={form.title_de || ''} onChange={(e) => set('title_de', e.target.value)} placeholder="Mein Blogartikel" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Title (EN) *</label>
-            <input className={inputCls} value={form.title_en || ''} onChange={(e) => set('title_en', e.target.value)} placeholder="My Blog Article" />
-          </div>
-        </div>
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        {success && <p className="mb-4 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg">{success}</p>}
 
-        {/* Excerpts */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Excerpt (DE)</label>
-            <textarea className={textareaCls} rows={2} value={form.excerpt_de || ''} onChange={(e) => set('excerpt_de', e.target.value)} placeholder="Kurze Zusammenfassung auf Deutsch…" />
+        <Section title="URL & Metadata">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Field label="URL Slug">
+                <input className={inputCls} value={form.slug || ''} onChange={(e) => set('slug', e.target.value)} placeholder="mein-artikel-titel" />
+              </Field>
+            </div>
+            <div className="flex items-end pb-0.5">
+              <button type="button" onClick={() => set('slug', autoSlug(form.title_de || ''))} className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 whitespace-nowrap transition">
+                Auto
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Excerpt (EN)</label>
-            <textarea className={textareaCls} rows={2} value={form.excerpt_en || ''} onChange={(e) => set('excerpt_en', e.target.value)} placeholder="Short summary in English…" />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Cover Image URL">
+              <input className={inputCls} value={form.cover_image_url || ''} onChange={(e) => set('cover_image_url', e.target.value)} placeholder="https://…" />
+            </Field>
+            <Field label="Publish Date (empty = draft)">
+              <input type="datetime-local" className={inputCls} value={form.published_at ? form.published_at.slice(0, 16) : ''} onChange={(e) => set('published_at', e.target.value ? new Date(e.target.value).toISOString() : null)} />
+            </Field>
           </div>
-        </div>
+        </Section>
 
-        {/* Content */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Content (DE) *</label>
-            <textarea className={textareaCls} rows={16} value={form.content_de || ''} onChange={(e) => set('content_de', e.target.value)} placeholder="Artikel auf Deutsch…" />
+        <Section title="Titles & Excerpts">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Title (DE)">
+              <input className={inputCls} value={form.title_de || ''} onChange={(e) => set('title_de', e.target.value)} placeholder="Mein Blogartikel" />
+            </Field>
+            <Field label="Title (EN)">
+              <input className={inputCls} value={form.title_en || ''} onChange={(e) => set('title_en', e.target.value)} placeholder="My Blog Article" />
+            </Field>
+            <Field label="Excerpt (DE)">
+              <textarea className={textareaCls} rows={2} value={form.excerpt_de || ''} onChange={(e) => set('excerpt_de', e.target.value)} placeholder="Kurze Zusammenfassung…" />
+            </Field>
+            <Field label="Excerpt (EN)">
+              <textarea className={textareaCls} rows={2} value={form.excerpt_en || ''} onChange={(e) => set('excerpt_en', e.target.value)} placeholder="Short summary…" />
+            </Field>
           </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Content (EN) *</label>
-            <textarea className={textareaCls} rows={16} value={form.content_en || ''} onChange={(e) => set('content_en', e.target.value)} placeholder="Article in English…" />
-          </div>
-        </div>
+        </Section>
 
-        {/* Cover image + publish date */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Cover Image URL</label>
-            <input className={inputCls} value={form.cover_image_url || ''} onChange={(e) => set('cover_image_url', e.target.value)} placeholder="https://…" />
+        <Section title="Content">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Content (DE)">
+              <textarea className={textareaCls} rows={20} value={form.content_de || ''} onChange={(e) => set('content_de', e.target.value)} placeholder="Artikel auf Deutsch…" />
+            </Field>
+            <Field label="Content (EN)">
+              <textarea className={textareaCls} rows={20} value={form.content_en || ''} onChange={(e) => set('content_en', e.target.value)} placeholder="Article in English…" />
+            </Field>
           </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5">Publish Date (empty = draft)</label>
-            <input
-              type="datetime-local"
-              className={inputCls}
-              value={form.published_at ? form.published_at.slice(0, 16) : ''}
-              onChange={(e) => set('published_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
-            />
-          </div>
-        </div>
+        </Section>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <button onClick={() => handleSave(false)} disabled={saving} className="px-8 py-3 bg-black text-white rounded-xl text-sm font-bold hover:opacity-90 transition disabled:opacity-50">
-            {saving ? 'Saving…' : 'Save Draft'}
-          </button>
-          <button onClick={() => handleSave(true)} disabled={saving} className="px-8 py-3 bg-green-600 text-white rounded-xl text-sm font-bold hover:opacity-90 transition disabled:opacity-50">
-            {saving ? '…' : 'Publish Now'}
-          </button>
-          {!isNew && (
-            <button onClick={handleDelete} disabled={deleting} className="px-8 py-3 border border-red-200 text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 transition disabled:opacity-50 ml-auto">
+        {!isNew && (
+          <div className="pt-2 flex justify-end">
+            <button onClick={handleDelete} disabled={deleting} className="px-6 py-3 border border-red-200 text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 disabled:opacity-50 transition">
               {deleting ? 'Deleting…' : 'Delete Post'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
