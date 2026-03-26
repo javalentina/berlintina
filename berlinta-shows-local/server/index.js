@@ -1623,6 +1623,19 @@ app.post('/api/admin/submissions/:id/reject', requireAdmin, async (req, res) => 
   }
 });
 
+app.delete('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
+  try {
+    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
+    const { id } = req.params;
+    const { error } = await supabase.from('show_submissions').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('admin delete submission:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete.' });
+  }
+});
+
 app.post('/api/admin/submissions/:id/changes', requireAdmin, async (req, res) => {
   try {
     if (!supabase) {

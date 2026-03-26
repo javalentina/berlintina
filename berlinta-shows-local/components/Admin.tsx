@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   adminLogin, adminLogout,
   adminGetSubmissions, adminGetSubmission,
-  adminApprove, adminReject,
+  adminApprove, adminReject, adminDeleteSubmission,
   adminGetShows, adminGetShow, adminUpdateShow, adminDeleteShow,
   adminListBlogPosts, adminCreateBlogPost, adminUpdateBlogPost, adminDeleteBlogPost,
   type Submission, type AdminApproveOverrides,
@@ -368,14 +368,31 @@ const DashboardInner: React.FC<{ defaultTab: 'submissions' | 'shows' | 'blog' }>
                       <p className={`text-xs truncate ${muted}`}>{s.submitter_email}{s.artist_genre ? ` · ${s.artist_genre}` : ''}</p>
                     </div>
                     <span className={`text-xs flex-shrink-0 ${muted}`}>{fmtDate((s as Record<string,unknown>).created_at as string)}</span>
-                    {isPending && (
-                      <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      {isPending && <>
                         <button onClick={e => quickApprove(e, s)} disabled={isActing} title="Approve & publish"
                           className="w-8 h-8 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 text-sm font-bold transition disabled:opacity-40 flex items-center justify-center">✓</button>
                         <button onClick={e => quickReject(e, s)} disabled={isActing} title="Reject"
                           className="w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-sm font-bold transition disabled:opacity-40 flex items-center justify-center">✕</button>
-                      </div>
-                    )}
+                      </>}
+                      {!isPending && (
+                        <button
+                          onClick={async e => {
+                            e.stopPropagation();
+                            if (!window.confirm(`Delete submission "${s.show_title}"? This cannot be undone.`)) return;
+                            setActingId(s.id);
+                            try {
+                              await adminDeleteSubmission(s.id);
+                              setSubmissions(prev => prev.filter(x => x.id !== s.id));
+                            } catch (err) { setError((err as Error).message || 'Delete failed'); }
+                            finally { setActingId(null); }
+                          }}
+                          disabled={isActing}
+                          title="Delete submission"
+                          className="w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-sm font-bold transition disabled:opacity-40 flex items-center justify-center"
+                        >🗑</button>
+                      )}
+                    </div>
                     <span className={`text-sm flex-shrink-0 ${muted}`}>›</span>
                   </div>
                 );

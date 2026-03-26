@@ -124,6 +124,10 @@ export async function adminReject(id: string, reviewNotes?: string): Promise<{ o
   }) as Promise<{ ok: boolean }>;
 }
 
+export async function adminDeleteSubmission(id: string): Promise<{ ok: boolean }> {
+  return adminFetch(`/admin/submissions/${id}`, { method: 'DELETE' }) as Promise<{ ok: boolean }>;
+}
+
 export async function adminRequestChanges(id: string, reviewNotes?: string): Promise<{ ok: boolean }> {
   return adminFetch(`/admin/submissions/${id}/changes`, {
     method: 'POST',
