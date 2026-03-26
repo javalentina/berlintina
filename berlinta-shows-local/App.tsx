@@ -1896,67 +1896,70 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   return (
     <div className="flex bg-parchment min-h-[calc(100vh-64px)] mt-16">
 
-      {/* ── LEFT: Chat Panel (30%) ── */}
-      <div className="w-[32%] min-w-[300px] flex-shrink-0 flex flex-col bg-surface border-r border-warm-border h-[calc(100vh-64px)] sticky top-16">
+      {/* ── LEFT: Chat Panel (38%) ── */}
+      <div className="w-[38%] min-w-[340px] flex-shrink-0 flex flex-col bg-surface border-r border-warm-border h-[calc(100vh-64px)] sticky top-16">
 
-        {/* Progress bar */}
-        {filledCount > 0 && (
-          <div className="px-5 pt-3 pb-0 flex-shrink-0">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-semibold text-warm-muted uppercase tracking-widest">
-                Step {Math.min(filledCount, PROGRESS_KEYS.length)}/{PROGRESS_KEYS.length}
-              </span>
-              <span className="text-[10px] font-semibold text-terracotta">
-                {Math.round((filledCount / PROGRESS_KEYS.length) * 100)}% complete
-              </span>
-            </div>
-            <div className="h-1 rounded-full bg-surface-alt overflow-hidden">
-              <div
-                className="h-full rounded-full bg-terracotta transition-all duration-700"
-                style={{ width: `${Math.round((filledCount / PROGRESS_KEYS.length) * 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Chat header — Tina avatar + headline */}
-        <div className="px-5 pt-4 pb-3 border-b border-warm-border flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm shadow-soft">
-              V
-            </div>
+        {/* Community hero header */}
+        <div className="px-6 pt-6 pb-4 border-b border-warm-border flex-shrink-0 bg-gradient-to-b from-terracotta/5 to-transparent">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-black text-lg shadow-md">V</div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-charcoal leading-tight">Valiantsina's AI Helper</p>
-              <p className="text-[10px] text-green-500 font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-                Online
+              <p className="text-base font-bold text-charcoal leading-tight">Valiantsina</p>
+              <p className="text-xs text-green-600 font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                {locale === 'de' ? 'Gründerin · Berlin' : 'Founder · Berlin'}
               </p>
             </div>
           </div>
-          <p className="text-[11px] text-warm-muted font-medium mt-2 leading-relaxed">
-            Let's build your perfect Berlintina profile together ✨
+          <p className="text-sm font-semibold text-charcoal leading-snug mb-1">
+            {locale === 'de' ? 'Willkommen in der Berlintina-Community 🎭' : 'Welcome to the Berlintina community 🎭'}
           </p>
-        </div>
+          <p className="text-xs text-warm-muted leading-relaxed">
+            {locale === 'de'
+              ? 'Ich begleite dich Schritt für Schritt — in 5 Minuten ist dein Profil fertig.'
+              : "I'll guide you step by step — your profile is ready in 5 minutes."}
+          </p>
 
-        {/* Messages */}
-        <div ref={messagesContainerRef} className="flex-grow overflow-y-auto px-4 py-4 space-y-3 flex flex-col">
-          {resolvingToken && messages.length === 0 && (
-            <div className="flex-grow flex items-center justify-center">
-              <div className="flex items-center gap-1.5">
-                {[0, 160, 320].map(d => <span key={d} className="typing-dot w-2 h-2 rounded-full bg-warm-border inline-block" style={{ animationDelay: `${d}ms` }} />)}
+          {/* Progress bar */}
+          {filledCount > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-warm-muted">
+                  {Math.min(filledCount, PROGRESS_KEYS.length)}/{PROGRESS_KEYS.length} {locale === 'de' ? 'ausgefüllt' : 'filled'}
+                </span>
+                <span className="text-xs font-bold text-terracotta">
+                  {Math.round((filledCount / PROGRESS_KEYS.length) * 100)}%
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-surface-alt overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-terracotta transition-all duration-700"
+                  style={{ width: `${Math.round((filledCount / PROGRESS_KEYS.length) * 100)}%` }}
+                />
               </div>
             </div>
           )}
-          {apiError && <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">{apiError}</div>}
-          {submitError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium">{submitError}</div>}
+        </div>
+
+        {/* Messages */}
+        <div ref={messagesContainerRef} className="flex-grow overflow-y-auto px-5 py-5 space-y-4 flex flex-col">
+          {resolvingToken && messages.length === 0 && (
+            <div className="flex-grow flex items-center justify-center">
+              <div className="flex items-center gap-1.5">
+                {[0, 160, 320].map(d => <span key={d} className="typing-dot w-2.5 h-2.5 rounded-full bg-warm-border inline-block" style={{ animationDelay: `${d}ms` }} />)}
+              </div>
+            </div>
+          )}
+          {apiError && <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">{apiError}</div>}
+          {submitError && <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">{submitError}</div>}
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'ai' ? 'items-end gap-2' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
+            <div key={i} className={`flex ${m.role === 'ai' ? 'items-end gap-2.5' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
               {m.role === 'ai' && (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-[9px] mb-0.5">V</div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs mb-0.5 shadow-sm">V</div>
               )}
-              <div className={`max-w-[78%] px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
+              <div className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                 m.role === 'ai'
-                  ? 'bg-terracotta-light text-charcoal rounded-2xl rounded-bl-none border border-terracotta/15'
+                  ? 'bg-terracotta-light text-charcoal rounded-2xl rounded-bl-none border border-terracotta/15 shadow-sm'
                   : 'bg-[#0084ff] text-white rounded-2xl rounded-br-none shadow-sm'
               }`}>
                 {m.text}
@@ -1965,22 +1968,22 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           ))}
           {loading && messages.length > 0 && <TypingIndicator />}
           {!loading && quickReplies.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pl-8">
+            <div className="flex flex-wrap gap-2 pl-10">
               {quickReplies.map((q, i) => (
                 <button key={i} type="button" onClick={() => {
                   if (lastNextSlot === 'has_show') {
                     const value = (q === 'Ja, habe eine Show' || q === 'Yes, I have a show') ? 'HAS_SHOW' : (q === 'Nein, brainstormen' || q === 'No, brainstorm') ? 'NO_SHOW' : undefined;
                     sendMessage(q, value ? { action: 'BUTTON', value } : undefined);
                   } else { sendMessage(q); }
-                }} disabled={loading} className="px-3 py-1.5 rounded-xl bg-surface border-2 border-warm-border text-xs font-semibold text-warm-muted hover:border-terracotta hover:text-terracotta transition disabled:opacity-50">
+                }} disabled={loading} className="px-4 py-2 rounded-xl bg-surface border-2 border-warm-border text-sm font-semibold text-warm-muted hover:border-terracotta hover:text-terracotta transition disabled:opacity-50">
                   {q}
                 </button>
               ))}
             </div>
           )}
           {showMediaInput && (
-            <div className="pl-8 space-y-2">
-              <label className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-warm-border cursor-pointer text-xs font-semibold text-warm-muted hover:bg-surface-alt">
+            <div className="pl-10 space-y-2.5">
+              <label className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-surface border border-warm-border cursor-pointer text-sm font-semibold text-warm-muted hover:bg-surface-alt">
                 <span>📸</span>
                 <span>{photoFiles.length > 0 ? `✓ ${photoFiles.length} ${locale === 'de' ? 'Foto(s)' : 'photo(s)'}` : (locale === 'de' ? 'Fotos hochladen' : 'Upload photos')}</span>
                 <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => {
@@ -1994,11 +1997,11 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                   placeholder={locale === 'de' ? 'YouTube-Link (optional)' : 'YouTube link (optional)'}
                   value={pendingVideoUrl}
                   onChange={e => setPendingVideoUrl(e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-xl bg-surface border border-warm-border text-xs font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface border border-warm-border text-sm font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
                 />
                 {pendingVideoUrl && (
                   <button type="button" onClick={() => sendMessage(locale === 'de' ? '▶ Video hinzugefügt' : '▶ Video added')}
-                    className="px-3 py-1.5 rounded-xl bg-terracotta text-white text-xs font-semibold">
+                    className="px-4 py-2.5 rounded-xl bg-terracotta text-white text-sm font-semibold">
                     OK
                   </button>
                 )}
@@ -2010,16 +2013,16 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
         {/* Finish button */}
         {canFinish && (
-          <div className="px-3 pt-2 flex-shrink-0">
+          <div className="px-4 pt-2 flex-shrink-0">
             <button
               type="button"
               onClick={handleFinish}
               disabled={submitting}
-              className="w-full py-3 bg-terracotta text-white rounded-xl font-semibold text-sm hover:bg-terracotta-dark transition flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 bg-terracotta text-white rounded-xl font-bold text-base hover:bg-terracotta-dark transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
             >
               {submitting
                 ? <span className="flex gap-1">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
-                : <>{locale === 'de' ? 'Show einreichen' : 'Submit show'} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></>
+                : <>{locale === 'de' ? 'Show einreichen' : 'Submit show'} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></>
               }
             </button>
           </div>
@@ -2028,31 +2031,30 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         {/* Input */}
         <div className="border-t border-warm-border bg-surface flex-shrink-0">
           {/https?:\/\//.test(input) && (
-            <div className="px-4 pt-2.5 pb-0 flex items-center gap-1.5 text-[10px] text-warm-muted font-medium">
+            <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-xs text-warm-muted font-semibold">
               <span>🔍</span>
-              <span>{locale === 'de' ? 'Website wird analysiert' : 'Website will be analyzed'}</span>
+              <span>{locale === 'de' ? 'Website wird analysiert…' : 'Analyzing your website…'}</span>
             </div>
           )}
-          <div className="p-3 flex gap-2">
+          <div className="p-4 flex gap-2.5">
             <input type="text" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} className="hidden" aria-hidden="true" tabIndex={-1} />
             <input
               type="text"
-              placeholder={locale === 'de' ? 'Antworten oder URL einfügen…' : 'Reply or paste URL…'}
-              className="flex-grow px-4 py-2.5 rounded-xl bg-surface-alt text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/20 transition text-charcoal disabled:opacity-50 placeholder:text-warm-faint"
+              placeholder={locale === 'de' ? 'Antworten oder URL einfügen…' : 'Reply or paste your URL…'}
+              className="flex-grow px-4 py-3 rounded-xl bg-surface-alt text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/20 transition text-charcoal disabled:opacity-50 placeholder:text-warm-faint"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
               disabled={loading || submitting || !conversationId}
             />
             <button onClick={() => sendMessage()} disabled={(!input.trim()) || loading || submitting || !conversationId}
-              className="w-10 h-10 bg-terracotta text-white rounded-xl hover:bg-terracotta-dark transition flex items-center justify-center shadow-md disabled:opacity-20 flex-shrink-0 self-end">
+              className="w-11 h-11 bg-terracotta text-white rounded-xl hover:bg-terracotta-dark transition flex items-center justify-center shadow-md disabled:opacity-20 flex-shrink-0 self-end">
               {loading
-                ? <span className="flex gap-0.5">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1 h-1 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
-                : <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                ? <span className="flex gap-0.5">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
+                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               }
             </button>
           </div>
-          <p className="text-center text-[9px] text-warm-faint pb-2">Powered by OpenAI</p>
         </div>
       </div>
 
