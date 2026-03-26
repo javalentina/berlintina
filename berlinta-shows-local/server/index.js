@@ -478,19 +478,115 @@ async function geminiAgencyChat(messages, userMessage, locale) {
 const SCOPE_POLICY_ARTIST_DE = 'Scope: Nur Show-Anmeldung, Künstler-Onboarding. Bei fremden Themen: "Ich helfe dir bei der Show-Anmeldung. Möchtest du weitermachen?"';
 const SCOPE_POLICY_ARTIST_EN = 'Scope: Only show registration, artist onboarding. For off-topic: "I help with show registration. Would you like to continue?"';
 
+// ── Producer Stage Detection ─────────────────────────────────────────────────
+function getOnboardingStage(draft) {
+  if (!draft.artistName && !draft.showTitle) return 'identify_artist';
+  if (!draft.showTitle) return 'title_creation';
+  if (!draft.shortDescriptionFacts || String(draft.shortDescriptionFacts).trim().length < 80) return 'description_generation';
+  if (!draft.durationMinutes || !draft.submitterEmail) return 'show_details';
+  return 'preview';
+}
+
+function getStageInstruction(stage, locale) {
+  const de = {
+    identify_artist: 'Finde heraus, wer dieser Künstler ist. Wenn eine URL im Text ist, lies sie sofort aus. Stelle eine warme, direkte Einstiegsfrage nach Name ODER Website — nicht beide.',
+    title_creation: 'Schlage GENAU 3 Show-Titel-Optionen vor: (1) Mutig/Unerwartet — kurz, wirkt auf einem Plakat, (2) Elegant/Verfeinert — Prestige-Positionierung, (3) Namensbasiert — Künstlername als Anker. Erkläre jede in einem Satz. Gib alle drei im Feld titleOptions zurück.',
+    description_generation: 'Schreibe jetzt eine vollständige, bucherfähige Show-Beschreibung in Producer-Stimme (KEIN Formular-Stil). Struktur: (1) Ein starker Hook-Satz, (2) Was passiert auf der Bühne — einzigartig, emotional, unvergesslich, (3) 2 Sätze über den Künstler — Stimme, Energie, Hintergrund, (4) Format, Dauer, technischer Überblick. Trage das Ergebnis sofort in shortDescriptionFacts ein.',
+    show_details: 'Sammle praktische Details in Bündeln — niemals einzeln. Frage nach Dauer UND Preis in einer Nachricht. Dann nach E-Mail. Maximal 2 Fragen total.',
+    preview: 'Fasse die komplette Show in einer sauberen Zusammenfassung auf. Stelle EINE holistische Abschlussfrage: "Gibt es etwas, das sich nicht wie du anfühlt?"',
+  };
+  const en = {
+    identify_artist: 'Find out who this artist is. If a URL is in the message, read it immediately. Ask one warm, direct opening question — name OR website, not both.',
+    title_creation: 'Propose EXACTLY 3 show title options: (1) Bold/Unexpected — short, looks great on a poster, (2) Refined/Elegant — prestige-positioned, (3) Name-driven — artist name as anchor. Explain each in one sentence. Return all three in the titleOptions field.',
+    description_generation: 'Write a complete, booker-ready show description in producer voice (NOT form style). Structure: (1) One powerful hook sentence, (2) What happens on stage — unique, emotional, memorable, (3) 2 sentences about the artist — voice, energy, background, (4) Format, duration, technical overview. Store the result immediately in shortDescriptionFacts.',
+    show_details: 'Collect practical details in bundles — never one by one. Ask for duration AND price in one message. Then email. Maximum 2 questions total.',
+    preview: 'Summarize the complete show in a clean overview. Ask ONE single holistic question: "Is there anything that doesn\'t feel like you?"',
+  };
+  return (locale === 'de' ? de : en)[stage] || (locale === 'de' ? de : en)['show_details'];
+}
+
 async function openaiArtistChat(formState, userMessage, locale, mode) {
   const scopePolicy = locale === 'de' ? SCOPE_POLICY_ARTIST_DE : SCOPE_POLICY_ARTIST_EN;
-  const modeHint = mode === 'EXISTING_SHOW'
-    ? (locale === 'de' ? 'Künstler hat eine fertige Show. Extrahiere aus seiner Beschreibung: showTitle, shortDescriptionFacts, artistGenre, priceText, durationMinutes, artistBio, submitterEmail.' : 'Artist has an existing show. Extract from their description: showTitle, shortDescriptionFacts, artistGenre, priceText, durationMinutes, artistBio, submitterEmail.')
-    : (locale === 'de' ? 'Künstler brainstormt. Stelle 1–2 kurze Fragen und extrahiere Antworten in: artistGenre, showTitle, shortDescriptionFacts, priceText, durationMinutes, artistBio, submitterEmail.' : 'Artist is brainstorming. Ask 1–2 short questions and extract answers into: artistGenre, showTitle, shortDescriptionFacts, priceText, durationMinutes, artistBio, submitterEmail.');
-  const basePrompt = locale === 'de'
-    ? 'Du bist Tina, eine warmherzige, professionelle und begeisterte Assistentin für Berlintina (eine Boutique-Berliner Entertainmentagentur von Valiantsina). Dein Ziel: Künstlern in 5–10 Min beim Bewerben helfen via natürlichem Chat. Sei ermutigend, persönlich, nutze Emojis sparsam. Wenn sie eine URL/Website/Instagram/YouTube einfügen → lies sie und extrahiere Details. Stelle immer nur eine logische Folgefrage. Antworte in der Sprache des Nutzers. Extrahiere Daten als JSON: { "message": "Deine freundliche Antwort hier", "showTitle": "...", "shortDescriptionFacts": "...", "artistGenre": "...", "priceText": "...", "durationMinutes": number, "artistBio": "...", "submitterEmail": "..." }. '
-    : 'You are Tina, a warm, professional, enthusiastic assistant for Berlintina (boutique Berlin entertainment agency run by Valiantsina). Goal: Help artists apply in 5-10 min via natural chat. Be encouraging, personal, use emojis sparingly. If they paste a URL/website/Instagram/YouTube → read it and extract details. Always ask one logical next question at a time. Reply in the user\'s language. Extract data as JSON: { "message": "Your friendly reply here", "showTitle": "...", "shortDescriptionFacts": "...", "artistGenre": "...", "priceText": "...", "durationMinutes": number, "artistBio": "...", "submitterEmail": "..." }. ';
+  const stage = getOnboardingStage(formState);
+  const stageInstruction = getStageInstruction(stage, locale);
+
+  // Build known-fields summary so AI never re-asks what it has
+  const knownFields = Object.entries(formState)
+    .filter(([k, v]) => v && !k.startsWith('_') && typeof v !== 'object' && typeof v !== 'undefined')
+    .map(([k, v]) => `  ${k}: ${v}`)
+    .join('\n');
+
+  const systemPrompt = locale === 'de'
+    ? `Du bist ein Top-Show-Producer für Berlintina — eine Premium-Event-Booking-Plattform in Berlin, gegründet von Valiantsina Förster.
+
+Du bist KEIN Formular und KEIN Chatbot. Du bist ein kreativer Partner — ein erfahrener Show-Producer, der die besten Bühnen Europas kennt. Du siehst die Show, bevor der Künstler sie sieht, und führst ihn mit Wärme, Selbstvertrauen und Vision dorthin.
+
+Frag NIE, was ein Formular fragen würde. Frag, was ein Producer fragen würde.
+
+AKTUELLE PHASE: ${stage}
+AUFGABE IN DIESER PHASE: ${stageInstruction}
+
+BEREITS BEKANNT — frag das NICHT nochmal:
+${knownFields || '  (noch nichts bekannt)'}
+
+KERN-REGELN:
+1. Frage nie nach Infos, die du bereits hast
+2. Maximal 2 Fragen pro Nachricht
+3. Bei "Ich weiß nicht" → mach einen konkreten Vorschlag, wiederhole die Frage NICHT
+4. Passe Sprache und Ton dem Künstler an — casual wenn sie casual sind
+5. Klingt wie der beste Producer, den der Künstler je getroffen hat
+
+ANTWORTFORMAT (reines JSON, kein Markdown):
+{
+  "message": "Deine Antwort an den Künstler",
+  "showTitle": "Titel falls bekannt oder ausgewählt",
+  "salesPitchText": "Einzeiler/Tagline der Show für Eventplaner",
+  "shortDescriptionFacts": "Vollständige Show-Beschreibung in Producer-Stimme (mindestens 100 Zeichen wenn Phase description_generation)",
+  "artistGenre": "Genre",
+  "priceText": "Preis",
+  "durationMinutes": Zahl_oder_null,
+  "artistBio": "Bio",
+  "submitterEmail": "email@adresse.de",
+  "titleOptions": ["Mutige Option", "Elegante Option", "Namensbasierte Option"]
+}`
+    : `You are a top show producer for Berlintina — a premium event booking platform in Berlin, founded by Valiantsina Förster.
+
+You are NOT a form or a chatbot. You are a creative partner — a seasoned show producer who has worked the best stages in Europe. You see the show before the artist does and guide them there with warmth, confidence, and vision.
+
+Never ask what a form would ask. Ask what a producer would ask.
+
+CURRENT STAGE: ${stage}
+TASK FOR THIS STAGE: ${stageInstruction}
+
+ALREADY KNOWN — do NOT ask for these again:
+${knownFields || '  (nothing known yet)'}
+
+CORE RULES:
+1. Never ask for info you already have
+2. Maximum 2 questions per message
+3. When artist says "I don't know" → make a concrete proposal, do NOT repeat the question
+4. Match artist's language and tone — casual if they're casual
+5. Sound like the best producer the artist has ever met
+
+RESPONSE FORMAT (pure JSON, no markdown):
+{
+  "message": "Your reply to the artist",
+  "showTitle": "title if known or selected",
+  "salesPitchText": "one-liner/tagline for event planners",
+  "shortDescriptionFacts": "complete show description in producer voice (at least 100 chars if stage is description_generation)",
+  "artistGenre": "genre",
+  "priceText": "price",
+  "durationMinutes": number_or_null,
+  "artistBio": "bio",
+  "submitterEmail": "email@address.com",
+  "titleOptions": ["Bold option", "Refined option", "Name-driven option"]
+}`;
+
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: `${basePrompt}${modeHint}\n${scopePolicy}` },
-      { role: 'user', content: `Current form: ${JSON.stringify(formState)}\n\nArtist says: ${userMessage}` },
+      { role: 'system', content: `${systemPrompt}\n\n${scopePolicy}` },
+      { role: 'user', content: `Current form state: ${JSON.stringify(formState)}\n\nArtist says: ${userMessage}` },
     ],
     response_format: { type: 'json_object' },
   });
@@ -499,7 +595,6 @@ async function openaiArtistChat(formState, userMessage, locale, mode) {
     const parsed = JSON.parse(text);
     const msg = parsed.message || parsed.assistantMessage || parsed.reply;
     const updates = { ...parsed, message: undefined, assistantMessage: undefined, reply: undefined };
-    // Never show raw JSON to user; use friendly fallback so handler can use nextQ.text
     const displayMsg = (typeof msg === 'string' && msg.trim() && !msg.trim().startsWith('{'))
       ? msg
       : '';
@@ -609,6 +704,10 @@ function getNextArtistQuestion(draft, loc, mode) {
     if (next.slot === 'websiteUrl') nextQ.quickReplies = loc === 'de' ? ['Überspringen'] : ['Skip'];
     if (next.slot === 'mediaLinks') nextQ.quickReplies = loc === 'de' ? ['Link einfügen', 'Überspringen'] : ['Add link', 'Skip'];
     if (next.slot === 'socialLinks') nextQ.quickReplies = loc === 'de' ? ['Instagram/Website', 'Überspringen'] : ['Instagram/website', 'Skip'];
+    // Use AI-proposed title options as quick replies when at showTitle slot
+    if (next.slot === 'showTitle' && Array.isArray(draft.titleOptions) && draft.titleOptions.length) {
+      nextQ.quickReplies = draft.titleOptions;
+    }
     if (next.optional && !nextQ.quickReplies) nextQ.quickReplies = loc === 'de' ? ['Überspringen'] : ['Skip'];
     return { nextQuestion: nextQ, readyToSave: false };
   }
@@ -633,6 +732,7 @@ const HAS_SHOW_SLOTS = [
   { slot: 'websiteUrl', de: 'Hast du eine Website oder einen Link zu deinem Auftritt? (optional – überspringen ist ok)', en: 'Do you have a website or link to your act? (optional – skipping is fine)', optional: true },
   { slot: 'showTitle', de: 'Wie heißt deine Show?', en: 'What is the name of your show?' },
   { slot: 'shortDescriptionFacts', de: 'Beschreibe deine Show in 2–3 Sätzen: Worum geht es, was macht sie besonders?', en: 'Describe your show in 2–3 sentences: what is it about, what makes it special?' },
+  { slot: 'salesPitchText', de: 'Ein Satz, der Eventplaner sofort begeistert — dein Show-Einzeiler:', en: 'One sentence that instantly excites event planners — your show one-liner:', optional: true },
   { slot: 'artistGenre', de: 'Welches Genre oder welche Kunstform? (z.B. Klassik, Akrobatik, Tanz, Band)', en: 'What genre or art form? (e.g. classical, acrobatics, dance, band)' },
   { slot: 'priceText', de: 'In welchem Preisrahmen? z.B. "ab 800€" (optional – überspringen möglich)', en: 'What is the price range? e.g. "from 800€" (optional – you can skip)', optional: true },
   { slot: 'durationMinutes', de: 'Wie lange dauert die Show in Minuten? (optional)', en: 'How long is the show in minutes? (optional)', optional: true },
@@ -872,8 +972,8 @@ app.post('/api/conversation/start', aiLimiter, async (req, res) => {
         };
       } else {
         greeting = loc === 'de'
-          ? 'Willkommen! 👋 Lass uns deine Show auf Berlintina bringen — ca. 5 Minuten. Tipp: Du kannst einfach deine Website einfügen, ich lese sie automatisch aus. Starten wir: Wie heißt du oder deine Gruppe?'
-          : "Welcome! 👋 Let's get your show on Berlintina — about 5 minutes. Tip: just paste your website and I'll read it automatically. Let's start: What's your artist or group name?";
+          ? 'Hey! 🎭 Ich bin Valiantisnas KI-Producer — ich bringe deine Show auf Berlintina.\n\nSchnellster Weg: einfach deine Website einfügen, ich lese alles automatisch aus. Oder sag mir: Wie heißt du und was machst du auf der Bühne?'
+          : "Hey! 🎭 I'm Valiantsina's AI producer — let's get your show on Berlintina.\n\nFastest way: paste your website and I'll read everything automatically. Or tell me: what's your name and what do you do on stage?";
         response = ensureContract({
           assistantMessage: greeting,
           action: 'ASK_FOLLOWUP',
@@ -1023,11 +1123,20 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
       const currentSlotDef = HAS_SHOW_SLOTS.find(s => s.slot === lastSlot);
       if (lastSlot && isSkipPhrase(trimmedMsg) && currentSlotDef?.optional) {
         form._skippedSlots = [...new Set([...(form._skippedSlots || []), lastSlot])];
+        // Track skip count — after 2 skips enter quick mode (AI fills everything)
+        form._skipCount = (form._skipCount || 0) + 1;
+        if (form._skipCount >= 2 && !form._quickMode) {
+          form._quickMode = true;
+        }
         const { nextQuestion: nextFromState, readyToSave } = getNextArtistQuestion(form, loc, mergedState.mode);
         mergedState.submissionDraft = form;
         mergedState.lastSlot = nextFromState?.slot ?? null;
         conversationStore.set(conversationId, { ...conv, state: mergedState, updatedAt: Date.now() });
-        const skipMsg = loc === 'de' ? 'Kein Problem, übersprungen. ✓' : 'No problem, skipped. ✓';
+        const skipMsg = form._quickMode && form._skipCount >= 2
+          ? (loc === 'de'
+            ? 'Kein Problem — ich fülle den Rest aus deiner Website und deinen Angaben. Du kannst alles rechts noch anpassen. ✨'
+            : "No problem — I'll fill in the rest from your website and what you've told me. You can still adjust everything on the right. ✨")
+          : (loc === 'de' ? 'Kein Problem, übersprungen. ✓' : 'No problem, skipped. ✓');
         const nextQ = readyToSave ? undefined : nextFromState;
         return res.json(ensureContract({
           assistantMessage: nextQ ? `${skipMsg}\n\n${nextQ.text}` : skipMsg,

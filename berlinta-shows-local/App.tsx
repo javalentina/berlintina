@@ -1326,6 +1326,7 @@ const PROGRESS_KEYS = [
   { key: 'showTitle', de: 'Titel', en: 'Title' },
   { key: 'artistGenre', de: 'Genre', en: 'Genre' },
   { key: 'shortDescriptionFacts', de: 'Beschreibung', en: 'Description' },
+  { key: 'durationMinutes', de: 'Dauer', en: 'Duration' },
   { key: 'submitterEmail', de: 'E-Mail', en: 'Email' },
 ] as const;
 
@@ -1335,6 +1336,7 @@ const EDIT_FIELDS = [
   { key: 'artistGenre',           de: 'Genre',              en: 'Genre',             ph_de: 'z.B. Klassik, Akrobatik',              ph_en: 'e.g. Classical, Acrobatics',         multiline: false },
   { key: 'durationMinutes',       de: 'Dauer (Minuten)',    en: 'Duration (min)',    ph_de: '60',                                   ph_en: '60',                                 multiline: false },
   { key: 'priceText',             de: 'Preis',              en: 'Price',             ph_de: 'ab 1.500 €',                           ph_en: 'from €1,500',                        multiline: false },
+  { key: 'salesPitchText',        de: 'Show-Einzeiler',      en: 'Show tagline',      ph_de: '1 Satz der Eventplaner begeistert',    ph_en: '1 sentence that excites planners',   multiline: false },
   { key: 'shortDescriptionFacts', de: 'Kurzbeschreibung',   en: 'Short description', ph_de: 'Was macht deine Show besonders?',      ph_en: 'What makes your show special?',      multiline: true  },
   { key: 'artistBio',             de: 'Über den Künstler',  en: 'About the artist',  ph_de: 'Hintergrund, Stil, Erfahrung…',        ph_en: 'Background, style, experience…',     multiline: true  },
   { key: 'socialLinks',           de: 'Website / Social',   en: 'Website / Social',  ph_de: 'https://deine-website.de',             ph_en: 'https://your-website.com',           multiline: false },
