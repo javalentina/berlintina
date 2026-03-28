@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ShowDetailPage } from './ShowDetailPage';
+import { ShowDetailPage, type ShowEditProps } from './ShowDetailPage';
 import { Category, PriceType, ArtistStatus, type Show } from '../types';
 import {
   adminLogin, adminLogout,
@@ -485,8 +485,6 @@ const SubmissionDetailInner: React.FC = () => {
   const [editDesc, setEditDesc] = useState('');
   const [editPitch, setEditPitch] = useState('');
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
-  const [newPhotoUrl, setNewPhotoUrl] = useState('');
-  const [view, setView] = useState<'edit' | 'preview'>('preview');
   const [contactMode, setContactMode] = useState<'options' | 'form' | 'success'>('options');
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '', eventDate: '' });
 
@@ -522,21 +520,13 @@ const SubmissionDetailInner: React.FC = () => {
     return adminApprove(sub.id, overrides);
   };
 
-  const addPhotoUrl = () => {
-    const url = newPhotoUrl.trim();
-    if (url && !editPhotos.includes(url)) { setEditPhotos(p => [...p, url]); setNewPhotoUrl(''); }
-  };
   const removePhoto = (i: number) => setEditPhotos(p => p.filter((_, j) => j !== i));
   const movePhoto = (i: number, dir: -1 | 1) => {
     setEditPhotos(p => { const a = [...p]; const j = i + dir; if (j < 0 || j >= a.length) return a; [a[i], a[j]] = [a[j], a[i]]; return a; });
   };
 
-  const inp   = dynInput(dark);
-  const ta    = `${inp} resize-y`;
   const txt   = dark ? 'text-white' : 'text-gray-900';
-  const sub_  = dark ? 'text-gray-300' : 'text-gray-600';
   const muted = dark ? 'text-gray-500' : 'text-gray-400';
-  const card  = `border rounded-xl p-5 ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`;
 
   if (loading || !sub) return (
     <div className="px-8 py-6"><p className={`text-sm ${muted}`}>{loading ? 'Loading…' : 'Not found.'}</p></div>
@@ -567,184 +557,77 @@ const SubmissionDetailInner: React.FC = () => {
     status: ArtistStatus.NEEDS_REVIEW,
   };
 
+  const editProps: ShowEditProps = {
+    onTitleChange: setEditTitle,
+    onDescChange: setEditDesc,
+    onPitchChange: setEditPitch,
+    onPhotoAdd: (url) => { if (!editPhotos.includes(url)) setEditPhotos(p => [...p, url]); },
+    onPhotoRemove: removePhoto,
+    onPhotoMove: movePhoto,
+  };
+
   return (
-    <div className="px-8 py-6 max-w-6xl">
+    <div className="px-6 py-5 max-w-6xl">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5 gap-4">
-        <div className="flex items-center gap-4 min-w-0">
-          <button onClick={() => navigate('/admin/submissions')}
-            className={`text-sm font-semibold inline-flex items-center gap-1 flex-shrink-0 transition ${dark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
-          >← Back</button>
-          <h1 className={`text-lg font-bold truncate ${txt}`}>{editTitle || sub.show_title}</h1>
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex-shrink-0 ${statusBadge(sub.status, dark)}`}>
-            {STATUS_LABELS[sub.status] || sub.status}
-          </span>
-        </div>
-
-        {/* View toggle */}
-        <div className={`flex rounded-lg border overflow-hidden flex-shrink-0 ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-          <button onClick={() => setView('edit')}
-            className={`px-4 py-2 text-sm font-semibold transition ${view === 'edit'
-              ? 'bg-gray-900 text-white'
-              : dark ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-white text-gray-500 hover:text-gray-900'
-            }`}>✏ Edit</button>
-          <button onClick={() => setView('preview')}
-            className={`px-4 py-2 text-sm font-semibold transition ${view === 'preview'
-              ? 'bg-gray-900 text-white'
-              : dark ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-white text-gray-500 hover:text-gray-900'
-            }`}>👁 Preview</button>
-        </div>
+      {/* ── Admin bar ── */}
+      <div className={`flex items-center gap-3 mb-4 pb-4 border-b ${dark ? 'border-gray-700' : 'border-gray-100'}`}>
+        <button onClick={() => navigate('/admin/submissions')}
+          className={`text-sm font-semibold inline-flex items-center gap-1 flex-shrink-0 transition ${dark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
+        >← Back</button>
+        <span className={`text-sm font-bold truncate flex-1 ${txt}`}>{editTitle || sub.show_title}</span>
+        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex-shrink-0 ${statusBadge(sub.status, dark)}`}>
+          {STATUS_LABELS[sub.status] || sub.status}
+        </span>
+        {email && (
+          <a href={`mailto:${email}?subject=Re: Ihre Berlintina Einreichung – ${encodeURIComponent(sub.show_title || '')}`}
+            className={`text-xs font-semibold flex-shrink-0 ${dark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}>
+            ✉ Email
+          </a>
+        )}
+        {isPending && (
+          <>
+            <input
+              type="text"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Notes for reject…"
+              className={`text-xs px-3 py-1.5 rounded-lg border flex-shrink-0 w-44 ${dark ? 'bg-gray-800 border-gray-600 text-gray-200 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-700 placeholder-gray-400'} outline-none`}
+            />
+            <button onClick={() => doAction(approve)} disabled={actionLoading}
+              className="flex-shrink-0 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition">
+              ✓ Approve
+            </button>
+            <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
+              className="flex-shrink-0 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 disabled:opacity-50 transition">
+              ✕ Reject
+            </button>
+          </>
+        )}
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
-      {/* ── PREVIEW MODE ── */}
-      {view === 'preview' && (
-        <div className="space-y-4">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${dark ? 'bg-amber-900/30 text-amber-300 border border-amber-700/40' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
-            <span>👁</span>
-            <span>Preview mode — this is exactly how the artist page will look after approval. Edits made on the ✏ Edit tab are reflected here.</span>
-          </div>
-          {isPending && (
-            <div className="flex gap-3">
-              <button onClick={() => doAction(approve)} disabled={actionLoading}
-                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
-                ✓ Approve & Publish
-              </button>
-              <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
-                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
-                ✕ Reject
-              </button>
-            </div>
-          )}
-          {/* Live show page preview in a white container */}
-          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-white">
-            <ShowDetailPage
-              show={previewShow}
-              locale="de"
-              contactMode={contactMode}
-              contactForm={contactForm}
-              contactSubmitting={false}
-              contactError={null}
-              onContactModeChange={setContactMode}
-              onContactFormChange={setContactForm}
-              onContactSubmit={e => { e.preventDefault(); setContactMode('success'); }}
-            />
-          </div>
-        </div>
-      )}
+      {/* ── Hint banner ── */}
+      <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium mb-5 ${dark ? 'bg-amber-900/30 text-amber-300 border border-amber-800/40' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+        <span>✏</span>
+        <span>Hover over any section to edit inline — click the pencil. Photos: hover for ✕ / ← →, or add URL below the image.</span>
+      </div>
 
-      {/* ── EDIT MODE ── */}
-      {view === 'edit' && (
-        <div className="space-y-4">
-
-          {/* ── Edit strip (compact, above live preview) ── */}
-          <div className={`rounded-2xl border p-5 space-y-4 ${dark ? 'bg-gray-800/60 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-
-            {/* Artist meta row */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
-              {[
-                ['Artist', String(subAny.artist_name || '—')],
-                ['Email', email || '—'],
-                ['Genre', sub.artist_genre || '—'],
-                ['Submitted', fmtDate(subAny.created_at as string)],
-              ].map(([label, val]) => (
-                <span key={label} className={muted}>
-                  <span className="font-bold uppercase tracking-widest">{label}: </span>{val as string}
-                </span>
-              ))}
-              {email && (
-                <a href={`mailto:${email}?subject=Re: Ihre Berlintina Einreichung – ${encodeURIComponent(sub.show_title || '')}`}
-                  className={`ml-auto text-xs font-semibold underline ${dark ? 'text-blue-400' : 'text-blue-600'}`}>
-                  ✉ Email artist
-                </a>
-              )}
-            </div>
-
-            {/* Editable fields grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="md:col-span-2">
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Title</label>
-                <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={inp} placeholder={sub.show_title || 'Show title…'} />
-              </div>
-              <div>
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Description</label>
-                <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={5} className={ta} placeholder={sub.short_description_facts || 'Description…'} />
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Sales pitch (tagline)</label>
-                  <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className={ta} placeholder={String((sub as Record<string,unknown>).sales_pitch_text || 'One-liner for bookers…')} />
-                </div>
-                <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Notes (optional)</label>
-                  <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className={inp} placeholder="For reject or request changes…" />
-                </div>
-              </div>
-            </div>
-
-            {/* Photos */}
-            <div>
-              <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${muted}`}>Photos</p>
-              {editPhotos.length > 0 ? (
-                <div className="flex gap-2 flex-wrap mb-2">
-                  {editPhotos.map((url, i) => (
-                    <div key={i} className="relative group w-20 h-20 flex-shrink-0">
-                      <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
-                        {i > 0 && <button onClick={() => movePhoto(i, -1)} className="w-6 h-6 bg-white/90 text-gray-900 rounded text-xs font-bold">←</button>}
-                        <button onClick={() => removePhoto(i)} className="w-6 h-6 bg-red-500 text-white rounded text-xs font-bold">✕</button>
-                        {i < editPhotos.length - 1 && <button onClick={() => movePhoto(i, 1)} className="w-6 h-6 bg-white/90 text-gray-900 rounded text-xs font-bold">→</button>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className={`text-xs mb-2 ${muted}`}>No photos yet</p>
-              )}
-              <div className="flex gap-2">
-                <input type="url" value={newPhotoUrl} onChange={e => setNewPhotoUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPhotoUrl()}
-                  placeholder="Paste photo URL…" className={`${inp} flex-1`} />
-                <button onClick={addPhotoUrl} disabled={!newPhotoUrl.trim()}
-                  className="px-3 py-2 bg-gray-900 text-white rounded-lg text-xs font-bold disabled:opacity-40 hover:bg-gray-700 transition">+ Add</button>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            {isPending && (
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => doAction(approve)} disabled={actionLoading}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
-                  ✓ Approve & Publish
-                </button>
-                <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
-                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
-                  ✕ Reject
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* ── Live page preview below (updates as you type) ── */}
-          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-white">
-            <div className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-2 ${dark ? 'bg-blue-900/40 text-blue-300 border-b border-blue-800/40' : 'bg-blue-50 text-blue-700 border-b border-blue-100'}`}>
-              <span>↕</span> Live preview — updates as you type above
-            </div>
-            <ShowDetailPage
-              show={previewShow}
-              locale="de"
-              contactMode={contactMode}
-              contactForm={contactForm}
-              contactSubmitting={false}
-              contactError={null}
-              onContactModeChange={setContactMode}
-              onContactFormChange={setContactForm}
-              onContactSubmit={e => { e.preventDefault(); setContactMode('success'); }}
-            />
-          </div>
-        </div>
-      )}
+      {/* ── Live page with inline editing ── */}
+      <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+        <ShowDetailPage
+          show={previewShow}
+          locale="de"
+          contactMode={contactMode}
+          contactForm={contactForm}
+          contactSubmitting={false}
+          contactError={null}
+          onContactModeChange={setContactMode}
+          onContactFormChange={setContactForm}
+          onContactSubmit={e => { e.preventDefault(); setContactMode('success'); }}
+          editProps={editProps}
+        />
+      </div>
     </div>
   );
 };

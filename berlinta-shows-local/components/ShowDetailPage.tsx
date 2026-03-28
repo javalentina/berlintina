@@ -31,6 +31,37 @@ function getVideoEmbedUrl(url: string, preview15s = false): string | null {
   } catch { return null; }
 }
 
+// ── Inline edit helper (admin only) ─────────────────────────────────────────
+function InlineEdit({ value, onChange, as = 'textarea', className = '', placeholder = '—', rows = 4 }: {
+  value: string; onChange: (v: string) => void;
+  as?: 'input' | 'textarea'; className?: string; placeholder?: string; rows?: number;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const save = () => { onChange(draft); setEditing(false); };
+  React.useEffect(() => { if (!editing) setDraft(value); }, [value, editing]);
+
+  if (editing) {
+    const shared = {
+      autoFocus: true, value: draft,
+      onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => setDraft(e.target.value),
+      onBlur: save,
+      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Escape') { setDraft(value); setEditing(false); } },
+    };
+    const editCls = 'w-full bg-amber-50 border-0 border-b-2 border-amber-400 outline-none p-0 resize-none';
+    return as === 'input'
+      ? <input {...shared} className={`${className} ${editCls}`} />
+      : <textarea {...shared} rows={rows} className={`${className} ${editCls}`} />;
+  }
+
+  return (
+    <div className="group/ie relative cursor-pointer" onClick={() => { setDraft(value); setEditing(true); }}>
+      <span className={`${className} ${!value ? 'opacity-30 italic !text-base' : ''}`}>{value || placeholder}</span>
+      <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-amber-400 text-white text-xs flex items-center justify-center shadow-lg opacity-0 group-hover/ie:opacity-100 transition-opacity pointer-events-none z-20 select-none">✏</span>
+    </div>
+  );
+}
+
 function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -64,6 +95,15 @@ const priceRangeFromShow = (show: Show): string => {
   return '€€€';
 };
 
+export interface ShowEditProps {
+  onTitleChange: (v: string) => void;
+  onDescChange: (v: string) => void;
+  onPitchChange: (v: string) => void;
+  onPhotoAdd: (url: string) => void;
+  onPhotoRemove: (i: number) => void;
+  onPhotoMove: (i: number, dir: -1 | 1) => void;
+}
+
 interface Props {
   show: Show;
   locale: 'de' | 'en';
@@ -74,15 +114,17 @@ interface Props {
   onContactModeChange: (mode: 'options' | 'form' | 'success') => void;
   onContactFormChange: (form: { name: string; email: string; message: string; eventDate: string }) => void;
   onContactSubmit: (e: React.FormEvent) => void;
+  editProps?: ShowEditProps;
   children?: React.ReactNode;
 }
 
 export const ShowDetailPage: React.FC<Props> = ({
   show, locale, contactMode, contactForm, contactSubmitting, contactError,
-  onContactModeChange, onContactFormChange, onContactSubmit,
+  onContactModeChange, onContactFormChange, onContactSubmit, editProps,
 }) => {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const photos = show.photoUrls || [];
   const videos = show.videoUrls || [];
   const videoEmbeds = videos.map(u => getVideoEmbedUrl(u, false)).filter((u): u is string => !!u);
@@ -217,37 +259,73 @@ export const ShowDetailPage: React.FC<Props> = ({
 
           {/* ── LEFT: Image col (7 cols) ── */}
           <div className="lg:col-span-7">
-            {/* Main image */}
-            {activePhoto && (
-              <div
-                className="relative overflow-hidden border border-border cursor-pointer mb-4"
-                onClick={() => setLightboxIndex(activePhotoIdx)}
-              >
+            {/* Main image or placeholder */}
+            {activePhoto ? (
+              <div className="relative overflow-hidden border border-border mb-4 group/photo">
                 <img
                   src={activePhoto}
                   alt={show.title}
-                  className="w-full aspect-[4/3] object-cover"
+                  className={`w-full aspect-[4/3] object-cover ${!editProps ? 'cursor-pointer' : ''}`}
+                  onClick={() => !editProps && setLightboxIndex(activePhotoIdx)}
                 />
+                {editProps && (
+                  <button
+                    onClick={() => editProps.onPhotoRemove(activePhotoIdx)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full text-sm flex items-center justify-center shadow opacity-0 group-hover/photo:opacity-100 transition"
+                    title="Remove photo"
+                  >✕</button>
+                )}
               </div>
-            )}
+            ) : editProps ? (
+              <div className="aspect-[4/3] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center bg-gray-50 mb-4 rounded-sm">
+                <span className="text-4xl mb-3">📷</span>
+                <p className="text-sm text-gray-400 font-medium">Noch kein Foto</p>
+                <p className="text-xs text-gray-300 mt-1">URL unten einfügen</p>
+              </div>
+            ) : null}
 
             {/* Thumbnail row */}
             {photos.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 mb-2">
                 {photos.map((url, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setActivePhotoIdx(i)}
-                    className={`flex-shrink-0 w-20 h-16 overflow-hidden border transition-all ${
-                      i === activePhotoIdx
-                        ? 'border-accent scale-105'
-                        : 'border-border hover:border-foreground/30'
-                    }`}
-                  >
-                    <img src={url} alt={`${show.title} — ${i + 1}`} className="w-full h-full object-cover" />
-                  </button>
+                  <div key={i} className="relative flex-shrink-0 group/thumb">
+                    <button
+                      type="button"
+                      onClick={() => setActivePhotoIdx(i)}
+                      className={`w-20 h-16 overflow-hidden border transition-all ${
+                        i === activePhotoIdx ? 'border-accent scale-105' : 'border-border hover:border-foreground/30'
+                      }`}
+                    >
+                      <img src={url} alt={`${show.title} — ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                    {editProps && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center gap-0.5">
+                        {i > 0 && <button onClick={() => editProps.onPhotoMove(i, -1)} className="w-5 h-5 bg-white/90 text-gray-900 rounded text-[10px] font-bold">←</button>}
+                        <button onClick={() => editProps.onPhotoRemove(i)} className="w-5 h-5 bg-red-500 text-white rounded text-[10px] font-bold">✕</button>
+                        {i < photos.length - 1 && <button onClick={() => editProps.onPhotoMove(i, 1)} className="w-5 h-5 bg-white/90 text-gray-900 rounded text-[10px] font-bold">→</button>}
+                      </div>
+                    )}
+                  </div>
                 ))}
+              </div>
+            )}
+
+            {/* Add photo URL (edit mode only) */}
+            {editProps && (
+              <div className="flex gap-2 mb-6">
+                <input
+                  type="url"
+                  value={newPhotoUrl}
+                  onChange={e => setNewPhotoUrl(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && newPhotoUrl.trim()) { editProps.onPhotoAdd(newPhotoUrl.trim()); setNewPhotoUrl(''); } }}
+                  placeholder="Foto-URL einfügen und Enter drücken…"
+                  className="flex-1 text-sm px-3 py-2 border border-dashed border-gray-300 rounded-lg bg-white outline-none focus:border-amber-400"
+                />
+                <button
+                  onClick={() => { if (newPhotoUrl.trim()) { editProps.onPhotoAdd(newPhotoUrl.trim()); setNewPhotoUrl(''); } }}
+                  disabled={!newPhotoUrl.trim()}
+                  className="px-3 py-2 bg-amber-400 text-white rounded-lg text-sm font-bold disabled:opacity-40 hover:bg-amber-500 transition"
+                >+ Add</button>
               </div>
             )}
 
@@ -278,12 +356,23 @@ export const ShowDetailPage: React.FC<Props> = ({
             )}
 
             {/* About the show */}
-            {show.shortDescriptionFacts && (
+            {(show.shortDescriptionFacts || editProps) && (
               <section className="mt-10">
                 <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.about}</h2>
-                <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
-                  {show.shortDescriptionFacts}
-                </p>
+                {editProps ? (
+                  <InlineEdit
+                    value={show.shortDescriptionFacts || ''}
+                    onChange={editProps.onDescChange}
+                    as="textarea"
+                    rows={6}
+                    className="text-base text-muted-foreground leading-relaxed whitespace-pre-line"
+                    placeholder="Beschreibung eingeben…"
+                  />
+                ) : (
+                  <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {show.shortDescriptionFacts}
+                  </p>
+                )}
               </section>
             )}
 
@@ -303,12 +392,23 @@ export const ShowDetailPage: React.FC<Props> = ({
             )}
 
             {/* Artist bio */}
-            {show.salesPitchText && (
+            {(show.salesPitchText || editProps) && (
               <section className="mt-10">
                 <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.aboutArtist}</h2>
-                <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
-                  {show.salesPitchText}
-                </p>
+                {editProps ? (
+                  <InlineEdit
+                    value={show.salesPitchText || ''}
+                    onChange={editProps.onPitchChange}
+                    as="textarea"
+                    rows={3}
+                    className="text-base text-muted-foreground leading-relaxed whitespace-pre-line"
+                    placeholder="Einzeiler für Eventplaner…"
+                  />
+                ) : (
+                  <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {show.salesPitchText}
+                  </p>
+                )}
               </section>
             )}
 
@@ -349,9 +449,19 @@ export const ShowDetailPage: React.FC<Props> = ({
             <span className="label-style text-accent mb-3 block">{show.category}</span>
 
             {/* Title */}
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[0.95] mb-4">
-              {show.title}
-            </h1>
+            {editProps ? (
+              <InlineEdit
+                value={show.title}
+                onChange={editProps.onTitleChange}
+                as="input"
+                className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[0.95] mb-4 block"
+                placeholder="Show-Titel…"
+              />
+            ) : (
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[0.95] mb-4">
+                {show.title}
+              </h1>
+            )}
 
             {/* Artist */}
             <p className="text-base text-muted-foreground mb-8">
