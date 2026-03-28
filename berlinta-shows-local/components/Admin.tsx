@@ -486,7 +486,7 @@ const SubmissionDetailInner: React.FC = () => {
   const [editPitch, setEditPitch] = useState('');
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
-  const [view, setView] = useState<'edit' | 'preview'>('edit');
+  const [view, setView] = useState<'edit' | 'preview'>('preview');
   const [contactMode, setContactMode] = useState<'options' | 'form' | 'success'>('options');
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '', eventDate: '' });
 
