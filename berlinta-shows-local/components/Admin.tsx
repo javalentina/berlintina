@@ -1,5 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ShowDetailPage } from './ShowDetailPage';
+import { Category, PriceType, ArtistStatus, type Show } from '../types';
 import {
   adminLogin, adminLogout,
   adminGetSubmissions, adminGetSubmission,
@@ -482,11 +484,22 @@ const SubmissionDetailInner: React.FC = () => {
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editPitch, setEditPitch] = useState('');
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [view, setView] = useState<'edit' | 'preview'>('edit');
+  const [contactMode, setContactMode] = useState<'options' | 'form' | 'success'>('options');
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '', eventDate: '' });
 
   useEffect(() => {
     if (!id) return;
     adminGetSubmission(id)
-      .then(s => { setSub(s); setEditTitle(s.show_title || ''); setEditDesc(s.short_description_facts || ''); setEditPitch(s.sales_pitch_text || ''); })
+      .then(s => {
+        setSub(s);
+        setEditTitle(s.show_title || '');
+        setEditDesc(s.short_description_facts || '');
+        setEditPitch(s.sales_pitch_text || '');
+        setEditPhotos(Array.isArray(s.photo_urls) ? s.photo_urls as string[] : []);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -504,14 +517,24 @@ const SubmissionDetailInner: React.FC = () => {
       title: editTitle.trim() || undefined,
       short_description_facts: editDesc.trim() || undefined,
       sales_pitch_text: editPitch.trim() || undefined,
+      photo_urls: editPhotos.length ? editPhotos : undefined,
     };
     return adminApprove(sub.id, overrides);
   };
 
-  const inp  = dynInput(dark);
-  const ta   = `${inp} resize-y`;
-  const txt  = dark ? 'text-white' : 'text-gray-900';
-  const sub_ = dark ? 'text-gray-300' : 'text-gray-600';
+  const addPhotoUrl = () => {
+    const url = newPhotoUrl.trim();
+    if (url && !editPhotos.includes(url)) { setEditPhotos(p => [...p, url]); setNewPhotoUrl(''); }
+  };
+  const removePhoto = (i: number) => setEditPhotos(p => p.filter((_, j) => j !== i));
+  const movePhoto = (i: number, dir: -1 | 1) => {
+    setEditPhotos(p => { const a = [...p]; const j = i + dir; if (j < 0 || j >= a.length) return a; [a[i], a[j]] = [a[j], a[i]]; return a; });
+  };
+
+  const inp   = dynInput(dark);
+  const ta    = `${inp} resize-y`;
+  const txt   = dark ? 'text-white' : 'text-gray-900';
+  const sub_  = dark ? 'text-gray-300' : 'text-gray-600';
   const muted = dark ? 'text-gray-500' : 'text-gray-400';
   const card  = `border rounded-xl p-5 ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`;
 
@@ -520,111 +543,221 @@ const SubmissionDetailInner: React.FC = () => {
   );
 
   const isPending = sub.status === 'PENDING_REVIEW';
-  const photos: string[] = Array.isArray(sub.photo_urls) ? sub.photo_urls as string[] : [];
   const email = sub.submitter_email;
+  const subAny = sub as Record<string, unknown>;
+
+  // Build preview Show from current edit state
+  const previewShow: Show = {
+    id: sub.id,
+    shortId: sub.id.slice(0, 8),
+    slug: (editTitle || sub.show_title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    artistId: 'preview',
+    artistName: String(subAny.artist_name || ''),
+    title: editTitle || sub.show_title || '',
+    category: Category.CLASSICAL,
+    extractedTags: [],
+    vibeTags: [],
+    shortDescriptionFacts: editDesc || sub.short_description_facts || '',
+    salesPitchText: editPitch || sub.sales_pitch_text || '',
+    durationMinutes: Number(subAny.duration_minutes) || 60,
+    languageOptions: ['de'],
+    priceType: PriceType.POA,
+    photoUrls: editPhotos,
+    videoUrls: [],
+    status: ArtistStatus.NEEDS_REVIEW,
+  };
 
   return (
-    <div className="px-8 py-6 max-w-5xl">
-      <button onClick={() => navigate('/admin/submissions')}
-        className={`text-sm font-semibold mb-5 inline-flex items-center gap-1 transition ${dark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
-      >← Back to submissions</button>
+    <div className="px-8 py-6 max-w-6xl">
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5 gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <button onClick={() => navigate('/admin/submissions')}
+            className={`text-sm font-semibold inline-flex items-center gap-1 flex-shrink-0 transition ${dark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
+          >← Back</button>
+          <h1 className={`text-lg font-bold truncate ${txt}`}>{editTitle || sub.show_title}</h1>
+          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex-shrink-0 ${statusBadge(sub.status, dark)}`}>
+            {STATUS_LABELS[sub.status] || sub.status}
+          </span>
+        </div>
+
+        {/* View toggle */}
+        <div className={`flex rounded-lg border overflow-hidden flex-shrink-0 ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
+          <button onClick={() => setView('edit')}
+            className={`px-4 py-2 text-sm font-semibold transition ${view === 'edit'
+              ? 'bg-gray-900 text-white'
+              : dark ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-white text-gray-500 hover:text-gray-900'
+            }`}>✏ Edit</button>
+          <button onClick={() => setView('preview')}
+            className={`px-4 py-2 text-sm font-semibold transition ${view === 'preview'
+              ? 'bg-gray-900 text-white'
+              : dark ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-white text-gray-500 hover:text-gray-900'
+            }`}>👁 Preview</button>
+        </div>
+      </div>
 
       {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
-      <div className={`grid gap-6 ${isPending ? 'lg:grid-cols-[1fr_1.1fr]' : ''}`}>
-
-        {/* Left — artist info */}
+      {/* ── PREVIEW MODE ── */}
+      {view === 'preview' && (
         <div className="space-y-4">
-          <div className={card}>
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className={`text-xl font-bold leading-tight ${txt}`}>{sub.show_title}</h2>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex-shrink-0 ${statusBadge(sub.status, dark)}`}>
-                {STATUS_LABELS[sub.status] || sub.status}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {[
-                ['Email',     email],
-                ['Genre',     sub.artist_genre],
-                ['Artist',    (sub as Record<string,unknown>).artist_name as string],
-                ['Submitted', fmtDate((sub as Record<string,unknown>).created_at as string)],
-              ].map(([label, val]) => (
-                <div key={label}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ${muted}`}>{label}</p>
-                  <p className={`text-sm ${sub_}`}>{val || '—'}</p>
-                </div>
-              ))}
-            </div>
-            {email && (
-              <a
-                href={`mailto:${email}?subject=Re: Ihre Berlintina Einreichung – ${encodeURIComponent(sub.show_title || '')}`}
-                className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-semibold transition ${dark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-              >✉ Email artist</a>
-            )}
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${dark ? 'bg-amber-900/30 text-amber-300 border border-amber-700/40' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+            <span>👁</span>
+            <span>Preview mode — this is exactly how the artist page will look after approval. Edits made on the ✏ Edit tab are reflected here.</span>
           </div>
-
-          <div className={card}>
-            <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${muted}`}>Description</p>
-            <p className={`text-sm leading-relaxed ${sub_}`}>{sub.short_description_facts || '—'}</p>
-            {sub.sales_pitch_text && (
-              <>
-                <p className={`text-xs font-bold uppercase tracking-widest mt-4 mb-2 ${muted}`}>Sales Pitch</p>
-                <p className={`text-sm leading-relaxed ${sub_}`}>{sub.sales_pitch_text}</p>
-              </>
-            )}
+          {isPending && (
+            <div className="flex gap-3">
+              <button onClick={() => doAction(approve)} disabled={actionLoading}
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
+                ✓ Approve & Publish
+              </button>
+              <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
+                ✕ Reject
+              </button>
+            </div>
+          )}
+          {/* Live show page preview in a white container */}
+          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-white">
+            <ShowDetailPage
+              show={previewShow}
+              locale="de"
+              contactMode={contactMode}
+              contactForm={contactForm}
+              contactSubmitting={false}
+              contactError={null}
+              onContactModeChange={setContactMode}
+              onContactFormChange={setContactForm}
+              onContactSubmit={e => { e.preventDefault(); setContactMode('success'); }}
+            />
           </div>
+        </div>
+      )}
 
-          {photos.length > 0 && (
+      {/* ── EDIT MODE ── */}
+      {view === 'edit' && (
+        <div className={`grid gap-6 ${isPending ? 'lg:grid-cols-[1fr_1.1fr]' : ''}`}>
+
+          {/* Left — artist info */}
+          <div className="space-y-4">
+            <div className={card}>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {[
+                  ['Email',     email],
+                  ['Genre',     sub.artist_genre],
+                  ['Artist',    String(subAny.artist_name || '—')],
+                  ['Submitted', fmtDate(subAny.created_at as string)],
+                ].map(([label, val]) => (
+                  <div key={label}>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ${muted}`}>{label}</p>
+                    <p className={`text-sm ${sub_}`}>{(val as string) || '—'}</p>
+                  </div>
+                ))}
+              </div>
+              {email && (
+                <a href={`mailto:${email}?subject=Re: Ihre Berlintina Einreichung – ${encodeURIComponent(sub.show_title || '')}`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-semibold transition ${dark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                >✉ Email artist</a>
+              )}
+            </div>
+
+            {/* Description preview (read-only on left) */}
+            <div className={card}>
+              <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${muted}`}>Description</p>
+              <p className={`text-sm leading-relaxed ${sub_}`}>{editDesc || sub.short_description_facts || '—'}</p>
+              {(editPitch || sub.sales_pitch_text) && (
+                <>
+                  <p className={`text-xs font-bold uppercase tracking-widest mt-4 mb-2 ${muted}`}>Sales Pitch</p>
+                  <p className={`text-sm leading-relaxed ${sub_}`}>{editPitch || sub.sales_pitch_text}</p>
+                </>
+              )}
+            </div>
+
+            {/* Photo management */}
             <div className={card}>
               <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${muted}`}>Photos</p>
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map((url, i) => (
-                  <a key={i} href={url} target="_blank" rel="noopener">
-                    <img src={url} alt="" className="w-full aspect-square object-cover rounded-lg hover:opacity-90 transition" />
-                  </a>
-                ))}
+              {editPhotos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {editPhotos.map((url, i) => (
+                    <div key={i} className="relative group">
+                      <a href={url} target="_blank" rel="noopener">
+                        <img src={url} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                      </a>
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
+                        {i > 0 && (
+                          <button onClick={() => movePhoto(i, -1)} className="w-7 h-7 bg-white/90 text-gray-900 rounded-md text-xs font-bold hover:bg-white">←</button>
+                        )}
+                        <button onClick={() => removePhoto(i)} className="w-7 h-7 bg-red-500 text-white rounded-md text-xs font-bold hover:bg-red-600">✕</button>
+                        {i < editPhotos.length - 1 && (
+                          <button onClick={() => movePhoto(i, 1)} className="w-7 h-7 bg-white/90 text-gray-900 rounded-md text-xs font-bold hover:bg-white">→</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={`text-sm mb-3 ${muted}`}>No photos yet</p>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={newPhotoUrl}
+                  onChange={e => setNewPhotoUrl(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addPhotoUrl()}
+                  placeholder="Paste photo URL and press Enter…"
+                  className={`${inp} flex-1`}
+                />
+                <button onClick={addPhotoUrl} disabled={!newPhotoUrl.trim()}
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-700 transition flex-shrink-0">
+                  + Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right — edit + actions (pending only) */}
+          {isPending && (
+            <div className="space-y-4">
+              <div className={card}>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-4 ${muted}`}>Edit before approving</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Title</label>
+                    <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={inp} />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Description</label>
+                    <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={5} className={ta} />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Sales pitch</label>
+                    <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className={ta} />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Notes (optional)</label>
+                    <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className={inp} placeholder="For reject or request changes…" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button onClick={() => { setView('preview'); }}
+                  className={`w-full py-3 rounded-xl font-bold text-sm transition border ${dark ? 'border-gray-600 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                  👁 Preview before approving
+                </button>
+                <button onClick={() => doAction(approve)} disabled={actionLoading}
+                  className="w-full py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
+                  ✓ Approve & Publish
+                </button>
+                <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
+                  className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
+                  ✕ Reject
+                </button>
               </div>
             </div>
           )}
         </div>
-
-        {/* Right — edit + actions (pending only) */}
-        {isPending && (
-          <div className="space-y-4">
-            <div className={card}>
-              <p className={`text-xs font-bold uppercase tracking-widest mb-4 ${muted}`}>Edit before approving</p>
-              <div className="space-y-3">
-                <div>
-                  <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Title</label>
-                  <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={inp} />
-                </div>
-                <div>
-                  <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Description</label>
-                  <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={4} className={ta} />
-                </div>
-                <div>
-                  <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Sales pitch</label>
-                  <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className={ta} />
-                </div>
-                <div>
-                  <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Notes (optional)</label>
-                  <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className={inp} placeholder="For reject or request changes…" />
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <button onClick={() => doAction(approve)} disabled={actionLoading}
-                className="w-full py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
-                ✓ Approve & Publish
-              </button>
-              <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
-                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
-                ✕ Reject
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };
