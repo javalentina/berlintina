@@ -637,125 +637,112 @@ const SubmissionDetailInner: React.FC = () => {
 
       {/* ── EDIT MODE ── */}
       {view === 'edit' && (
-        <div className={`grid gap-6 ${isPending ? 'lg:grid-cols-[1fr_1.1fr]' : ''}`}>
+        <div className="space-y-4">
 
-          {/* Left — artist info */}
-          <div className="space-y-4">
-            <div className={card}>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {[
-                  ['Email',     email],
-                  ['Genre',     sub.artist_genre],
-                  ['Artist',    String(subAny.artist_name || '—')],
-                  ['Submitted', fmtDate(subAny.created_at as string)],
-                ].map(([label, val]) => (
-                  <div key={label}>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ${muted}`}>{label}</p>
-                    <p className={`text-sm ${sub_}`}>{(val as string) || '—'}</p>
-                  </div>
-                ))}
-              </div>
+          {/* ── Edit strip (compact, above live preview) ── */}
+          <div className={`rounded-2xl border p-5 space-y-4 ${dark ? 'bg-gray-800/60 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+
+            {/* Artist meta row */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
+              {[
+                ['Artist', String(subAny.artist_name || '—')],
+                ['Email', email || '—'],
+                ['Genre', sub.artist_genre || '—'],
+                ['Submitted', fmtDate(subAny.created_at as string)],
+              ].map(([label, val]) => (
+                <span key={label} className={muted}>
+                  <span className="font-bold uppercase tracking-widest">{label}: </span>{val as string}
+                </span>
+              ))}
               {email && (
                 <a href={`mailto:${email}?subject=Re: Ihre Berlintina Einreichung – ${encodeURIComponent(sub.show_title || '')}`}
-                  className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-semibold transition ${dark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                >✉ Email artist</a>
+                  className={`ml-auto text-xs font-semibold underline ${dark ? 'text-blue-400' : 'text-blue-600'}`}>
+                  ✉ Email artist
+                </a>
               )}
             </div>
 
-            {/* Description preview (read-only on left) */}
-            <div className={card}>
-              <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${muted}`}>Description</p>
-              <p className={`text-sm leading-relaxed ${sub_}`}>{editDesc || sub.short_description_facts || '—'}</p>
-              {(editPitch || sub.sales_pitch_text) && (
-                <>
-                  <p className={`text-xs font-bold uppercase tracking-widest mt-4 mb-2 ${muted}`}>Sales Pitch</p>
-                  <p className={`text-sm leading-relaxed ${sub_}`}>{editPitch || sub.sales_pitch_text}</p>
-                </>
-              )}
+            {/* Editable fields grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="md:col-span-2">
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Title</label>
+                <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={inp} placeholder={sub.show_title || 'Show title…'} />
+              </div>
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Description</label>
+                <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={5} className={ta} placeholder={sub.short_description_facts || 'Description…'} />
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Sales pitch (tagline)</label>
+                  <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className={ta} placeholder={String((sub as Record<string,unknown>).sales_pitch_text || 'One-liner for bookers…')} />
+                </div>
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${muted}`}>Notes (optional)</label>
+                  <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className={inp} placeholder="For reject or request changes…" />
+                </div>
+              </div>
             </div>
 
-            {/* Photo management */}
-            <div className={card}>
-              <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${muted}`}>Photos</p>
+            {/* Photos */}
+            <div>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${muted}`}>Photos</p>
               {editPhotos.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="flex gap-2 flex-wrap mb-2">
                   {editPhotos.map((url, i) => (
-                    <div key={i} className="relative group">
-                      <a href={url} target="_blank" rel="noopener">
-                        <img src={url} alt="" className="w-full aspect-square object-cover rounded-lg" />
-                      </a>
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
-                        {i > 0 && (
-                          <button onClick={() => movePhoto(i, -1)} className="w-7 h-7 bg-white/90 text-gray-900 rounded-md text-xs font-bold hover:bg-white">←</button>
-                        )}
-                        <button onClick={() => removePhoto(i)} className="w-7 h-7 bg-red-500 text-white rounded-md text-xs font-bold hover:bg-red-600">✕</button>
-                        {i < editPhotos.length - 1 && (
-                          <button onClick={() => movePhoto(i, 1)} className="w-7 h-7 bg-white/90 text-gray-900 rounded-md text-xs font-bold hover:bg-white">→</button>
-                        )}
+                    <div key={i} className="relative group w-20 h-20 flex-shrink-0">
+                      <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-1">
+                        {i > 0 && <button onClick={() => movePhoto(i, -1)} className="w-6 h-6 bg-white/90 text-gray-900 rounded text-xs font-bold">←</button>}
+                        <button onClick={() => removePhoto(i)} className="w-6 h-6 bg-red-500 text-white rounded text-xs font-bold">✕</button>
+                        {i < editPhotos.length - 1 && <button onClick={() => movePhoto(i, 1)} className="w-6 h-6 bg-white/90 text-gray-900 rounded text-xs font-bold">→</button>}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className={`text-sm mb-3 ${muted}`}>No photos yet</p>
+                <p className={`text-xs mb-2 ${muted}`}>No photos yet</p>
               )}
               <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={newPhotoUrl}
-                  onChange={e => setNewPhotoUrl(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addPhotoUrl()}
-                  placeholder="Paste photo URL and press Enter…"
-                  className={`${inp} flex-1`}
-                />
+                <input type="url" value={newPhotoUrl} onChange={e => setNewPhotoUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPhotoUrl()}
+                  placeholder="Paste photo URL…" className={`${inp} flex-1`} />
                 <button onClick={addPhotoUrl} disabled={!newPhotoUrl.trim()}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-700 transition flex-shrink-0">
-                  + Add
-                </button>
+                  className="px-3 py-2 bg-gray-900 text-white rounded-lg text-xs font-bold disabled:opacity-40 hover:bg-gray-700 transition">+ Add</button>
               </div>
             </div>
-          </div>
 
-          {/* Right — edit + actions (pending only) */}
-          {isPending && (
-            <div className="space-y-4">
-              <div className={card}>
-                <p className={`text-xs font-bold uppercase tracking-widest mb-4 ${muted}`}>Edit before approving</p>
-                <div className="space-y-3">
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Title</label>
-                    <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className={inp} />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Description</label>
-                    <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={5} className={ta} />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Sales pitch</label>
-                    <textarea value={editPitch} onChange={e => setEditPitch(e.target.value)} rows={2} className={ta} />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Notes (optional)</label>
-                    <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className={inp} placeholder="For reject or request changes…" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3">
-                <button onClick={() => { setView('preview'); }}
-                  className={`w-full py-3 rounded-xl font-bold text-sm transition border ${dark ? 'border-gray-600 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                  👁 Preview before approving
-                </button>
+            {/* Action buttons */}
+            {isPending && (
+              <div className="flex gap-3 pt-1">
                 <button onClick={() => doAction(approve)} disabled={actionLoading}
-                  className="w-full py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50 transition">
                   ✓ Approve & Publish
                 </button>
                 <button onClick={() => doAction(() => adminReject(sub.id, notes))} disabled={actionLoading}
-                  className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50 transition">
                   ✕ Reject
                 </button>
               </div>
+            )}
+          </div>
+
+          {/* ── Live page preview below (updates as you type) ── */}
+          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-white">
+            <div className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-2 ${dark ? 'bg-blue-900/40 text-blue-300 border-b border-blue-800/40' : 'bg-blue-50 text-blue-700 border-b border-blue-100'}`}>
+              <span>↕</span> Live preview — updates as you type above
             </div>
-          )}
+            <ShowDetailPage
+              show={previewShow}
+              locale="de"
+              contactMode={contactMode}
+              contactForm={contactForm}
+              contactSubmitting={false}
+              contactError={null}
+              onContactModeChange={setContactMode}
+              onContactFormChange={setContactForm}
+              onContactSubmit={e => { e.preventDefault(); setContactMode('success'); }}
+            />
+          </div>
         </div>
       )}
     </div>
