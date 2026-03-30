@@ -178,7 +178,7 @@ async function openaiAnswerQuestion(question, showFacts) {
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: 'You are a helpful event concierge. Be warm and professional. If the answer is not in the facts, politely say you do not know and suggest contacting the artist. ' + SCOPE_POLICY_QA },
+      { role: 'system', content: 'You are the Berlintina show concierge — warm, knowledgeable, and direct. Answer questions about this show as if you personally know the artist. If the answer is not in the facts provided, say so honestly and encourage the visitor to send a booking inquiry — a real person at Berlintina will answer within 24 hours. Never speculate or invent details. ' + SCOPE_POLICY_QA },
       { role: 'user', content: `Question: "${question}"\n\nShow facts: "${showFacts}"` },
     ],
   });
@@ -222,9 +222,72 @@ async function geminiAnswerQuestion(question, showFacts) {
 }
 
 const POLISH_PROMPTS = {
-  shortDescriptionFacts: { de: 'Verwandle die folgenden rohen Fakten in einen flüssigen, einladenden Beschreibungstext für eine Show. Behalte alle Fakten bei, schreibe sie aber elegant und professionell um. Maximal 3-4 Sätze.', en: 'Turn the following raw facts into a fluent, inviting description text for a show. Keep all facts, but rewrite them elegantly and professionally. Max 3-4 sentences.' },
-  salesPitchText: { de: 'Verwandle die folgenden Informationen in einen kurzen, einprägsamen Verkaufspitch (1-2 Sätze), der Eventplaner zum Buchen inspiriert.', en: 'Turn the following information into a short, memorable sales pitch (1-2 sentences) that inspires event planners to book.' },
-  artistBio: { de: 'Verwandle die folgenden rohen Angaben in einen professionellen, warmen Künstler-Steckbrief. Kurz und persönlich.', en: 'Turn the following raw info into a professional, warm artist bio. Short and personal.' },
+  shortDescriptionFacts: {
+    de: `Du schreibst Show-Beschreibungen für Berlintina.de — eine kuratierte Berliner Künstleragentur für Galas, Firmenfeiern und private Events.
+
+Zielgruppe: Eventplaner und HR-Manager, die einen unvergesslichen Moment für ihre Veranstaltung suchen. Sie brauchen keine Features — sie wollen das Gefühl im Raum, wenn diese Show beginnt.
+
+Schreibe die folgende Rohbeschreibung um. Struktur:
+1. Ein starker Eröffnungssatz — konkret, sinnlich, unvergesslich (kein "Das ist eine Show über...")
+2. Was auf der Bühne passiert — präzise, lebendig, einzigartig
+3. Wer der Künstler ist — kurz, persönlich, mit Energie
+4. Format und Praktisches (Dauer, Sprache, technische Basis)
+
+Regeln: Keine Buzzwords (atemberaubend, einzigartig, unvergesslich — zeig es statt es zu sagen). Keine Passivkonstruktionen. Maximal 4 Sätze. Nur den fertigen Text ausgeben, keine Erklärungen.`,
+    en: `You write show descriptions for Berlintina.de — a curated Berlin artist agency for galas, corporate events, and private occasions.
+
+Audience: Event planners and HR managers looking for an unforgettable moment at their event. They don't need features — they want to feel what the room will be like when this show begins.
+
+Rewrite the following raw description. Structure:
+1. One strong opening sentence — concrete, sensory, specific (not "This is a show about...")
+2. What happens on stage — precise, vivid, specific
+3. Who the artist is — brief, personal, with energy
+4. Format and practicalities (duration, language, technical needs)
+
+Rules: No buzzwords (breathtaking, unique, unforgettable — show it, don't say it). No passive constructions. Max 4 sentences. Output only the finished text, no explanations.`,
+  },
+  salesPitchText: {
+    de: `Du schreibst den Einzeiler einer Show für Berlintina.de — sichtbar auf der Übersichtsseite für Eventplaner.
+
+Ziel: Ein Satz, der sofort klar macht, warum genau diese Show die richtige ist — und Lust auf mehr macht.
+
+Formel: [Was der Raum erlebt] + [wer das liefert] + [für welchen Anlass perfekt]
+
+Beispiel: "Wenn ein Streichquartett auf elektronische Beats trifft — die Show, die Galas in Berlin seit Jahren unvergesslich macht."
+
+Regeln: Maximal 2 Sätze. Kein "Diese Show ist...". Kein generisches Lob. Konkret und buchbar. Nur den fertigen Text ausgeben.`,
+    en: `You write the one-liner for a show on Berlintina.de — visible on the overview page for event planners.
+
+Goal: One sentence that immediately makes clear why this show is the right choice — and makes them want to know more.
+
+Formula: [What the room experiences] + [who delivers it] + [perfect for which occasion]
+
+Example: "When a string quartet meets electronic beats — the act that has made Berlin galas unforgettable for years."
+
+Rules: Max 2 sentences. No "This show is...". No generic praise. Concrete and bookable. Output only the finished text.`,
+  },
+  artistBio: {
+    de: `Du schreibst den Künstler-Steckbrief für eine Show-Seite auf Berlintina.de.
+
+Zielgruppe: Eventplaner, die wissen wollen: Wer ist das? Kann ich dem vertrauen? Passt das zu meinem Event?
+
+Schreibe die folgenden Rohdaten um. Was gezeigt werden soll:
+- Kurze persönliche Vorstellung (Name, Hintergrund, was sie antreibt)
+- Was sie auf die Bühne bringen, das andere nicht haben
+- Ein konkretes Detail, das hängenbleibt (Auszeichnung, bekannte Bühne, besondere Geschichte)
+
+Regeln: 3–4 Sätze. Warmherzig aber professionell. Erste Person NICHT verwenden. Kein "Der Künstler ist...". Nur den fertigen Text ausgeben.`,
+    en: `You write the artist bio for a show page on Berlintina.de.
+
+Audience: Event planners who want to know: Who is this? Can I trust them? Will they fit my event?
+
+Rewrite the following raw info. What to convey:
+- Brief personal introduction (name, background, what drives them)
+- What they bring to the stage that others don't
+- One concrete detail that sticks (award, famous stage, distinctive story)
+
+Rules: 3–4 sentences. Warm but professional. Do NOT use first person. No "The artist is...". Output only the finished text.`,
+  },
 };
 
 async function openaiPolishText(rawText, field, locale) {
@@ -490,15 +553,15 @@ function getOnboardingStage(draft) {
 function getStageInstruction(stage, locale) {
   const de = {
     identify_artist: 'Finde heraus, wer dieser Künstler ist. Wenn eine URL im Text ist, lies sie sofort aus. Stelle eine warme, direkte Einstiegsfrage nach Name ODER Website — nicht beide.',
-    title_creation: 'Schlage GENAU 3 Show-Titel-Optionen vor: (1) Mutig/Unerwartet — kurz, wirkt auf einem Plakat, (2) Elegant/Verfeinert — Prestige-Positionierung, (3) Namensbasiert — Künstlername als Anker. Erkläre jede in einem Satz. Gib alle drei im Feld titleOptions zurück.',
-    description_generation: 'Schreibe jetzt eine vollständige, bucherfähige Show-Beschreibung in Producer-Stimme (KEIN Formular-Stil). Struktur: (1) Ein starker Hook-Satz, (2) Was passiert auf der Bühne — einzigartig, emotional, unvergesslich, (3) 2 Sätze über den Künstler — Stimme, Energie, Hintergrund, (4) Format, Dauer, technischer Überblick. Trage das Ergebnis sofort in shortDescriptionFacts ein.',
+    title_creation: 'Schlage GENAU 3 Show-Titel-Optionen vor, die auf berlintina.de und in Eventplaner-Katalogen sofort Aufmerksamkeit erzeugen: (1) Mutig/Unerwartet — 2–4 Wörter, wirkt auf einem Plakat, erzeugt sofort ein Bild im Kopf, (2) Elegant/Verfeinert — Prestige-Positionierung für Galas und Corporate, klingt nach echtem Programm, (3) Namensbasiert — Künstlername als Anker, professionell und persönlich. Erkläre jede in einem Satz warum sie funktioniert. Gib alle drei IMMER im Feld titleOptions zurück.',
+    description_generation: 'Schreibe jetzt die fertige Show-Beschreibung — bucherfähig, in Producer-Stimme, KEIN Formular-Stil. Struktur: (1) Ein starker Eröffnungssatz — konkret und sinnlich, zeigt das Gefühl im Raum wenn die Show beginnt, (2) Was auf der Bühne passiert — präzise, lebendig, spezifisch für genau diese Show, (3) 1–2 Sätze über den Künstler — Energie, Hintergrund, was ihn von anderen unterscheidet, (4) Praktisches: Format, Dauer, technischer Bedarf. Keine Buzzwords ("atemberaubend", "einzigartig") — zeig es statt es zu sagen. Trage das Ergebnis SOFORT in shortDescriptionFacts ein — mindestens 150 Zeichen.',
     show_details: 'Sammle praktische Details in Bündeln — niemals einzeln. Frage nach Dauer UND Preis in einer Nachricht. Dann nach E-Mail. Maximal 2 Fragen total.',
     preview: 'Fasse die komplette Show in einer sauberen Zusammenfassung auf. Stelle EINE holistische Abschlussfrage: "Gibt es etwas, das sich nicht wie du anfühlt?"',
   };
   const en = {
     identify_artist: 'Find out who this artist is. If a URL is in the message, read it immediately. Ask one warm, direct opening question — name OR website, not both.',
-    title_creation: 'Propose EXACTLY 3 show title options: (1) Bold/Unexpected — short, looks great on a poster, (2) Refined/Elegant — prestige-positioned, (3) Name-driven — artist name as anchor. Explain each in one sentence. Return all three in the titleOptions field.',
-    description_generation: 'Write a complete, booker-ready show description in producer voice (NOT form style). Structure: (1) One powerful hook sentence, (2) What happens on stage — unique, emotional, memorable, (3) 2 sentences about the artist — voice, energy, background, (4) Format, duration, technical overview. Store the result immediately in shortDescriptionFacts.',
+    title_creation: 'Propose EXACTLY 3 show title options that instantly grab attention in the Berlintina catalog and event planner searches: (1) Bold/Unexpected — 2–4 words, great on a poster, creates an immediate image in the mind, (2) Refined/Elegant — prestige-positioned for galas and corporate events, sounds like a real programme, (3) Name-driven — artist name as anchor, professional and personal. Explain in one sentence why each one works. ALWAYS return all three in the titleOptions field.',
+    description_generation: 'Write the finished show description — booker-ready, in producer voice, NOT form style. Structure: (1) One strong opening sentence — concrete and sensory, make the planner feel the room when the show begins, (2) What happens on stage — precise, vivid, specific to this show only, (3) 1–2 sentences about the artist — energy, background, what sets them apart, (4) Practicalities: format, duration, technical needs. No buzzwords ("breathtaking", "unique", "unforgettable") — show it, don\'t say it. Store the result IMMEDIATELY in shortDescriptionFacts — minimum 150 characters.',
     show_details: 'Collect practical details in bundles — never one by one. Ask for duration AND price in one message. Then email. Maximum 2 questions total.',
     preview: 'Summarize the complete show in a clean overview. Ask ONE single holistic question: "Is there anything that doesn\'t feel like you?"',
   };
