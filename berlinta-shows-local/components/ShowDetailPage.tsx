@@ -242,19 +242,21 @@ export const ShowDetailPage: React.FC<Props> = ({
   return (
     <div className="min-h-screen bg-background pb-28">
 
-      {/* ── Back link ── */}
-      <div className="container pt-20 sm:pt-24 pb-6">
-        <Link
-          to="/catalog"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors no-underline"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t.back}
-        </Link>
-      </div>
+      {/* ── Back link (hidden in admin/edit mode) ── */}
+      {!editProps && (
+        <div className="container pt-20 sm:pt-24 pb-6">
+          <Link
+            to="/catalog"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors no-underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t.back}
+          </Link>
+        </div>
+      )}
 
       {/* ── Main 12-col grid ── */}
-      <div className="container">
+      <div className={`container ${editProps ? 'pt-6' : 'pt-0'}`}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
 
           {/* ── LEFT: Image col (7 cols) ── */}
@@ -314,15 +316,16 @@ export const ShowDetailPage: React.FC<Props> = ({
             {editProps && (
               <div className="flex gap-2 mb-6">
                 <input
-                  type="url"
+                  type="text"
                   value={newPhotoUrl}
                   onChange={e => setNewPhotoUrl(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && newPhotoUrl.trim()) { editProps.onPhotoAdd(newPhotoUrl.trim()); setNewPhotoUrl(''); } }}
-                  placeholder="Foto-URL einfügen und Enter drücken…"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const u = newPhotoUrl.trim(); if (u) { editProps.onPhotoAdd(u); setNewPhotoUrl(''); } } }}
+                  placeholder="https://… Foto-URL einfügen"
                   className="flex-1 text-sm px-3 py-2 border border-dashed border-gray-300 rounded-lg bg-white outline-none focus:border-amber-400"
                 />
                 <button
-                  onClick={() => { if (newPhotoUrl.trim()) { editProps.onPhotoAdd(newPhotoUrl.trim()); setNewPhotoUrl(''); } }}
+                  type="button"
+                  onClick={() => { const u = newPhotoUrl.trim(); if (u) { editProps.onPhotoAdd(u); setNewPhotoUrl(''); } }}
                   disabled={!newPhotoUrl.trim()}
                   className="px-3 py-2 bg-amber-400 text-white rounded-lg text-sm font-bold disabled:opacity-40 hover:bg-amber-500 transition"
                 >+ Add</button>
