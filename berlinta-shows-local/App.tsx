@@ -60,7 +60,27 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
     };
     if (path.startsWith('/show/') || path.startsWith('/blog/')) return;
     document.title = titles[path] ?? 'Berlintina Shows';
-  }, [location.pathname]);
+
+    /**
+     * Eigene Beschreibung für die Seiten, die keine über <PageSEO> setzen.
+     *
+     * Ohne das tragen /join und /blog denselben Satz wie die Startseite — Google entscheidet
+     * dann selbst, welchen Ausschnitt es als Snippet zeigt. Alle übrigen Seiten haben eine
+     * eigene über PageSEO; hier stehen nur die Lücken.
+     */
+    const descriptions: Record<string, string> = {
+      '/join': locale === 'de'
+        ? 'Als Künstlerin oder Künstler bei Berlintina anfragen: Show eintragen, Fotos und Videos hochladen, persönliche Rückmeldung aus Berlin.'
+        : 'Join Berlintina as an artist: submit your show with photos and videos and get a personal reply from Berlin.',
+      '/blog': locale === 'de'
+        ? 'Notizen und Neuigkeiten von Berlintina — Showacts, Künstlerinnen und Künstler und Veranstaltungen in Berlin.'
+        : 'Notes and news from Berlintina — show acts, artists and events in Berlin.',
+    };
+    const beschreibung = descriptions[path];
+    if (beschreibung) {
+      document.querySelector('meta[name="description"]')?.setAttribute('content', beschreibung);
+    }
+  }, [location.pathname, locale]);
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
