@@ -278,21 +278,64 @@ const SEITEN_URL = "https://berlintina.de";
 function kopfNormalisieren(html, route) {
   let ergebnis = html;
 
-  // Bei mehreren gleichartigen Tags gewinnt der ERSTE, alle weiteren fallen weg.
+  // Erst die VORGABE aus index.html gezielt entfernen, dann erst nach Position aussortieren.
   //
-  // Gemessen an zwei Fällen, die verschieden aussehen und dieselbe Regel brauchen:
-  //   /             → 1. App-Titel, 2. die Vorgabe aus index.html
-  //   /show/<slug>  → 1. „<Showtitel> — berlintina.de", 2. eine generische Beschreibung
-  //                    (hier ist die Vorgabe gar nicht dabei — die App setzt ZWEI eigene)
-  // In beiden Fällen steht der spezifischere zuerst. Ein früherer Entwurf entfernte
-  // gezielt den bekannten Vorgabe-Wert und war auf den Showseiten wirkungslos, weil dieser
-  // Wert dort nicht vorkommt. Die allgemeine Regel braucht kein Sonderwissen.
-  const ersteBehalten = (regex) => {
-    const treffer = [...ergebnis.matchAll(regex)];
-    for (const t of treffer.slice(1)) ergebnis = ergebnis.replace(t[0], "");
+  // Die frühere Fassung ging nur nach Position („der erste gewinnt") und war beim <title>
+  // richtig, bei der description auf fünf von zehn Seiten falsch. Gemessen am Rohzustand
+  // (Normalisierung testweise abgeschaltet):
+  //
+  //   /about, /catalog, /impressum, /datenschutz, /   description[0] = die VORGABE
+  //                                                   description[1] = der eigene Text
+  //   /show/<slug>                                    description[0] = der eigene Text
+  //                                                   description[1] = eine zweite eigene
+  //   /join, /blog                                    nur die Vorgabe (kein eigener Text)
+  //
+  // Die Reihenfolge, die React 19 beim Hoisting erzeugt, ist also NICHT verlässlich
+  // „spezifisch zuerst". Ergebnis der alten Regel: /about, /catalog, /impressum und
+  // /datenschutz trugen live denselben generischen Satz wie die Startseite — obwohl die App
+  // für jede dieser Seiten längst einen eigenen setzt. Vier Seiten mit Duplicate
+  // Description, und die Ursache stand nicht in den Texten, sondern hier.
+  //
+  // Der Vorgabewert ist kein Sonderwissen und keine Annahme: er wird aus der unberührten
+  // Hülle gelesen, die ohnehin im Speicher liegt. Entfernt wird er nur, wenn ein anderer
+  // Wert übrig bleibt — sonst behalten /join und /blog gar keine Beschreibung mehr.
+  /**
+   * ⚠️ Verglichen wird der WERT, entity-frei — nie das rohe Tag.
+   *
+   * Zwei Unterschiede, die Chrome beim Serialisieren einführt, und die beide gemessen sind:
+   *   1. Markup: Vite-Hülle `… 24 h." />`, Schnappschuss `… 24 h.">`.
+   *   2. Entities: Hülle `Live-Musik & mehr`, Schnappschuss `Live-Musik &amp; mehr`.
+   *
+   * Jeder der beiden allein macht einen String-Vergleich wertlos. Die ersten zwei Anläufe
+   * dieses Fixes liefen deshalb wirkungslos durch und sahen grün aus, weil der Fallback
+   * („der erste gewinnt") einfach das alte Verhalten fortsetzte.
+   *
+   * Für (2) gibt es `entityFrei()` bereits weiter oben in dieser Datei — dieselbe Falle hat
+   * schon den Show-Guard erwischt. Beim dritten Mal ist es keine Falle mehr, sondern eine
+   * Regel: **an jeder Grenze zwischen Quelle und gerendertem HTML wird entity-frei
+   * verglichen.**
+   */
+  const wertVon = (tag) =>
+    entityFrei(
+      tag.startsWith("<title") ? tag.replace(/<\/?title>/g, "") : (tag.match(/content="(.*?)"/s)?.[1] ?? ""),
+    );
+  const vorgabeWert = (regex) => {
+    const t = HUELLE.toString("utf8").match(regex);
+    return t ? wertVon(t[0]) : null;
   };
-  ersteBehalten(/<title>.*?<\/title>/gs);
-  ersteBehalten(/<meta\s+name="description"\s+content=".*?"\s*\/?>/gs);
+  const aufraeumen = (regex) => {
+    const vorgabe = vorgabeWert(regex);
+    let treffer = [...ergebnis.matchAll(regex)].map((t) => t[0]);
+    if (vorgabe !== null && treffer.some((t) => wertVon(t) !== vorgabe)) {
+      for (const t of treffer.filter((t) => wertVon(t) === vorgabe)) ergebnis = ergebnis.replace(t, "");
+      treffer = [...ergebnis.matchAll(regex)].map((t) => t[0]);
+    }
+    // Was jetzt noch mehrfach dasteht, sind zwei eigene Werte (Showseiten) — dort steht der
+    // spezifischere zuerst, also gewinnt der erste.
+    for (const t of treffer.slice(1)) ergebnis = ergebnis.replace(t, "");
+  };
+  aufraeumen(/<title>.*?<\/title>/gs);
+  aufraeumen(/<meta\s+name="description"\s+content=".*?"\s*\/?>/gs);
 
   // Positiver Nachweis, dass die Aufräumarbeit auch wirklich stattgefunden hat. Ohne diese
   // Prüfung meldet ein wirkungsloses replace() einen grünen Build mit doppeltem Kopf.
@@ -302,6 +345,30 @@ function kopfNormalisieren(html, route) {
   };
   for (const [was, anzahl] of Object.entries(uebrig)) {
     if (anzahl > 1) throw new Error(`${anzahl}× <${was}> im Kopf — Dublette nicht entfernt`);
+  }
+
+  /**
+   * Zweiter, schärferer Nachweis: hatte die Seite einen EIGENEN Wert, muss der eigene
+   * übrig sein — nicht die Vorgabe.
+   *
+   * „Genau ein Tag im Kopf" allein sagt darüber nichts: die alte Fassung hat auf vier
+   * Seiten sauber entdoppelt und dabei jedes Mal den falschen behalten. Ein Guard, der nur
+   * zählt, hätte diesen Zustand als grün gemeldet — und hat es monatelang getan.
+   */
+  for (const [was, regex] of [
+    ["title", /<title>.*?<\/title>/gs],
+    ["description", /<meta\s+name="description"\s+content=".*?"\s*\/?>/gs],
+  ]) {
+    const vorgabe = vorgabeWert(regex);
+    if (vorgabe === null) continue;
+    const rohHatteEigenen = [...html.matchAll(regex)].some((t) => wertVon(t[0]) !== vorgabe);
+    const uebrigTag = ergebnis.match(regex)?.[0];
+    if (rohHatteEigenen && uebrigTag && wertVon(uebrigTag) === vorgabe) {
+      throw new Error(
+        `${route}: eigener <${was}> war vorhanden, übrig blieb die Vorgabe aus index.html — ` +
+          `die Seite bekäme denselben Text wie alle anderen`,
+      );
+    }
   }
 
   // 2. canonical + og:url: alle vorhandenen raus, genau einen richtigen rein.
