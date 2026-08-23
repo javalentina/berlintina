@@ -381,10 +381,32 @@ await new Promise((ok) => server.listen(PORT, ok));
 console.log(`Prerender: ${ROUTES.length} Routen aus sitemap.xml · Chrome: ${CHROME}`);
 console.log(`           API-Daten von: ${API_ORIGIN}`);
 
+/**
+ * Sprache des Schnappschusses: DEUTSCH, erzwungen.
+ *
+ * Die App wählt ihre Sprache über `navigator.language` (App.tsx:2507) — im Browser eines
+ * echten Besuchers richtig, im Prerender-Chrome fatal: der Build-Container hat keine
+ * deutsche Locale, `navigator.language` ist dort `en-US`. Gemessen an der Live-Seite nach
+ * dem ersten Deploy: JEDE eingefrorene Seite trug englischen Text unter
+ * `<html lang="de">` — „Price from 800€", „Request a Quote" — auf einer Berliner
+ * Vermittlungsseite. Für Google und die KI-Suche ist das die einzige Fassung, die es gibt;
+ * ein deutscher Suchender bekommt ein englisches Snippet, und Sprachauszeichnung und
+ * Inhalt widersprechen sich.
+ *
+ * Lokal fiel es NICHT auf: der Chrome des Entwicklers ist deutsch. Ein Unterschied, den
+ * nur die ausgelieferte Fläche zeigt.
+ *
+ * Der echte Besucher ist unberührt — React übernimmt beim Laden und schaltet nach seiner
+ * Browsersprache um. Erzwungen wird auf drei Ebenen, weil `--lang` allein je nach
+ * Chrome-Version `navigator.language` nicht sicher setzt.
+ */
+const SPRACHE = process.env.PRERENDER_LANG || "de-DE";
+const SPRACHE_KURZ = SPRACHE.split("-")[0];
+
 const browser = await puppeteer.launch({
   executablePath: CHROME,
   headless: "new",
-  args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  args: ["--no-sandbox", "--disable-dev-shm-usage", `--lang=${SPRACHE}`],
 });
 let geschrieben = 0;
 const fehler = [];
@@ -392,6 +414,14 @@ const fehler = [];
 try {
   for (const route of ROUTES) {
     const page = await browser.newPage();
+
+    // Ebene 2 + 3 der Spracherzwingung (siehe SPRACHE oben): der Header für alles, was
+    // über HTTP geht, und `navigator.language`/`languages` für die Abfrage in App.tsx.
+    await page.setExtraHTTPHeaders({ "Accept-Language": `${SPRACHE},${SPRACHE_KURZ};q=0.9` });
+    await page.evaluateOnNewDocument((lang, kurz) => {
+      Object.defineProperty(navigator, "language", { get: () => lang });
+      Object.defineProperty(navigator, "languages", { get: () => [lang, kurz] });
+    }, SPRACHE, SPRACHE_KURZ);
 
     // Fremde Zähl-/Werbedienste während des Prerenders blocken: kein Bot-Traffic in der
     // GA4-Statistik und keine von außen injizierten Skripte im gespeicherten Schnappschuss.
@@ -418,6 +448,31 @@ try {
       // Positiver Nachweis statt „hat nicht geworfen": zu wenig Text = Fehler, sonst liegt
       // am Ende ein grüner Build mit leeren Seiten vor.
       if (zeichen < 300) throw new Error(`nur ${zeichen} Zeichen Text — Schnappschuss wäre leer`);
+
+      /**
+       * Sprach-Guard: hat die App die erzwungene Sprache auch BENUTZT?
+       *
+       * Zwei Stufen, weil die eine ohne die andere nichts beweist. `navigator.language`
+       * belegt nur, dass die Injektion ankam — nicht, dass der ausgegebene Text deutsch
+       * ist. Deshalb zusätzlich ein Text-Nachweis: ANWESENHEIT eines deutschen Markers,
+       * nicht Abwesenheit eines englischen. (Ein Verbots-Guard fängt nur Fehler, die man
+       * schon kennt — dieselbe Lehre wie beim „0 Shows gefunden".) Mehrere Marker, einer
+       * genügt: ein einzelner würde bei jeder Textänderung falsch-rot.
+       */
+      const gemesseneSprache = await page.evaluate(() => navigator.language);
+      if (!gemesseneSprache.startsWith(SPRACHE_KURZ)) {
+        throw new Error(`navigator.language ist „${gemesseneSprache}", erwartet „${SPRACHE}" — Spracherzwingung greift nicht`);
+      }
+      if (SPRACHE_KURZ === "de") {
+        const MARKER = ["Über uns", "Jetzt anfragen", "Anfrage", "Künstler", "Shows"];
+        const text = await page.evaluate(() => document.getElementById("root")?.innerText ?? "");
+        if (!MARKER.some((m) => text.includes(m))) {
+          throw new Error(
+            `kein deutscher Text im Schnappschuss (keiner von: ${MARKER.join(", ")}) — ` +
+              `die Seite waere unter <html lang="de"> auf Englisch eingefroren`,
+          );
+        }
+      }
 
       // Inhalts-Guard, aber nur wo er etwas aussagt: Wenn die API selbst 0 Shows meldet,
       // ist ein leerer Katalog die Wahrheit und kein Fehler — dann darf er den Deploy
