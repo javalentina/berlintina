@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, follow" />
+    <title>Seite nicht gefunden | Berlintina</title>
+    <!--
+      Statisch und ohne Bundle lauffähig — Absicht.
+
+      Diese Seite wird ausgeliefert, wenn eine URL zu keiner Route gehört. Sie darf
+      deshalb nicht davon abhängen, dass das JavaScript lädt: React Router hat in
+      App.tsx keine `path="*"`-Route, ein Fallback über die Anwendung ergäbe also den
+      Rahmen mit leerem Inhalt — eine weiße Fläche zwischen Kopf und Fuß.
+
+      `noindex, follow`: nicht indexieren, den Links aber folgen, damit die
+      Verlinkung zu den echten Seiten erhalten bleibt.
+    -->
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: #faf8f5;
+        color: #1a1a1a;
+        line-height: 1.6;
+      }
+      main { max-width: 34rem; text-align: center; }
+      .code {
+        font-size: 0.75rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        opacity: 0.55;
+        margin: 0 0 1rem;
+      }
+      h1 { font-size: clamp(1.6rem, 5vw, 2.25rem); margin: 0 0 0.75rem; font-weight: 600; }
+      p { margin: 0 0 1.75rem; opacity: 0.8; }
+      .en { font-size: 0.95rem; opacity: 0.6; margin-bottom: 2rem; }
+      .links { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+      a {
+        display: inline-block;
+        padding: 0.7rem 1.4rem;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        text-decoration: none;
+        color: inherit;
+        font-size: 0.9rem;
+        transition: opacity 0.2s;
+      }
+      a:hover { opacity: 0.65; }
+      a.primary { background: #1a1a1a; color: #faf8f5; border-color: #1a1a1a; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #14110f; color: #f5f1ec; }
+        a.primary { background: #f5f1ec; color: #14110f; border-color: #f5f1ec; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="code">Fehler 404</p>
+      <h1>Diese Seite gibt es nicht</h1>
+      <p>Der Link ist vermutlich veraltet oder hat sich vertippt. Die Shows und alles andere sind weiterhin da.</p>
+      <p class="en">This page doesn’t exist. The link may be outdated — everything else is still here.</p>
+      <div class="links">
+        <a class="primary" href="/">Zur Startseite</a>
+        <a href="/catalog">Alle Shows</a>
+        <a href="/about">Über uns</a>
+      </div>
+    </main>
+  </body>
+</html>

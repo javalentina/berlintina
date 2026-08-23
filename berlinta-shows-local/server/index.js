@@ -2332,8 +2332,50 @@ app.get('*', (req, res, next) => {
 
 app.use(express.static(distPath, { redirect: false }));
 
-app.get('*', (_req, res) => {
-  res.sendFile(join(distPath, 'index.html'));
+/**
+ * Echte 404 statt Startseite.
+ *
+ * Vorher beantwortete der SPA-Fallback JEDE unbekannte URL mit Status 200 und der
+ * Startseite. Seit dem Prerender ist das gewichtiger geworden: früher bekam ein Crawler
+ * dort eine leere Hülle, jetzt den vollständigen Startseiteninhalt — dieselbe Seite unter
+ * beliebig vielen Adressen.
+ *
+ * ⚠️ Die Liste stammt aus App.tsx, NICHT aus der sitemap.xml. Ein Prerender-Schnappschuss
+ * ist kein Existenznachweis für eine Route: `/artist` und `/join/start` sind echte Seiten
+ * ohne Sitemap-Eintrag, und `/show/:slug` ist der Umsatzpfad der Agentur. Wer hier die
+ * Sitemap als Wahrheit nimmt, setzt jede einzelne Showseite auf 404.
+ *
+ * ⚠️ Diese Prüfung MUSS nach express.static stehen. Davor würde sie /assets/*, /llms.txt,
+ * /robots.txt und /sitemap.xml mit 404 beantworten — also die Seite weiß machen.
+ */
+const SEITEN = new Set([
+  '', 'catalog', 'blog', 'about', 'impressum', 'datenschutz', 'join', 'join/start', 'artist',
+]);
+
+/**
+ * Parametrisierte Routen: Präfix erlaubt, Wert ungeprüft.
+ *
+ * Bewusst offen gelassen: Ob eine Show-Slug wirklich existiert, weiß nur die Datenbank.
+ * Eine Abfrage pro Anfrage wäre ein Roundtrip auf dem Umsatzpfad, und ein Fehlgriff dort
+ * kostet eine echte Buchung — teurer als das, was hier gewonnen wird. Erfundene Adressen
+ * unter diesen Präfixen antworten deshalb weiterhin mit 200 und der Hülle.
+ *
+ * Billige Verschärfung, falls das später stört: die Slug-Menge einmal beim Start laden und
+ * im Speicher halten (Set-Lookup statt DB-Runde); dann muss beim Anlegen einer Show der
+ * Speicher aufgefrischt werden. Erst tun, wenn jemand das Problem tatsächlich hat.
+ */
+const PRAEFIXE = ['show', 'blog', 'results', 'admin'];
+
+app.get('*', (req, res) => {
+  const pfad = req.path.replace(/^\/+|\/+$/g, ''); // /about/ und /about sind dieselbe Seite
+  const ersterTeil = pfad.split('/')[0];
+  const bekannt = SEITEN.has(pfad) || PRAEFIXE.includes(ersterTeil);
+
+  if (bekannt) return res.sendFile(join(distPath, 'index.html'));
+
+  const fehlerseite = join(distPath, '404.html');
+  if (existsSync(fehlerseite)) return res.status(404).sendFile(fehlerseite);
+  res.status(404).type('text/plain').send('404 — Seite nicht gefunden');
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
