@@ -280,7 +280,6 @@ export const ShowDetailPage: React.FC<Props> = ({
               </div>
             ) : editProps ? (
               <div className="aspect-[4/3] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center bg-gray-50 mb-4 rounded-sm">
-                <span className="text-4xl mb-3">📷</span>
                 <p className="text-sm text-gray-400 font-medium">Noch kein Foto</p>
                 <p className="text-xs text-gray-300 mt-1">URL unten einfügen</p>
               </div>

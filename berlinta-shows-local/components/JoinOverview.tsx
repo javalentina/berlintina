@@ -155,7 +155,7 @@ export const JoinOverview: React.FC<JoinOverviewProps> = ({
       disabled={!String(draft[field] || '').trim() || polishingField !== null}
       className="text-xs font-bold text-gray-500 hover:text-black transition disabled:opacity-40"
     >
-      {polishingField === field ? (locale === 'de' ? '…' : '…') : '✨ ' + label}
+      {polishingField === field ? (locale === 'de' ? '…' : '…') : label}
     </button>
   );
 

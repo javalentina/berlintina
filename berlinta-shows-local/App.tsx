@@ -1497,9 +1497,8 @@ const ShowPreview: React.FC<{ draft: Record<string, unknown>; photoFile: File | 
 
             {/* Stats pills */}
             <div className="flex flex-wrap gap-2 mb-8">
-              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt border border-warm-border text-sm font-medium text-charcoal">★ 5.0</span>
               {ef('durationMinutes', false,
-                duration ? <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt border border-warm-border text-sm font-medium text-charcoal">⏱ {duration}</span> : null,
+                duration ? <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-alt border border-warm-border text-sm font-medium text-charcoal">{duration}</span> : null,
                 locale === 'de' ? 'Dauer…' : 'Duration…'
               )}
               {ef('priceText', false,
@@ -1725,7 +1724,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   };
-  useEffect(() => { scrollToBottom(); }, [messages, loading]);
+  useEffect(() => { scrollToBottom(); }, [messages, loading, submitError]);
 
   useEffect(() => {
     const token = getStoredArtistToken();
@@ -1998,11 +1997,10 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           {showMediaInput && (
             <div className="pl-10 space-y-2.5">
               <label className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-surface border border-warm-border cursor-pointer text-sm font-semibold text-warm-muted hover:bg-surface-alt">
-                <span>📸</span>
-                <span>{photoFiles.length > 0 ? `✓ ${photoFiles.length} ${locale === 'de' ? 'Foto(s)' : 'photo(s)'}` : (locale === 'de' ? 'Fotos hochladen' : 'Upload photos')}</span>
+                <span>{photoFiles.length > 0 ? `${photoFiles.length} ${locale === 'de' ? 'Foto(s) hinzugefügt' : 'photo(s) added'}` : (locale === 'de' ? 'Fotos hochladen' : 'Upload photos')}</span>
                 <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => {
                   const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
-                  if (files.length) { setPhotoFiles(prev => [...prev, ...files]); sendMessage(locale === 'de' ? `📸 ${files.length} Foto(s) hinzugefügt` : `📸 ${files.length} photo(s) added`); }
+                  if (files.length) { setPhotoFiles(prev => [...prev, ...files]); sendMessage(locale === 'de' ? `${files.length} Foto(s) hinzugefügt` : `${files.length} photo(s) added`); }
                 }} />
               </label>
               <div className="flex gap-2">
@@ -2014,7 +2012,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                   className="flex-1 px-4 py-2.5 rounded-xl bg-surface border border-warm-border text-sm font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
                 />
                 {pendingVideoUrl && (
-                  <button type="button" onClick={() => sendMessage(locale === 'de' ? '▶ Video hinzugefügt' : '▶ Video added')}
+                  <button type="button" onClick={() => sendMessage(locale === 'de' ? 'Video hinzugefügt' : 'Video added')}
                     className="px-4 py-2.5 rounded-xl bg-terracotta text-white text-sm font-semibold">
                     OK
                   </button>
@@ -2027,10 +2025,20 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
         {/* Finish button */}
         {canFinish && (
-          <div className="px-4 pt-2 flex-shrink-0">
+          <div className="px-4 pt-2 flex-shrink-0 space-y-2.5">
+            {!(submissionDraft.submitterEmail && String(submissionDraft.submitterEmail).includes('@')) && (
+              <input
+                type="email"
+                placeholder={locale === 'de' ? 'Deine E-Mail-Adresse (für die Bestätigung)' : 'Your email address (for confirmation)'}
+                value={String(submissionDraft.submitterEmail || '')}
+                onChange={(e) => setSubmissionDraft((d) => ({ ...d, submitterEmail: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-surface border border-warm-border text-sm font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
+              />
+            )}
+            {submitError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">{submitError}</div>}
             <button
               type="button"
-              onClick={handleFinish}
+              onClick={() => handleFinish()}
               disabled={submitting}
               className="w-full py-3.5 bg-terracotta text-white rounded-xl font-bold text-base hover:bg-terracotta-dark transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
             >
@@ -2046,7 +2054,6 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         <div className="border-t border-warm-border bg-surface flex-shrink-0">
           {/https?:\/\//.test(input) && (
             <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-xs text-warm-muted font-semibold">
-              <span>🔍</span>
               <span>{locale === 'de' ? 'Website wird analysiert…' : 'Analyzing your website…'}</span>
             </div>
           )}

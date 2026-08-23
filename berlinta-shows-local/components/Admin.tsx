@@ -48,9 +48,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode; active?: string }> = ({
   const navigate = useNavigate();
 
   const nav = [
-    { key: 'submissions', label: 'Submissions', icon: '📥', to: '/admin/submissions' },
-    { key: 'shows',       label: 'Shows',       icon: '🎭', to: '/admin/shows' },
-    { key: 'blog',        label: 'Blog',        icon: '✍️', to: '/admin/blog' },
+    { key: 'submissions', label: 'Submissions', to: '/admin/submissions' },
+    { key: 'shows',       label: 'Shows',       to: '/admin/shows' },
+    { key: 'blog',        label: 'Blog',        to: '/admin/blog' },
   ];
 
   return (
@@ -68,7 +68,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode; active?: string }> = ({
                   active === n.key ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'
                 }`}
               >
-                <span>{n.icon}</span><span>{n.label}</span>
+                <span>{n.label}</span>
               </button>
             ))}
           </nav>
@@ -77,7 +77,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode; active?: string }> = ({
               ↗ View site
             </a>
             <button onClick={toggleDark} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-white/70 transition-colors text-left">
-              {dark ? '☀ Light mode' : '◐ Dark mode'}
+              {dark ? 'Light mode' : 'Dark mode'}
             </button>
             <button
               onClick={() => { adminLogout(); window.location.href = '/admin'; }}
@@ -303,7 +303,6 @@ const DashboardInner: React.FC<{ defaultTab: 'submissions' | 'shows' | 'blog' }>
       {/* Tabs */}
       <div className={`flex gap-1 mb-5 border-b ${bdr}`}>
         {(['submissions','shows','blog'] as const).map((key) => {
-          const icons: Record<string,string> = { submissions:'📥', shows:'🎭', blog:'✍️' };
           const labels: Record<string,string> = { submissions:'Submissions', shows:'Shows', blog:'Blog' };
           return (
             <button key={key} onClick={() => setTab(key)}
@@ -311,7 +310,7 @@ const DashboardInner: React.FC<{ defaultTab: 'submissions' | 'shows' | 'blog' }>
                 tab === key ? `border-gray-900 ${txt}` : `border-transparent ${muted} hover:text-gray-600`
               }`}
             >
-              <span>{icons[key]}</span> {labels[key]}
+              {labels[key]}
             </button>
           );
         })}
@@ -358,7 +357,7 @@ const DashboardInner: React.FC<{ defaultTab: 'submissions' | 'shows' | 'blog' }>
                   >
                     {photos[0]
                       ? <img src={photos[0]} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-                      : <div className={`w-14 h-14 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl ${dark ? 'bg-gray-700' : 'bg-gray-100'}`}>🎭</div>
+                      : <div className={`w-14 h-14 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl ${dark ? 'bg-gray-700' : 'bg-gray-100'}`} />
                     }
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
@@ -392,7 +391,7 @@ const DashboardInner: React.FC<{ defaultTab: 'submissions' | 'shows' | 'blog' }>
                           disabled={isActing}
                           title="Delete submission"
                           className="w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-sm font-bold transition disabled:opacity-40 flex items-center justify-center"
-                        >🗑</button>
+                        >✕</button>
                       )}
                     </div>
                     <span className={`text-sm flex-shrink-0 ${muted}`}>›</span>
@@ -412,7 +411,7 @@ const DashboardInner: React.FC<{ defaultTab: 'submissions' | 'shows' | 'blog' }>
                   <div key={s.id} className={`flex items-center gap-4 p-3 border rounded-xl transition ${dark ? 'bg-gray-800 border-gray-700 hover:border-gray-500' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
                     {photos[0]
                       ? <img src={photos[0]} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-                      : <div className={`w-14 h-14 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl ${dark ? 'bg-gray-700' : 'bg-gray-100'}`}>🎭</div>
+                      : <div className={`w-14 h-14 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl ${dark ? 'bg-gray-700' : 'bg-gray-100'}`} />
                     }
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/admin/shows/${s.id}`)}>
                       <p className={`font-semibold text-sm truncate ${txt}`}>{s.title}</p>
@@ -581,7 +580,7 @@ const SubmissionDetailInner: React.FC = () => {
         {email && (
           <a href={`mailto:${email}?subject=Re: Ihre Berlintina Einreichung – ${encodeURIComponent(sub.show_title || '')}`}
             className={`text-xs font-semibold flex-shrink-0 ${dark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}>
-            ✉ Email
+            Email
           </a>
         )}
         {isPending && (
@@ -609,7 +608,6 @@ const SubmissionDetailInner: React.FC = () => {
 
       {/* ── Hint banner ── */}
       <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium mb-5 ${dark ? 'bg-amber-900/30 text-amber-300 border border-amber-800/40' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-        <span>✏</span>
         <span>Hover over any section to edit inline — click the pencil. Photos: hover for ✕ / ← →, or add URL below the image.</span>
       </div>
 

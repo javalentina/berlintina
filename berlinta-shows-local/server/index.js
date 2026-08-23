@@ -1140,6 +1140,7 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
 
       // Auto-scrape website: triggers on websiteUrl slot OR any non-media URL in any message (once per session)
       let scrapeMessage = null;
+      let scrapedLastSlot = false; // true if the website scraper just found a proper value for `lastSlot` this turn
       const urlInMessage = (userMessage.match(/https?:\/\/[^\s]+/) || [])[0]?.replace(/[.,;:!?)]+$/, '');
       const isMediaUrl = urlInMessage && /youtube|youtu\.be|vimeo|\.mp4|\.webm|\.mov/i.test(urlInMessage);
       const isWebsiteSlot = lastSlot === 'websiteUrl';
@@ -1147,6 +1148,7 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
         mergedState.urlScraped = true;
         try {
           const scraped = await scrapeWebsiteForShow(urlInMessage, loc);
+          scrapedLastSlot = !!(lastSlot && scraped[lastSlot]);
           // Merge scraped fields without overwriting already-filled fields
           const mergedForm = { ...scraped };
           for (const [k, v] of Object.entries(form)) {
@@ -1155,19 +1157,19 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
           form = mergedForm;
           mergedState.submissionDraft = form;
           const foundFields = Object.keys(scraped).filter(k => scraped[k] && k !== 'photoUrls');
-          const fieldLabels = { showTitle: { de: 'Titel', en: 'title' }, shortDescriptionFacts: { de: 'Beschreibung', en: 'description' }, artistBio: { de: 'Bio', en: 'bio' }, artistGenre: { de: 'Genre', en: 'genre' }, priceText: { de: 'Preis', en: 'price' }, durationMinutes: { de: 'Dauer', en: 'duration' }, socialLinks: { de: 'Links', en: 'links' } };
+          const fieldLabels = { artistName: { de: 'Name', en: 'name' }, showTitle: { de: 'Titel', en: 'title' }, shortDescriptionFacts: { de: 'Beschreibung', en: 'description' }, artistBio: { de: 'Bio', en: 'bio' }, artistGenre: { de: 'Genre', en: 'genre' }, priceText: { de: 'Preis', en: 'price' }, durationMinutes: { de: 'Dauer', en: 'duration' }, socialLinks: { de: 'Links', en: 'links' }, faqLanguage: { de: 'Sprachen', en: 'languages' } };
           if (foundFields.length > 0) {
             const labelList = foundFields.map(k => (fieldLabels[k]?.[loc] || k)).join(', ');
             const artistHint = scraped.artistName ? ` (${scraped.artistName})` : '';
             if (!scraped.showTitle) {
               // General artist website — no show title found, ask specifically
               scrapeMessage = loc === 'de'
-                ? `✓ Website ausgelesen${artistHint}. Gefunden: ${labelList}.\n\n👉 Schau mal rechts — so sieht deine Seite schon aus!\n\nNoch eine Frage: Wie heißt die konkrete Show, die du listen möchtest? (z.B. "Solo-Abend", "Duo Act")`
-                : `✓ Website analyzed${artistHint}. Found: ${labelList}.\n\n👉 Check the right side — that's how your page already looks!\n\nOne question: What's the specific show you want to list? (e.g. "Solo Evening", "Duo Act")`;
+                ? `Website ausgelesen${artistHint}. Gefunden: ${labelList}.\n\nSchau mal rechts — so sieht deine Seite schon aus.\n\nNoch eine Frage: Wie heißt die konkrete Show, die du listen möchtest? (z.B. "Solo-Abend", "Duo Act")`
+                : `Website analyzed${artistHint}. Found: ${labelList}.\n\nCheck the right side — that's how your page already looks.\n\nOne question: What's the specific show you want to list? (e.g. "Solo Evening", "Duo Act")`;
             } else {
               scrapeMessage = loc === 'de'
-                ? `✓ Perfekt! Ich hab deine Website gelesen${artistHint}.\n\n👉 Schau mal rechts — so sieht deine Show-Seite schon aus! Übernommen: ${labelList}.\n\nFehlt noch etwas oder passt alles?`
-                : `✓ Done! I read your website${artistHint}.\n\n👉 Look to the right — that's how your show page already looks! Imported: ${labelList}.\n\nAnything missing or does it all look good?`;
+                ? `Ich hab deine Website gelesen${artistHint}.\n\nSchau mal rechts — so sieht deine Show-Seite schon aus. Übernommen: ${labelList}.\n\nFehlt noch etwas oder passt alles?`
+                : `I read your website${artistHint}.\n\nLook to the right — that's how your show page already looks. Imported: ${labelList}.\n\nAnything missing or does it all look good?`;
             }
           } else {
             scrapeMessage = loc === 'de'
@@ -1210,7 +1212,7 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
           nextQuestion: nextQ,
           quickReplies: nextQ?.quickReplies,
         }));
-      } else if (lastSlot && trimmedMsg && !isPlaceholderQuickReply) {
+      } else if (lastSlot && trimmedMsg && !isPlaceholderQuickReply && !scrapedLastSlot) {
         form[lastSlot] = trimmedMsg;
       }
       // Intent: from slot has_show or joinState INTENT. Phase 1.2: button sends action=BUTTON + value=HAS_SHOW|NO_SHOW.
