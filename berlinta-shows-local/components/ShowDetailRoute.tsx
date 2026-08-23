@@ -272,14 +272,19 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
    *
    * Der Betrag ist unverändert. Ob er überhaupt öffentlich sein soll, ist eine eigene
    * Entscheidung und hängt nicht an diesem Schema.
+   *
+   * `valueAddedTaxIncluded: false`: die Beträge sind NETTO (Entscheid John, 23.08.2026).
+   * Ohne dieses Feld ist die Angabe mehrdeutig — eine Preisauskunft ohne Steuerstand sagt
+   * nicht, was der Kunde zahlt. Die sichtbare Entsprechung steht in ShowDetailPage.tsx
+   * („netto" am Betrag, Bruttowert als eigene Zeile).
    */
   const preisAngabe =
     show.priceType === 'POA'
       ? null
       : show.priceMin != null
-        ? { '@type': 'PriceSpecification', minPrice: show.priceMin, priceCurrency: 'EUR' }
+        ? { '@type': 'PriceSpecification', minPrice: show.priceMin, priceCurrency: 'EUR', valueAddedTaxIncluded: false }
         : show.priceMax != null
-          ? { '@type': 'PriceSpecification', maxPrice: show.priceMax, priceCurrency: 'EUR' }
+          ? { '@type': 'PriceSpecification', maxPrice: show.priceMax, priceCurrency: 'EUR', valueAddedTaxIncluded: false }
           : null;
 
   /**

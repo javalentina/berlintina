@@ -130,11 +130,40 @@ export const ShowDetailPage: React.FC<Props> = ({
   const videoEmbeds = videos.map(u => getVideoEmbedUrl(u, false)).filter((u): u is string => !!u);
   const videoPreviewUrl = videoEmbeds[0] ? getVideoEmbedUrl(videos[0], true) : null;
 
+  /**
+   * Preisangabe mit Steuerhinweis.
+   *
+   * Bisher stand hier nur „ab 800€" — ohne jeden Hinweis, ob das mit oder ohne Umsatzsteuer
+   * gemeint ist. Die Beträge sind NETTO (Entscheid John, 23.08.2026). Für gewerbliche
+   * Kunden ist das die übliche Angabe; buchen aber auch Privatpersonen, muss der Endpreis
+   * erkennbar sein (Preisangabenverordnung). Deshalb beides: „netto" direkt am Betrag,
+   * und der Bruttowert als eigene, kleine Zeile im Preisblock.
+   *
+   * Der Bruttowert wird gerechnet, nicht gepflegt — eine zweite gepflegte Zahl würde
+   * irgendwann von der ersten abweichen. Kaufmännisch gerundet; bei 800 € geht es glatt auf.
+   *
+   * ⚠️ MWST_SATZ steht bewusst als benannte Konstante an EINER Stelle: künstlerische
+   * Leistungen können je nach Vertragsgestaltung dem ermäßigten Satz unterliegen. Wenn die
+   * Steuerberatung das für diese Vermittlungen sagt, ist es hier eine Zahl.
+   */
+  const MWST_SATZ = 0.19;
+  const brutto = (netto: number) => Math.round(netto * (1 + MWST_SATZ));
+
   const priceLabel = show.priceType === 'POA'
     ? (locale === 'de' ? 'Auf Anfrage' : 'On request')
     : show.priceMin != null
-      ? `${locale === 'de' ? 'ab' : 'from'} ${show.priceMin}€`
-      : show.priceMax != null ? `≤ ${show.priceMax}€` : null;
+      ? `${locale === 'de' ? 'ab' : 'from'} ${show.priceMin}€ ${locale === 'de' ? 'netto' : 'net'}`
+      : show.priceMax != null
+        ? `≤ ${show.priceMax}€ ${locale === 'de' ? 'netto' : 'net'}`
+        : null;
+
+  const priceTaxNote = show.priceType === 'POA'
+    ? null
+    : (show.priceMin ?? show.priceMax) != null
+      ? (locale === 'de'
+          ? `entspricht ${brutto((show.priceMin ?? show.priceMax)!)}€ inkl. ${MWST_SATZ * 100} % MwSt.`
+          : `= €${brutto((show.priceMin ?? show.priceMax)!)} incl. ${MWST_SATZ * 100}% VAT`)
+      : null;
 
   React.useEffect(() => {
     if (lightboxIndex !== null) document.body.style.overflow = 'hidden';
@@ -505,6 +534,9 @@ export const ShowDetailPage: React.FC<Props> = ({
               <div className="mb-8 p-5 border border-border">
                 <p className="label-style mb-1">{t.price}</p>
                 <p className="font-display text-2xl font-bold text-foreground">{priceLabel}</p>
+                {priceTaxNote && (
+                  <p className="mt-1 text-xs text-muted-foreground">{priceTaxNote}</p>
+                )}
               </div>
             )}
 
