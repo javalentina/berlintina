@@ -10,6 +10,7 @@ import * as apiClient from './services/apiClient';
 import { scoreShows } from './lib/matching';
 import { conversationStart, conversationMessage } from './services/conversationService';
 import { LanguageToggle } from './components/LanguageToggle';
+import { CookieConsent } from './components/CookieConsent';
 import { PageSEO } from './components/PageSEO';
 import { ShowCard } from './components/ShowCard';
 import { JoinOverview } from './components/JoinOverview';
@@ -191,7 +192,9 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
             <span className="label-style mb-4 block">Contact</span>
             <div className="flex flex-col gap-3">
               <a href="mailto:info@berlintina.de" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">info@berlintina.de</a>
+              <a href="tel:+491608106880" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">+49 160 8106880</a>
               <a href="https://wa.me/491608106880" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">WhatsApp</a>
+              <a href="https://www.instagram.com/berlintina.shows" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Instagram</a>
             </div>
           </div>
           <div className="col-span-12 md:col-span-3">
@@ -221,6 +224,8 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
           <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.555 4.122 1.528 5.856L.057 23.882a.5.5 0 0 0 .61.61l6.026-1.471A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.805 9.805 0 0 1-5.013-1.374l-.36-.214-3.724.909.936-3.617-.235-.372A9.796 9.796 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
         </svg>
       </a>
+
+      <CookieConsent locale={locale} />
     </div>
   );
 };
@@ -686,6 +691,21 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   const defaultShows = useMemo(() => shows.slice(0, 12), [shows]);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const faqs = locale === 'de' ? [
+    { q: 'Wie funktioniert die Buchung?', a: 'Sie beschreiben Ihr Event — Anlass, Datum, Budget, Stil. Ich suche persönlich den passenden Act aus meinem kuratierten Netzwerk heraus und sende Ihnen innerhalb von 24 Stunden konkrete Vorschläge. Bei Interesse stelle ich den Kontakt her und begleite Sie bis zur finalen Buchung.' },
+    { q: 'Was kostet Berlintina?', a: 'Die Anfrage ist völlig kostenlos. Wenn es zur Buchung kommt, fällt eine Vermittlungsgebühr von 15–20% auf das vereinbarte Künstlerhonorar an. Bei komplexen Anfragen (mehrere Künstler, Produktionsbegleitung) kann eine zusätzliche Handling-Fee entstehen — das wird immer vorab transparent kommuniziert. Keine Überraschungen.' },
+    { q: 'Kann ich die Künstler direkt kontaktieren?', a: 'Ja — sobald ich die Verbindung hergestellt habe. Berlintina ist keine Sperrschicht zwischen Ihnen und dem Künstler. Ich sorge für den richtigen Match, danach kommunizieren Sie direkt.' },
+    { q: 'Wie schnell bekomme ich eine Antwort?', a: 'Innerhalb von 24 Stunden — meistens schneller. Bei dringenden Anfragen bitte direkt per WhatsApp oder Telefon kontaktieren.' },
+    { q: 'Wie werden Shows auf Berlintina aufgenommen?', a: 'Jeder Künstler auf Berlintina wurde von mir persönlich ausgewählt. Entweder habe ich ihre Show live erlebt, oder sie wurden mir von vertrauenswürdigen Personen empfohlen. Kein automatisches Listing — nur geprüfte Qualität.' },
+    { q: 'Was, wenn ich keinen passenden Act finde?', a: 'Dann suche ich weiter. Mein Netzwerk geht über die Website hinaus. Sagen Sie mir, was Sie suchen — ich finde eine Lösung.' },
+  ] : [
+    { q: 'How does booking work?', a: 'Describe your event — occasion, date, budget, style. I personally search my curated network and send you concrete suggestions within 24 hours. If you\'re interested, I make the introduction and guide you to the final booking.' },
+    { q: 'What does Berlintina cost?', a: "The enquiry is completely free. When a booking is made, a booking fee of 15–20% of the agreed artist fee applies. For complex requests (multiple artists, production support) an additional handling fee may apply — always communicated transparently upfront. No surprises." },
+    { q: 'Can I contact artists directly?', a: "Yes — once I've made the connection. Berlintina is not a barrier between you and the artist. I find the right match, then you communicate directly." },
+    { q: 'How quickly will I get a reply?', a: 'Within 24 hours — usually faster. For urgent requests, please contact me directly via WhatsApp or phone.' },
+    { q: 'How are artists selected for Berlintina?', a: "Every artist on Berlintina has been personally selected by me. I've either seen their show live, or they've been recommended by trusted contacts. No automatic listings — only vetted quality." },
+    { q: "What if I can't find a suitable act?", a: "Then I keep searching. My network extends beyond the website. Tell me what you're looking for — I'll find a solution." },
+  ];
   const [activeCat, setActiveCat] = useState<string>('all');
   const [searchFocused, setSearchFocused] = useState(false);
   const filteredShows = useMemo(() => {
@@ -738,18 +758,30 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         : 'Berlin show acts, acrobatics, live music, dance & more — personally curated by Valiantsina. Free enquiry. Reply within 24 h.'}
       structuredData={{
         '@context': 'https://schema.org',
-        '@type': 'EntertainmentBusiness',
-        name: 'Berlintina',
-        description: locale === 'de'
-          ? 'Persönlich kuratierte Showact-Agentur Berlin'
-          : 'Personally curated show act agency Berlin',
-        url: 'https://berlintina.de',
-        telephone: '+4916081068880',
-        email: 'info@berlintina.de',
-        address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
-        areaServed: { '@type': 'City', name: 'Berlin' },
-        sameAs: ['https://www.instagram.com/berlintina.shows'],
-        priceRange: '€€–€€€',
+        '@graph': [
+          {
+            '@type': 'EntertainmentBusiness',
+            name: 'Berlintina',
+            description: locale === 'de'
+              ? 'Persönlich kuratierte Showact-Agentur Berlin'
+              : 'Personally curated show act agency Berlin',
+            url: 'https://berlintina.de',
+            telephone: '+4916081068880',
+            email: 'info@berlintina.de',
+            address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
+            areaServed: { '@type': 'City', name: 'Berlin' },
+            sameAs: ['https://www.instagram.com/berlintina.shows'],
+            priceRange: '€€–€€€',
+          },
+          {
+            '@type': 'FAQPage',
+            mainEntity: faqs.map((f) => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
+          },
+        ],
       }}
     />
     {/* ── Hero ── */}
@@ -998,48 +1030,28 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </p>
           </div>
         </div>
-        <div className="container grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              quote: locale === 'de'
-                ? 'Valiantsina hat für unsere Gala genau den richtigen Act gefunden — schnell, unkompliziert, perfekt. Wir buchen wieder.'
-                : "Valiantsina found exactly the right act for our gala — fast, straightforward, perfect. We'll book again.",
-              name: 'Sophie K.',
-              role: locale === 'de' ? 'Eventmanagerin, Berlin' : 'Event Manager, Berlin',
-            },
-            {
-              quote: locale === 'de'
-                ? 'Unsere Hochzeitsgesellschaft war begeistert. Der Cello-Act war eine Überraschung, die noch Monate danach erwähnt wird.'
-                : 'Our wedding guests were blown away. The cello act was a surprise that people still talk about months later.',
-              name: 'Markus & Lena',
-              role: locale === 'de' ? 'Hochzeitspaar, Potsdam' : 'Wedding couple, Potsdam',
-            },
-            {
-              quote: locale === 'de'
-                ? 'Als Künstlerin schätze ich die persönliche Betreuung sehr. Berlintina vermittelt nur Anfragen, die wirklich passen.'
-                : 'As an artist I really appreciate the personal attention. Berlintina only passes on enquiries that are a genuine match.',
-              name: 'Alina V.',
-              role: locale === 'de' ? 'Sängerin & Performerin' : 'Singer & Performer',
-            },
-          ].map((t, i) => (
-            <motion.blockquote
-              key={t.name}
-              initial={{ y: 40, opacity: 0, rotate: 1 }}
-              whileInView={{ y: 0, opacity: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30, delay: i * 0.12 }}
-              whileHover={{ y: -4, transition: { duration: 0.3 } }}
-              className="border-l-2 border-accent pl-6 cursor-default"
+        <div className="container">
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="border-l-2 border-accent pl-6 max-w-2xl"
+          >
+            <p className="text-lg text-foreground leading-relaxed font-body">
+              {locale === 'de'
+                ? 'Berlintina ist eine junge Plattform — aber Valiantsina vermittelt seit Jahren persönlich Künstler in Berlin. Die ersten Kundenstimmen folgen nach unseren gemeinsamen Events. Bis dahin: schauen Sie hinter die Kulissen auf Instagram.'
+                : "Berlintina is a young platform — but Valiantsina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
+            </p>
+            <a
+              href="https://www.instagram.com/berlintina.shows"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity no-underline"
             >
-              <p className="text-lg text-foreground leading-relaxed mb-6 font-body">
-                "{t.quote}"
-              </p>
-              <footer>
-                <cite className="not-italic font-display font-bold text-foreground block">{t.name}</cite>
-                <span className="label-style mt-1 block">{t.role}</span>
-              </footer>
-            </motion.blockquote>
-          ))}
+              @berlintina.shows <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+          </motion.div>
         </div>
       </section>
 
@@ -1114,21 +1126,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               {locale === 'de' ? 'Antworten auf die wichtigsten Fragen.' : 'Answers to the most common questions.'}
             </p>
           <div className="space-y-0">
-            {(locale === 'de' ? [
-              { q: 'Wie funktioniert die Buchung?', a: 'Sie beschreiben Ihr Event — Anlass, Datum, Budget, Stil. Ich suche persönlich den passenden Act aus meinem kuratierten Netzwerk heraus und sende Ihnen innerhalb von 24 Stunden konkrete Vorschläge. Bei Interesse stelle ich den Kontakt her und begleite Sie bis zur finalen Buchung.' },
-              { q: 'Was kostet Berlintina?', a: 'Die Anfrage ist völlig kostenlos. Wenn es zur Buchung kommt, fällt eine Vermittlungsgebühr von 15–20% auf das vereinbarte Künstlerhonorar an. Bei komplexen Anfragen (mehrere Künstler, Produktionsbegleitung) kann eine zusätzliche Handling-Fee entstehen — das wird immer vorab transparent kommuniziert. Keine Überraschungen.' },
-              { q: 'Kann ich die Künstler direkt kontaktieren?', a: 'Ja — sobald ich die Verbindung hergestellt habe. Berlintina ist keine Sperrschicht zwischen Ihnen und dem Künstler. Ich sorge für den richtigen Match, danach kommunizieren Sie direkt.' },
-              { q: 'Wie schnell bekomme ich eine Antwort?', a: 'Innerhalb von 24 Stunden — meistens schneller. Bei dringenden Anfragen bitte direkt per WhatsApp oder Telefon kontaktieren.' },
-              { q: 'Wie werden Shows auf Berlintina aufgenommen?', a: 'Jeder Künstler auf Berlintina wurde von mir persönlich ausgewählt. Entweder habe ich ihre Show live erlebt, oder sie wurden mir von vertrauenswürdigen Personen empfohlen. Kein automatisches Listing — nur geprüfte Qualität.' },
-              { q: 'Was, wenn ich keinen passenden Act finde?', a: 'Dann suche ich weiter. Mein Netzwerk geht über die Website hinaus. Sagen Sie mir, was Sie suchen — ich finde eine Lösung.' },
-            ] : [
-              { q: 'How does booking work?', a: 'Describe your event — occasion, date, budget, style. I personally search my curated network and send you concrete suggestions within 24 hours. If you\'re interested, I make the introduction and guide you to the final booking.' },
-              { q: 'What does Berlintina cost?', a: "The enquiry is completely free. When a booking is made, a booking fee of 15–20% of the agreed artist fee applies. For complex requests (multiple artists, production support) an additional handling fee may apply — always communicated transparently upfront. No surprises." },
-              { q: 'Can I contact artists directly?', a: "Yes — once I've made the connection. Berlintina is not a barrier between you and the artist. I find the right match, then you communicate directly." },
-              { q: 'How quickly will I get a reply?', a: 'Within 24 hours — usually faster. For urgent requests, please contact me directly via WhatsApp or phone.' },
-              { q: 'How are artists selected for Berlintina?', a: "Every artist on Berlintina has been personally selected by me. I've either seen their show live, or they've been recommended by trusted contacts. No automatic listings — only vetted quality." },
-              { q: "What if I can't find a suitable act?", a: "Then I keep searching. My network extends beyond the website. Tell me what you're looking for — I'll find a solution." },
-            ]).map((item, i) => (
+            {faqs.map((item, i) => (
               <div key={i} className="border-b border-foreground/10">
                 <button
                   type="button"
