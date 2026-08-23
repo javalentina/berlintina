@@ -464,7 +464,18 @@ try {
         throw new Error(`navigator.language ist „${gemesseneSprache}", erwartet „${SPRACHE}" — Spracherzwingung greift nicht`);
       }
       if (SPRACHE_KURZ === "de") {
-        const MARKER = ["Über uns", "Jetzt anfragen", "Anfrage", "Künstler", "Shows"];
+        /**
+         * Die Marker sind GEMESSEN, nicht geraten: einmal mit `PRERENDER_LANG=en-US`
+         * gebaut und jeder Kandidat gegen beide Schnappschuss-Sätze gehalten. Tauglich
+         * ist nur, was auf ALLEN 10 deutschen Seiten steht und auf KEINER englischen.
+         *
+         * Zwei naheliegende Kandidaten fielen dabei durch — „Künstler" und „Shows" stehen
+         * auf allen zehn ENGLISCHEN Seiten (Marken- und Eigennamen, „For Artists" hin oder
+         * her). Mit ihnen in der Liste hätte der Guard jede englische Fassung durchgewunken
+         * und dabei grün ausgesehen. Wer hier etwas ergänzt: erst gegen einen EN-Build
+         * halten, sonst ist der Schutz dekorativ.
+         */
+        const MARKER = ["Über uns", "Jetzt anfragen", "anfragen"];
         const text = await page.evaluate(() => document.getElementById("root")?.innerText ?? "");
         if (!MARKER.some((m) => text.includes(m))) {
           throw new Error(
