@@ -1567,7 +1567,25 @@ app.get('/api/shows/slug/:slug', async (req, res) => {
 });
 
 // --- Admin (EPIC 4) ---
-app.post('/api/admin/login', (req, res) => {
+/**
+ * Bremse gegen Durchprobieren.
+ *
+ * Der Zugang ist EIN Passwort, und dasselbe Passwort ist zugleich der API-Token
+ * (`requireAdmin` vergleicht direkt damit). Wer es errät, kann Shows aendern und loeschen.
+ * Bis eben war dieser Endpunkt der einzige ohne Limiter — waehrend Formular, Kontakt und
+ * KI-Aufrufe laengst gedeckelt sind. Ausgerechnet die Tuer stand ohne Bremse offen.
+ *
+ * 10 Versuche pro IP und Stunde reichen fuer Vertipper und sind fuer eine Wortliste
+ * unbrauchbar. `skipSuccessfulRequests`: wer das richtige Passwort hat, verbraucht nichts.
+ */
+const adminLoginLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: { error: 'Zu viele Versuche. Bitte spaeter erneut.' },
+});
+
+app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   if (!ADMIN_PASSWORD) {
     return res.status(503).json({ error: 'Admin not configured.' });
   }
