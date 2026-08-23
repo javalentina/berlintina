@@ -145,7 +145,13 @@ async function showRouten() {
         console.warn(`  ! Show ohne brauchbaren Slug übersprungen: ${JSON.stringify(show?.slug)}`);
         continue;
       }
-      routen.push({ route: `/show/${slug}`, titel: typeof show?.title === "string" ? show.title : null });
+      routen.push({
+        route: `/show/${slug}`,
+        titel: typeof show?.title === "string" ? show.title : null,
+        // Eigenes Datum statt des Datums der statischen Sitemap: sonst behauptet eine
+        // heute angelegte Show den Stand der zuletzt bearbeiteten Seite.
+        stand: typeof show?.created_at === "string" ? show.created_at.slice(0, 10) : null,
+      });
     }
     return routen;
   } catch (e) {
@@ -189,6 +195,27 @@ const CHROME = chromeFinden();
  * durch. Ein Guard, der die Abwesenheit eines bekannten Fehlers prüft, übersieht jeden
  * unbekannten; einer, der Anwesenheit von echtem Inhalt verlangt, nicht.
  */
+/**
+ * HTML-Entities zurueckuebersetzen, bevor irgendetwas darin gesucht wird.
+ *
+ * Chrome serialisiert `&` als `&amp;`. Ein Muster, das aus Rohdaten gebaut wurde (etwa aus
+ * einem Showtitel, wie ihn die API liefert), findet sich im gespeicherten HTML deshalb
+ * nicht wieder. Beim ersten Anlauf dieser Datei war das schon einmal der Grund, warum eine
+ * Aufraeumregel wirkungslos blieb — und beim Show-Guard waere derselbe Fehler teurer
+ * geworden: Eine Show namens „Jim & John Akrobatik" haette JEDEN kuenftigen Deploy rot
+ * gemacht, auch solche, die mit dieser Show nichts zu tun haben, mit einer Fehlermeldung,
+ * die auf die falsche Ursache zeigt. Gemessen: das Muster trifft ohne diese Funktion nicht.
+ */
+function entityFrei(text) {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 const MUSS_ENTHALTEN = {
   "/catalog": /[1-9]\d* (?:Shows gefunden|shows found)/,
 };
@@ -397,8 +424,10 @@ try {
       // nicht blockieren (sonst hängt an einer zurückgezogenen Show auch jede unbeteiligte
       // Änderung). Blockiert wird nur der gefährliche Fall: Daten sind da, kommen aber
       // nicht im HTML an.
+      // Gegen die entity-freie Fassung pruefen, nie gegen das rohe HTML (siehe entityFrei).
+      const htmlLesbar = entityFrei(html);
       const muster = MUSS_ENTHALTEN[route];
-      if (muster && apiShowAnzahl !== 0 && !muster.test(html)) {
+      if (muster && apiShowAnzahl !== 0 && !muster.test(htmlLesbar)) {
         const woher = apiShowAnzahl === null ? "API-Antwort unlesbar" : `${apiShowAnzahl} Shows von der API`;
         throw new Error(`${woher}, aber nichts davon im HTML (Muster ${muster}) — API_ORIGIN = ${API_ORIGIN}`);
       }
@@ -442,12 +471,14 @@ if (SHOW_ROUTEN.length > 0 && !fehler.length) {
   try {
     const vorher = await readFile(sitemapDatei, "utf8");
     const heute = vorher.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1] ?? "";
-    const eintraege = SHOW_ROUTEN.map(
-      (r) =>
-        `  <url>\n    <loc>${SEITEN_URL}${r}</loc>\n` +
-        (heute ? `    <lastmod>${heute}</lastmod>\n` : "") +
-        `    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`,
-    ).join("\n");
+    const eintraege = SHOWS.map((s) => {
+      const stand = s.stand ?? heute;
+      return (
+        `  <url>\n    <loc>${SEITEN_URL}${s.route}</loc>\n` +
+        (stand ? `    <lastmod>${stand}</lastmod>\n` : "") +
+        `    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
+      );
+    }).join("\n");
     const nachher = vorher.replace(/<\/urlset>/, `${eintraege}\n</urlset>`);
     if (nachher === vorher) throw new Error("</urlset> nicht gefunden — Sitemap unverändert");
     await writeFile(sitemapDatei, nachher, "utf8");
