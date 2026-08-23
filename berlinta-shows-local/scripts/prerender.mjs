@@ -114,7 +114,58 @@ const MIME = {
   ".xml": "application/xml",
 };
 
-const ROUTES = await routenAusSitemap();
+const API_ORIGIN = process.env.PRERENDER_API_ORIGIN || "https://berlintina.de";
+
+/**
+ * Die Showseiten dazuholen — der eigentliche Inhalt dieser Agentur.
+ *
+ * Gemessen am 2026-08-23, vor dieser Änderung: `/show/supertalent-showact` lieferte
+ * byte-identisch dieselbe Seite wie `/`. Für Besucher unsichtbar (deren Browser lädt die
+ * Show nach), für Google und jede KI-Suche existierte **keine einzige Show**. Bei einer
+ * Künstleragentur ist genau das der Umsatzpfad: Wer „Akrobatik Show Berlin buchen" sucht,
+ * soll die Show finden, nicht die Startseite.
+ *
+ * Die Liste kommt aus derselben öffentlichen API, die auch der Katalog benutzt — es
+ * braucht keinen Datenbankzugang aus dem Build heraus.
+ */
+async function showRouten() {
+  try {
+    const antwort = await fetch(`${API_ORIGIN}/api/shows`, { headers: { accept: "application/json" } });
+    if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
+    const daten = await antwort.json();
+    const liste = Array.isArray(daten) ? daten : (daten.shows ?? daten.data ?? []);
+
+    const routen = [];
+    for (const show of liste) {
+      const slug = show?.slug;
+      // Nur unauffällige Slugs. Ein Wert mit Schrägstrich oder Punkt käme als
+      // Verzeichnispfad heraus und könnte aus dist/ herauszeigen; ein leerer Wert
+      // überschriebe dist/index.html. Beides wäre still und schwer zu finden.
+      if (typeof slug !== "string" || !/^[a-z0-9][a-z0-9-]*$/i.test(slug)) {
+        console.warn(`  ! Show ohne brauchbaren Slug übersprungen: ${JSON.stringify(show?.slug)}`);
+        continue;
+      }
+      routen.push({
+        route: `/show/${slug}`,
+        titel: typeof show?.title === "string" ? show.title : null,
+        // Eigenes Datum statt des Datums der statischen Sitemap: sonst behauptet eine
+        // heute angelegte Show den Stand der zuletzt bearbeiteten Seite.
+        stand: typeof show?.created_at === "string" ? show.created_at.slice(0, 10) : null,
+      });
+    }
+    return routen;
+  } catch (e) {
+    // Nicht fatal: ohne Showseiten ist der Build ärmer, aber nicht kaputt. Der Guard
+    // weiter unten meldet die Zahl, damit ein stiller Ausfall auffällt.
+    console.warn(`  ! Showseiten konnten nicht aufgezählt werden (${e.message}) — Build läuft ohne sie weiter.`);
+    return [];
+  }
+}
+
+const STATISCHE_ROUTEN = await routenAusSitemap();
+const SHOWS = await showRouten();
+const SHOW_ROUTEN = SHOWS.map((s) => s.route);
+const ROUTES = [...STATISCHE_ROUTEN, ...SHOW_ROUTEN];
 const CHROME = chromeFinden();
 
 /**
@@ -130,7 +181,7 @@ const CHROME = chromeFinden();
  * öffentlichen GET-Endpunkte, die auch jeder Besucher abruft — keine Zugangsdaten nötig,
  * kein Datenbankzugriff aus dem Build heraus.
  */
-const API_ORIGIN = process.env.PRERENDER_API_ORIGIN || "https://berlintina.de";
+
 
 /**
  * Inhaltliche Gegenprobe pro Route: ein Muster, das im fertigen Schnappschuss stehen MUSS.
@@ -144,9 +195,44 @@ const API_ORIGIN = process.env.PRERENDER_API_ORIGIN || "https://berlintina.de";
  * durch. Ein Guard, der die Abwesenheit eines bekannten Fehlers prüft, übersieht jeden
  * unbekannten; einer, der Anwesenheit von echtem Inhalt verlangt, nicht.
  */
+/**
+ * HTML-Entities zurueckuebersetzen, bevor irgendetwas darin gesucht wird.
+ *
+ * Chrome serialisiert `&` als `&amp;`. Ein Muster, das aus Rohdaten gebaut wurde (etwa aus
+ * einem Showtitel, wie ihn die API liefert), findet sich im gespeicherten HTML deshalb
+ * nicht wieder. Beim ersten Anlauf dieser Datei war das schon einmal der Grund, warum eine
+ * Aufraeumregel wirkungslos blieb — und beim Show-Guard waere derselbe Fehler teurer
+ * geworden: Eine Show namens „Jim & John Akrobatik" haette JEDEN kuenftigen Deploy rot
+ * gemacht, auch solche, die mit dieser Show nichts zu tun haben, mit einer Fehlermeldung,
+ * die auf die falsche Ursache zeigt. Gemessen: das Muster trifft ohne diese Funktion nicht.
+ */
+function entityFrei(text) {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 const MUSS_ENTHALTEN = {
   "/catalog": /[1-9]\d* (?:Shows gefunden|shows found)/,
 };
+
+/**
+ * Jede Showseite muss ihren EIGENEN Titel tragen.
+ *
+ * Ohne diese Prüfung wäre der Erfolg nicht von der Krankheit zu unterscheiden, die hier
+ * behandelt wird: Bisher lieferte /show/<slug> die Startseite — mit reichlich Text, über
+ * jeder Mindestlänge, mit gültigem JSON-LD. Ein Guard, der nur Zeichen zählt, hätte das
+ * für eine gelungene Showseite gehalten.
+ */
+for (const { route, titel } of SHOWS) {
+  if (titel && titel.trim().length >= 3) {
+    MUSS_ENTHALTEN[route] = new RegExp(titel.trim().slice(0, 24).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  }
+}
 
 /**
  * Die unberührte Vite-Ausgabe EINMAL in den Speicher lesen, bevor irgendetwas geschrieben
@@ -190,43 +276,23 @@ const SEITEN_URL = "https://berlintina.de";
  *      Antwort, und sie wirkt auch für die Routen ohne eigene Tags.
  */
 function kopfNormalisieren(html, route) {
-  const vorgabe = (muster) => {
-    const t = HUELLE.toString("utf8").match(muster);
-    return t ? t[1] : null;
-  };
-  const vorgabeTitel = vorgabe(/<title>(.*?)<\/title>/s);
-  const vorgabeBeschreibung = vorgabe(/<meta\s+name="description"\s+content="(.*?)"/s);
-
   let ergebnis = html;
 
-  // Vergleich muss entity-normalisiert laufen: in der Quelle steht `&`, Chrome schreibt
-  // beim Serialisieren `&amp;`. Ein roher Textvergleich trifft deshalb nie — gemessen,
-  // nicht vermutet: der erste Anlauf ließ alle Dubletten stehen und meldete trotzdem
-  // Erfolg, weil ein nicht gefundenes replace() klaglos das Original zurückgibt.
-  const gleich = (a, b) => {
-    const n = (s) =>
-      s
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#0?39;|&apos;/g, "'")
-        .replace(/\s+/g, " ")
-        .trim();
-    return n(a) === n(b);
+  // Bei mehreren gleichartigen Tags gewinnt der ERSTE, alle weiteren fallen weg.
+  //
+  // Gemessen an zwei Fällen, die verschieden aussehen und dieselbe Regel brauchen:
+  //   /             → 1. App-Titel, 2. die Vorgabe aus index.html
+  //   /show/<slug>  → 1. „<Showtitel> — berlintina.de", 2. eine generische Beschreibung
+  //                    (hier ist die Vorgabe gar nicht dabei — die App setzt ZWEI eigene)
+  // In beiden Fällen steht der spezifischere zuerst. Ein früherer Entwurf entfernte
+  // gezielt den bekannten Vorgabe-Wert und war auf den Showseiten wirkungslos, weil dieser
+  // Wert dort nicht vorkommt. Die allgemeine Regel braucht kein Sonderwissen.
+  const ersteBehalten = (regex) => {
+    const treffer = [...ergebnis.matchAll(regex)];
+    for (const t of treffer.slice(1)) ergebnis = ergebnis.replace(t[0], "");
   };
-
-  // 1. Dubletten: den bekannten Vorgabe-Wert entfernen, sofern ein zweiter Tag da ist.
-  const titel = [...ergebnis.matchAll(/<title>(.*?)<\/title>/gs)];
-  if (titel.length > 1 && vorgabeTitel) {
-    const treffer = titel.find((m) => gleich(m[1], vorgabeTitel));
-    if (treffer) ergebnis = ergebnis.replace(treffer[0], "");
-  }
-  const beschreibungen = [...ergebnis.matchAll(/<meta\s+name="description"\s+content="(.*?)"\s*\/?>/gs)];
-  if (beschreibungen.length > 1 && vorgabeBeschreibung) {
-    const treffer = beschreibungen.find((m) => gleich(m[1], vorgabeBeschreibung));
-    if (treffer) ergebnis = ergebnis.replace(treffer[0], "");
-  }
+  ersteBehalten(/<title>.*?<\/title>/gs);
+  ersteBehalten(/<meta\s+name="description"\s+content=".*?"\s*\/?>/gs);
 
   // Positiver Nachweis, dass die Aufräumarbeit auch wirklich stattgefunden hat. Ohne diese
   // Prüfung meldet ein wirkungsloses replace() einen grünen Build mit doppeltem Kopf.
@@ -358,8 +424,10 @@ try {
       // nicht blockieren (sonst hängt an einer zurückgezogenen Show auch jede unbeteiligte
       // Änderung). Blockiert wird nur der gefährliche Fall: Daten sind da, kommen aber
       // nicht im HTML an.
+      // Gegen die entity-freie Fassung pruefen, nie gegen das rohe HTML (siehe entityFrei).
+      const htmlLesbar = entityFrei(html);
       const muster = MUSS_ENTHALTEN[route];
-      if (muster && apiShowAnzahl !== 0 && !muster.test(html)) {
+      if (muster && apiShowAnzahl !== 0 && !muster.test(htmlLesbar)) {
         const woher = apiShowAnzahl === null ? "API-Antwort unlesbar" : `${apiShowAnzahl} Shows von der API`;
         throw new Error(`${woher}, aber nichts davon im HTML (Muster ${muster}) — API_ORIGIN = ${API_ORIGIN}`);
       }
@@ -386,7 +454,47 @@ try {
   server.close();
 }
 
-console.log(`Prerender: ${geschrieben}/${ROUTES.length} Routen geschrieben.`);
+console.log(`Prerender: ${geschrieben}/${ROUTES.length} Routen geschrieben (${STATISCHE_ROUTEN.length} feste + ${SHOW_ROUTEN.length} Shows).`);
+
+/**
+ * sitemap.xml um die Showseiten ergänzen.
+ *
+ * Ohne diesen Schritt wären die Seiten zwar da, aber nirgends angemeldet — Google fände
+ * sie nur über interne Links, und die KI-Suchen, um die es hier geht, meist gar nicht.
+ *
+ * Geschrieben wird nach dist/, NICHT nach public/: Vite kopiert public/ beim Build-START,
+ * ein späterer Schreibvorgang dorthin käme nie in der Auslieferung an. Die gepflegte
+ * public/sitemap.xml bleibt die Quelle der festen Seiten und wird nicht angefasst.
+ */
+if (SHOW_ROUTEN.length > 0 && !fehler.length) {
+  const sitemapDatei = join(DIST, "sitemap.xml");
+  try {
+    const vorher = await readFile(sitemapDatei, "utf8");
+    const heute = vorher.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1] ?? "";
+    const eintraege = SHOWS.map((s) => {
+      const stand = s.stand ?? heute;
+      return (
+        `  <url>\n    <loc>${SEITEN_URL}${s.route}</loc>\n` +
+        (stand ? `    <lastmod>${stand}</lastmod>\n` : "") +
+        `    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
+      );
+    }).join("\n");
+    const nachher = vorher.replace(/<\/urlset>/, `${eintraege}\n</urlset>`);
+    if (nachher === vorher) throw new Error("</urlset> nicht gefunden — Sitemap unverändert");
+    await writeFile(sitemapDatei, nachher, "utf8");
+
+    // Positiver Nachweis: die Zahl der <loc> muss um genau die Showseiten gewachsen sein.
+    const vorherAnzahl = (vorher.match(/<loc>/g) ?? []).length;
+    const nachherAnzahl = (nachher.match(/<loc>/g) ?? []).length;
+    if (nachherAnzahl !== vorherAnzahl + SHOW_ROUTEN.length) {
+      throw new Error(`Sitemap: ${vorherAnzahl} → ${nachherAnzahl}, erwartet ${vorherAnzahl + SHOW_ROUTEN.length}`);
+    }
+    console.log(`Sitemap: ${vorherAnzahl} → ${nachherAnzahl} URLs (${SHOW_ROUTEN.length} Showseiten ergänzt).`);
+  } catch (e) {
+    console.error(`❌ Sitemap konnte nicht ergänzt werden: ${e.message}`);
+    process.exit(1);
+  }
+}
 
 // Fail-closed: lieber ein roter Build als eine still ausgelieferte leere Hülle. Ein
 // abgebrochener Railway-Build nimmt die Seite nicht offline — die letzte gute Fassung
