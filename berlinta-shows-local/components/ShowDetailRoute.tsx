@@ -256,7 +256,42 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   if (!show) return <div className="p-20 text-center font-bold text-muted-foreground">Show nicht gefunden.</div>;
 
   const showDescription = (show.salesPitchText || show.shortDescriptionFacts || '').slice(0, 160);
-  const priceMin = show.priceMin ?? show.priceMax;
+  /**
+   * Preisauszeichnung: die Seite sagt „ab 800€", der Datensatz sagte `price: 800`.
+   *
+   * Das ist nicht dasselbe. `price` ist ein FESTPREIS — Google darf daraus „800 €" im
+   * Suchergebnis machen. Wer daraufhin anfragt und einen höheren Preis hört, erlebt das
+   * als Erhöhung. Für einen Startpreis ist `PriceSpecification.minPrice` das vorgesehene
+   * Feld (analog `maxPrice` für die „≤ X€"-Darstellung).
+   *
+   * Zweitens richtet sich die Auszeichnung jetzt nach `priceType`, so wie die sichtbare
+   * Angabe in ShowDetailPage.tsx: bei `POA` steht auf der Seite „Auf Anfrage" — dann darf
+   * im Datensatz kein Preis stehen. Vorher galt `priceMin ?? priceMax` ohne Rücksicht auf
+   * den Typ: ein stehengebliebener Betrag an einer POA-Show hätte einen Festpreis
+   * ausgezeichnet, den die Seite selbst nicht nennt.
+   *
+   * Der Betrag ist unverändert. Ob er überhaupt öffentlich sein soll, ist eine eigene
+   * Entscheidung und hängt nicht an diesem Schema.
+   */
+  const preisAngabe =
+    show.priceType === 'POA'
+      ? null
+      : show.priceMin != null
+        ? { '@type': 'PriceSpecification', minPrice: show.priceMin, priceCurrency: 'EUR' }
+        : show.priceMax != null
+          ? { '@type': 'PriceSpecification', maxPrice: show.priceMax, priceCurrency: 'EUR' }
+          : null;
+
+  /**
+   * `show.category` ist eine Enum-Schreibweise (`ACROBATICS`) — für einen Datensatz
+   * gedacht, nicht für Leser. Hier wird NUR die Schreibweise normalisiert. Eine
+   * Übersetzung wäre erfunden: das deutsche Label existiert bisher allein als lokale
+   * Filterliste in App.tsx und deckt nicht alle Kategorien ab.
+   */
+  const serviceType = String(show.category)
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <>
@@ -265,34 +300,68 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         description={showDescription || `${show.title} – persönlich kuratierter Showact aus Berlin. Jetzt anfragen über Berlintina.`}
         ogImage={show.photoUrls?.[0]}
         ogType="article"
+        /**
+         * Schema: Service, nicht PerformingArtsTheater.
+         *
+         * `PerformingArtsTheater` ist in schema.org ein ORT (Unterklasse von
+         * CivicStructure/LocalBusiness) — ein Theatergebäude, keine Darbietung. Auf einer
+         * Showseite stand damit sinngemäß „diese Show ist ein Theater in Berlin". Dazu
+         * trug der Datensatz `performer`, `organizer` und `offers`: allesamt Eigenschaften,
+         * die es an einem Ort/LocalBusiness nicht gibt (`Organization` kennt `makesOffer`,
+         * nicht `offers`). Der Block war also nicht nur schief, sondern in Teilen ungültig
+         * — ein Crawler verwirft ihn oder liest ihn widersprüchlich.
+         *
+         * Warum NICHT `Event`/`TheaterEvent`, obwohl es naheliegt: eine Show hat hier
+         * keinen Termin. Das Feld `eventDate` sitzt an `CustomerBrief` (types.ts) — es ist
+         * die Frage „wann soll das stattfinden", nicht die Angabe „das findet statt".
+         * `startDate` ist bei Google für Event aber Pflichtfeld; ein Event ohne Datum wird
+         * als fehlerhaft abgelehnt. Wir hätten eine falsche Auszeichnung gegen eine
+         * ungültige getauscht. Sobald eine Show ein echtes Datum trägt, ist `TheaterEvent`
+         * für genau diese Seiten der richtige nächste Schritt — dann bedingt, nicht pauschal.
+         *
+         * `Service` trägt `provider`, `serviceType`, `areaServed`, `broker` und `offers`
+         * legal und verlangt kein Feld, das die Daten nicht haben.
+         *
+         * ⚠️ Der Preis-BETRAG bleibt unangetastet — geändert wird nur, was er behauptet
+         * (Festpreis → Startpreis, POA respektiert). Ob der Betrag überhaupt öffentlich
+         * sein soll, ist eine eigene Entscheidung und hängt nicht an diesem Schema;
+         * siehe den Kommentar an `preisAngabe`.
+         */
         structuredData={{
           '@context': 'https://schema.org',
-          '@type': 'PerformingArtsTheater',
+          '@type': 'Service',
           name: show.title,
           description: showDescription,
           image: show.photoUrls?.[0],
           url: `https://berlintina.de/show/${show.slug}`,
-          location: {
-            '@type': 'Place',
+          serviceType,
+          areaServed: {
+            '@type': 'City',
             name: 'Berlin',
             address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
           },
-          performer: {
+          provider: {
             '@type': 'PerformingGroup',
             name: show.artistName,
             description: show.shortDescriptionFacts,
           },
-          organizer: { '@type': 'Organization', name: 'Berlintina', url: 'https://berlintina.de' },
-          ...(priceMin != null ? {
+          broker: { '@type': 'Organization', name: 'Berlintina', url: 'https://berlintina.de' },
+          ...(preisAngabe ? {
             offers: {
               '@type': 'Offer',
-              price: priceMin,
-              priceCurrency: 'EUR',
-              availability: 'https://schema.org/InStock',
+              priceSpecification: preisAngabe,
               url: `https://berlintina.de/show/${show.slug}`,
+              // `availability: InStock` ist entfallen: es beschreibt Lagerbestand einer
+              // Ware. Eine vermittelte Show ist nicht „auf Lager" — ob sie stattfinden
+              // kann, hängt am Termin, den es hier noch gar nicht gibt.
             },
           } : {}),
-          keywords: [show.category, ...(show.extractedTags ?? []), ...(show.vibeTags ?? [])].join(', '),
+          /**
+           * `keywords` gab es an der alten LocalBusiness-Fassung (über `Organization`),
+           * an `Service` ist es nicht definiert — `category` schon. Gleicher Inhalt,
+           * gültiges Feld; sonst hätten wir denselben Fehler im Kleinen wiederholt.
+           */
+          category: [show.category, ...(show.extractedTags ?? []), ...(show.vibeTags ?? [])].join(', '),
         }}
       />
     <ShowDetailPage
