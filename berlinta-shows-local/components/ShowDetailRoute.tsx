@@ -258,6 +258,17 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const showDescription = (show.salesPitchText || show.shortDescriptionFacts || '').slice(0, 160);
   const priceMin = show.priceMin ?? show.priceMax;
 
+  /**
+   * `show.category` ist eine Enum-Schreibweise (`ACROBATICS`) — für einen Datensatz
+   * gedacht, nicht für Leser. Hier wird NUR die Schreibweise normalisiert. Eine
+   * Übersetzung wäre erfunden: das deutsche Label existiert bisher allein als lokale
+   * Filterliste in App.tsx und deckt nicht alle Kategorien ab.
+   */
+  const serviceType = String(show.category)
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <>
       <PageSEO
@@ -265,24 +276,52 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         description={showDescription || `${show.title} – persönlich kuratierter Showact aus Berlin. Jetzt anfragen über Berlintina.`}
         ogImage={show.photoUrls?.[0]}
         ogType="article"
+        /**
+         * Schema: Service, nicht PerformingArtsTheater.
+         *
+         * `PerformingArtsTheater` ist in schema.org ein ORT (Unterklasse von
+         * CivicStructure/LocalBusiness) — ein Theatergebäude, keine Darbietung. Auf einer
+         * Showseite stand damit sinngemäß „diese Show ist ein Theater in Berlin". Dazu
+         * trug der Datensatz `performer`, `organizer` und `offers`: allesamt Eigenschaften,
+         * die es an einem Ort/LocalBusiness nicht gibt (`Organization` kennt `makesOffer`,
+         * nicht `offers`). Der Block war also nicht nur schief, sondern in Teilen ungültig
+         * — ein Crawler verwirft ihn oder liest ihn widersprüchlich.
+         *
+         * Warum NICHT `Event`/`TheaterEvent`, obwohl es naheliegt: eine Show hat hier
+         * keinen Termin. Das Feld `eventDate` sitzt an `CustomerBrief` (types.ts) — es ist
+         * die Frage „wann soll das stattfinden", nicht die Angabe „das findet statt".
+         * `startDate` ist bei Google für Event aber Pflichtfeld; ein Event ohne Datum wird
+         * als fehlerhaft abgelehnt. Wir hätten eine falsche Auszeichnung gegen eine
+         * ungültige getauscht. Sobald eine Show ein echtes Datum trägt, ist `TheaterEvent`
+         * für genau diese Seiten der richtige nächste Schritt — dann bedingt, nicht pauschal.
+         *
+         * `Service` trägt `provider`, `serviceType`, `areaServed`, `broker` und `offers`
+         * legal und verlangt kein Feld, das die Daten nicht haben.
+         *
+         * ⚠️ Das `offers`-Objekt bleibt absichtlich UNVERÄNDERT (dieselben Felder, derselbe
+         * Preis). Es stammt aus `8883ab5` und ist eine bestehende Entscheidung der
+         * Eigentümerin — sie hier zu ändern oder zu entfernen wäre ein Eingriff in eine
+         * Preisfrage, die nicht an diesem Schema hängt.
+         */
         structuredData={{
           '@context': 'https://schema.org',
-          '@type': 'PerformingArtsTheater',
+          '@type': 'Service',
           name: show.title,
           description: showDescription,
           image: show.photoUrls?.[0],
           url: `https://berlintina.de/show/${show.slug}`,
-          location: {
-            '@type': 'Place',
+          serviceType,
+          areaServed: {
+            '@type': 'City',
             name: 'Berlin',
             address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
           },
-          performer: {
+          provider: {
             '@type': 'PerformingGroup',
             name: show.artistName,
             description: show.shortDescriptionFacts,
           },
-          organizer: { '@type': 'Organization', name: 'Berlintina', url: 'https://berlintina.de' },
+          broker: { '@type': 'Organization', name: 'Berlintina', url: 'https://berlintina.de' },
           ...(priceMin != null ? {
             offers: {
               '@type': 'Offer',
@@ -292,7 +331,12 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               url: `https://berlintina.de/show/${show.slug}`,
             },
           } : {}),
-          keywords: [show.category, ...(show.extractedTags ?? []), ...(show.vibeTags ?? [])].join(', '),
+          /**
+           * `keywords` gab es an der alten LocalBusiness-Fassung (über `Organization`),
+           * an `Service` ist es nicht definiert — `category` schon. Gleicher Inhalt,
+           * gültiges Feld; sonst hätten wir denselben Fehler im Kleinen wiederholt.
+           */
+          category: [show.category, ...(show.extractedTags ?? []), ...(show.vibeTags ?? [])].join(', '),
         }}
       />
     <ShowDetailPage
