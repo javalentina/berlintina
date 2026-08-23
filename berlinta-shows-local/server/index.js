@@ -1107,7 +1107,7 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
 
       let recommendations = [];
       if (hasEnoughToSearch && supabase) {
-        let q = supabase.from('shows').select('*').eq('status', 'PUBLISHED');
+        let q = supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('status', 'PUBLISHED');
         if (brief.desiredCategories?.length) {
           q = q.in('category', brief.desiredCategories);
         }
@@ -1453,13 +1453,53 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+/**
+ * Spalten, die eine Show-Antwort nach AUSSEN tragen darf.
+ *
+ * 🔴 Vorher stand an den vier öffentlichen Show-Endpunkten `select('*')` — die Antwort
+ * enthielt damit jede Spalte der Tabelle, darunter `artist_email`. Gemessen am 2026-08-23:
+ * `curl https://berlintina.de/api/shows` gab ohne jede Anmeldung die Mailadressen aller
+ * veröffentlichten Künstler heraus, dazu `artist_id`, `artist_account_id` und
+ * `original_submission_id`. Das Frontend benutzt keines dieser Felder — sie wurden nur
+ * mitgeliefert. Für eine Künstleragentur ist die Mailliste ihrer Künstler genau das, was
+ * ein Wettbewerber oder ein Absender von Massenmail als Erstes abgreift.
+ *
+ * Bewusst eine ERLAUBNIS-Liste, keine Verbotsliste: Eine neue Spalte in der Tabelle ist
+ * damit standardmäßig **nicht** öffentlich. Bei einer Verbotsliste wäre jedes künftige
+ * Feld sofort draußen, und niemand würde es merken.
+ *
+ * Kommt ein Feld dazu, das die Seite anzeigen soll, gehört es hier hinein — fehlt es,
+ * bleibt die Anzeige leer, und das fällt beim ersten Ansehen auf. Das ist die richtige
+ * Richtung zu scheitern.
+ *
+ * Die Admin-Endpunkte (`requireAdmin`) behalten `select('*')`: dort ist der Zugriff
+ * geprüft, und die Verwaltung braucht die vollständige Zeile.
+ */
+const OEFFENTLICHE_SHOW_SPALTEN = [
+  'id', 'slug', 'short_id', 'status', 'title', 'category', 'artist_name',
+  'sales_pitch_text', 'short_description_facts', 'ideal_for', 'vibe_tags',
+  'photo_urls', 'video_urls', 'testimonials',
+  'duration_minutes', 'audience_range', 'cast', 'placement',
+  'stage_min', 'stage_ideal', 'ceiling_min',
+  'light_short', 'sound_short', 'timings_short', 'rider_pdf_url',
+  'price_min', 'price_max', 'price_type',
+  'faq_stage', 'faq_travel', 'faq_language', 'faq_outdoor', 'faq_custom',
+  'created_at',
+  // Diese vier liest services/showsService.ts aus der Antwort und bildet sie auf sein
+  // Modell ab (artistId, instrumentationText, extractedTags, languageOptions). Nimmt man
+  // sie weg, laufen die Felder still auf undefined bzw. leeres Array — die Anzeige bliebe
+  // ohne Fehlermeldung unvollständig. `artist_id` ist eine interne Kennung ohne
+  // Kontaktwert; sie bleibt, weil ein Typbruch teurer wäre als der Gewinn.
+  'artist_id', 'instrumentation_text', 'extracted_tags', 'language_options',
+].join(', ');
+
 // --- Public Shows API (proxies Supabase to avoid client CORS) ---
 app.get('/api/shows', async (req, res) => {
   try {
     if (!supabase) {
       return res.json({ shows: [] });
     }
-    const { data, error } = await supabase.from('shows').select('*').eq('status', 'PUBLISHED').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('status', 'PUBLISHED').order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ shows: data || [] });
   } catch (err) {
@@ -1504,7 +1544,7 @@ app.get('/api/shows/by/:shortId', async (req, res) => {
       return res.status(404).json({ error: 'Not found.' });
     }
     const { shortId } = req.params;
-    const { data, error } = await supabase.from('shows').select('*').eq('short_id', shortId).eq('status', 'PUBLISHED').single();
+    const { data, error } = await supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('short_id', shortId).eq('status', 'PUBLISHED').single();
     if (error || !data) return res.status(404).json({ error: 'Not found.' });
     res.json({ show: data });
   } catch (err) {
@@ -1517,7 +1557,7 @@ app.get('/api/shows/slug/:slug', async (req, res) => {
   try {
     if (!supabase) return res.status(404).json({ error: 'Not found.' });
     const { slug } = req.params;
-    const { data, error } = await supabase.from('shows').select('*').eq('slug', slug).eq('status', 'PUBLISHED').single();
+    const { data, error } = await supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('slug', slug).eq('status', 'PUBLISHED').single();
     if (error || !data) return res.status(404).json({ error: 'Not found.' });
     res.json({ show: data });
   } catch (err) {
