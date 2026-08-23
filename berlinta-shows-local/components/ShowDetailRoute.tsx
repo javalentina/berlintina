@@ -256,7 +256,31 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   if (!show) return <div className="p-20 text-center font-bold text-muted-foreground">Show nicht gefunden.</div>;
 
   const showDescription = (show.salesPitchText || show.shortDescriptionFacts || '').slice(0, 160);
-  const priceMin = show.priceMin ?? show.priceMax;
+  /**
+   * Preisauszeichnung: die Seite sagt „ab 800€", der Datensatz sagte `price: 800`.
+   *
+   * Das ist nicht dasselbe. `price` ist ein FESTPREIS — Google darf daraus „800 €" im
+   * Suchergebnis machen. Wer daraufhin anfragt und einen höheren Preis hört, erlebt das
+   * als Erhöhung. Für einen Startpreis ist `PriceSpecification.minPrice` das vorgesehene
+   * Feld (analog `maxPrice` für die „≤ X€"-Darstellung).
+   *
+   * Zweitens richtet sich die Auszeichnung jetzt nach `priceType`, so wie die sichtbare
+   * Angabe in ShowDetailPage.tsx: bei `POA` steht auf der Seite „Auf Anfrage" — dann darf
+   * im Datensatz kein Preis stehen. Vorher galt `priceMin ?? priceMax` ohne Rücksicht auf
+   * den Typ: ein stehengebliebener Betrag an einer POA-Show hätte einen Festpreis
+   * ausgezeichnet, den die Seite selbst nicht nennt.
+   *
+   * Der Betrag ist unverändert. Ob er überhaupt öffentlich sein soll, ist eine eigene
+   * Entscheidung und hängt nicht an diesem Schema.
+   */
+  const preisAngabe =
+    show.priceType === 'POA'
+      ? null
+      : show.priceMin != null
+        ? { '@type': 'PriceSpecification', minPrice: show.priceMin, priceCurrency: 'EUR' }
+        : show.priceMax != null
+          ? { '@type': 'PriceSpecification', maxPrice: show.priceMax, priceCurrency: 'EUR' }
+          : null;
 
   /**
    * `show.category` ist eine Enum-Schreibweise (`ACROBATICS`) — für einen Datensatz
@@ -298,10 +322,10 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
          * `Service` trägt `provider`, `serviceType`, `areaServed`, `broker` und `offers`
          * legal und verlangt kein Feld, das die Daten nicht haben.
          *
-         * ⚠️ Das `offers`-Objekt bleibt absichtlich UNVERÄNDERT (dieselben Felder, derselbe
-         * Preis). Es stammt aus `8883ab5` und ist eine bestehende Entscheidung der
-         * Eigentümerin — sie hier zu ändern oder zu entfernen wäre ein Eingriff in eine
-         * Preisfrage, die nicht an diesem Schema hängt.
+         * ⚠️ Der Preis-BETRAG bleibt unangetastet — geändert wird nur, was er behauptet
+         * (Festpreis → Startpreis, POA respektiert). Ob der Betrag überhaupt öffentlich
+         * sein soll, ist eine eigene Entscheidung und hängt nicht an diesem Schema;
+         * siehe den Kommentar an `preisAngabe`.
          */
         structuredData={{
           '@context': 'https://schema.org',
@@ -322,13 +346,14 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             description: show.shortDescriptionFacts,
           },
           broker: { '@type': 'Organization', name: 'Berlintina', url: 'https://berlintina.de' },
-          ...(priceMin != null ? {
+          ...(preisAngabe ? {
             offers: {
               '@type': 'Offer',
-              price: priceMin,
-              priceCurrency: 'EUR',
-              availability: 'https://schema.org/InStock',
+              priceSpecification: preisAngabe,
               url: `https://berlintina.de/show/${show.slug}`,
+              // `availability: InStock` ist entfallen: es beschreibt Lagerbestand einer
+              // Ware. Eine vermittelte Show ist nicht „auf Lager" — ob sie stattfinden
+              // kann, hängt am Termin, den es hier noch gar nicht gibt.
             },
           } : {}),
           /**
