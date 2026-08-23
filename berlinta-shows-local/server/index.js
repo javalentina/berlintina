@@ -598,6 +598,7 @@ KERN-REGELN:
 3. Bei "Ich weiß nicht" → mach einen konkreten Vorschlag, wiederhole die Frage NICHT
 4. Passe Sprache und Ton dem Künstler an — casual wenn sie casual sind
 5. Klingt wie der beste Producer, den der Künstler je getroffen hat
+6. Keine Emojis, keine Icons, keine Ausrufezeichen-Ketten — schreib klar, konkret und mit echtem Respekt, wie ein Mensch, kein Marketing-Text
 
 ANTWORTFORMAT (reines JSON, kein Markdown):
 {
@@ -630,6 +631,7 @@ CORE RULES:
 3. When artist says "I don't know" → make a concrete proposal, do NOT repeat the question
 4. Match artist's language and tone — casual if they're casual
 5. Sound like the best producer the artist has ever met
+6. No emojis, no icons, no exclamation-mark chains — write clear, concrete, with genuine respect, like a person, not marketing copy
 
 RESPONSE FORMAT (pure JSON, no markdown):
 {
@@ -1035,8 +1037,8 @@ app.post('/api/conversation/start', aiLimiter, async (req, res) => {
         };
       } else {
         greeting = loc === 'de'
-          ? 'Hey! 🎭 Ich bin Valiantisnas KI-Producer — ich bringe deine Show auf Berlintina.\n\nSchnellster Weg: einfach deine Website einfügen, ich lese alles automatisch aus. Oder sag mir: Wie heißt du und was machst du auf der Bühne?'
-          : "Hey! 🎭 I'm Valiantsina's AI producer — let's get your show on Berlintina.\n\nFastest way: paste your website and I'll read everything automatically. Or tell me: what's your name and what do you do on stage?";
+          ? 'Hallo, ich bin Valiantsinas KI-Producer. Schreib mir einfach, was du machst — egal ob eine fertige Show, dein erster Auftritt, oder nur eine Idee, die noch keine feste Form hat.\n\nHast du eine Website? Dann schick sie mir, ich lese sie automatisch aus. Sonst reicht auch: Wie heißt du, und was hast du im Kopf?'
+          : "Hello, I'm Valiantsina's AI producer. Just write what you do — a finished show, your first performance, or just an idea that doesn't have a fixed shape yet.\n\nDo you have a website? Send it and I'll read it automatically. Otherwise: what's your name, and what do you have in mind?";
         response = ensureContract({
           assistantMessage: greeting,
           action: 'ASK_FOLLOWUP',
@@ -1197,9 +1199,9 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
         conversationStore.set(conversationId, { ...conv, state: mergedState, updatedAt: Date.now() });
         const skipMsg = form._quickMode && form._skipCount >= 2
           ? (loc === 'de'
-            ? 'Kein Problem — ich fülle den Rest aus deiner Website und deinen Angaben. Du kannst alles rechts noch anpassen. ✨'
-            : "No problem — I'll fill in the rest from your website and what you've told me. You can still adjust everything on the right. ✨")
-          : (loc === 'de' ? 'Kein Problem, übersprungen. ✓' : 'No problem, skipped. ✓');
+            ? 'Kein Problem — ich fülle den Rest aus deiner Website und deinen Angaben. Du kannst alles rechts noch anpassen.'
+            : "No problem — I'll fill in the rest from your website and what you've told me. You can still adjust everything on the right.")
+          : (loc === 'de' ? 'Kein Problem, übersprungen.' : 'No problem, skipped.');
         const nextQ = readyToSave ? undefined : nextFromState;
         return res.json(ensureContract({
           assistantMessage: nextQ ? `${skipMsg}\n\n${nextQ.text}` : skipMsg,

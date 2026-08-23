@@ -480,32 +480,6 @@ const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   );
 };
 
-// --- StatsSection ---
-const StatsSection: React.FC = () => {
-  const stats = [
-    { value: 50, suffix: '+', label: 'Künstler' },
-    { value: 200, suffix: '+', label: 'Shows' },
-    { value: 98, suffix: '%', label: 'Rebooking Rate' },
-    { value: 12, suffix: '+', label: 'Jahre Erfahrung' },
-  ];
-  return (
-    <section className="py-20 md:py-28 border-y border-foreground/10">
-      <div className="container">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
-          {stats.map((stat, i) => (
-            <motion.div key={stat.label} className="text-center" initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1], delay: i * 0.1 }}>
-              <div className="font-display text-5xl md:text-6xl lg:text-7xl font-black text-foreground mb-2">
-                {stat.value}{stat.suffix}
-              </div>
-              <span className="label-style">{stat.label}</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
 // --- CTABanner ---
 const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
   <section id="call-to-action" className="py-24 md:py-32 overflow-hidden">
@@ -542,6 +516,47 @@ const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
     </div>
   </section>
 );
+
+// --- ArtistIdeaSection: open call for early-career artists & unformed ideas ---
+const ArtistIdeaSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
+  const examples = locale === 'de'
+    ? ['30-Min-Sport-Pause fürs Büro', '20-Min-Klavier-Opening', 'Ein Format, das es so noch nicht gibt']
+    : ['30-min sport break for offices', '20-min piano opening act', 'A format that doesn\'t exist yet'];
+  return (
+    <section className="py-24 md:py-32 border-y border-foreground/10 bg-surface-alt">
+      <div className="container grid grid-cols-12 gap-8">
+        <div className="col-span-12 md:col-span-4">
+          <span className="label-style mb-6 block">
+            06 / {locale === 'de' ? 'Für Künstler & Ideen' : 'For Artists & Ideas'}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {examples.map((ex) => (
+              <span key={ex} className="text-xs font-mono-ui px-3 py-1.5 rounded-full border border-foreground/15 text-muted-foreground">
+                {ex}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="col-span-12 md:col-span-8">
+          <h2 className="heading-lg mb-4">
+            {locale === 'de' ? 'Du hast eine Idee?' : 'Got an idea?'}
+          </h2>
+          <p className="body-text mb-10 max-w-[56ch]">
+            {locale === 'de'
+              ? 'Hast du schon eine fertige Show? Oder deinen ersten Auftritt? Oder nur eine Idee, die noch nicht fertig ist? Alles ist ein guter Start. Schreib mir ein paar Sätze darüber. Ich lese jede Nachricht persönlich, und mein KI-Producer macht dir danach einen konkreten Vorschlag. Kein Formular, keine Erfahrung mit Computern nötig — schreib einfach, wie du es einer Freundin erzählen würdest.'
+              : "Do you already have a finished show? Or your first performance? Or just an idea that isn't finished yet? All of that is a good start. Write me a few sentences about it. I read every message personally, and my AI producer sends back a concrete proposal. No form, no computer experience needed — just write it the way you'd tell a friend."}
+          </p>
+          <Link
+            to="/join/start"
+            className="inline-flex items-center gap-2 bg-accent text-accent-foreground px-7 py-3.5 rounded-full font-semibold text-sm tracking-wide hover:opacity-90 transition-opacity no-underline"
+          >
+            {locale === 'de' ? 'Idee erzählen' : 'Share your idea'} <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 // --- FeaturedArtistSection ---
 const FeaturedArtistSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
@@ -995,9 +1010,6 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </section>
 
-      {/* ── Stats ── */}
-      <StatsSection />
-
       {/* ── Featured Artist ── */}
       <FeaturedArtistSection locale={locale} />
 
@@ -1146,6 +1158,9 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </section>
 
+      {/* ── Artists & Ideas ── */}
+      <ArtistIdeaSection locale={locale} />
+
     </>)}
 </>
   );
@@ -1234,14 +1249,14 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
   const benefits = locale === 'de'
     ? [
-        'Persönlich geprüft von Valiantsina — nur geprüfte Qualität',
+        'Egal ob fertige Show, erster Auftritt oder nur eine Idee — alles willkommen',
+        'Persönlich gelesen von Valiantsina — keine Bots, keine Formulare',
         'Gefunden von Eventagenturen & Privatkunden in Berlin',
-        'Spare Zeit: Ich erstelle deine Beschreibung aus deiner Website — du musst nichts schreiben',
       ]
     : [
-        'Personally reviewed by Valiantsina — only vetted quality',
+        'Finished show, first performance, or just an idea — all welcome',
+        'Personally read by Valiantsina — no bots, no forms',
         'Found by event agencies & private customers in Berlin',
-        'Save time: I create your profile from your website — no writing needed',
       ];
   return (
     <div className="max-w-2xl mx-auto px-4 py-20 text-center">
@@ -1258,10 +1273,10 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-6 sm:p-10 md:p-12">
         <div className="w-16 h-16 rounded-2xl bg-terracotta text-white flex items-center justify-center font-black text-2xl italic shadow-xl mx-auto mb-8">V</div>
         <h1 className="font-display text-3xl sm:text-4xl font-normal tracking-tight text-charcoal mb-3">
-          {locale === 'de' ? 'Zeig deine Show auf Berlintina' : 'Add your show to Berlintina'}
+          {locale === 'de' ? 'Du hast eine Idee? Erzähl sie mir.' : 'Got an idea? Tell me about it.'}
         </h1>
         <p className="text-sm font-semibold text-warm-faint uppercase tracking-widest mb-10">
-          {locale === 'de' ? 'PERSÖNLICH BETREUT · ECHTE BUCHUNGSANFRAGEN · BERLIN-NETZWERK' : 'PERSONALLY SUPPORTED · REAL BOOKING ENQUIRIES · BERLIN NETWORK'}
+          {locale === 'de' ? 'PERSÖNLICH BETREUT · AUCH FÜR EINSTEIGER · BERLIN-NETZWERK' : 'PERSONALLY SUPPORTED · FOR BEGINNERS TOO · BERLIN NETWORK'}
         </p>
         <ul className="text-left space-y-4 mb-12">
           {benefits.map((benefit) => (
@@ -1277,12 +1292,12 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </p>
           <ul className="space-y-2.5">
             {(locale === 'de' ? [
-              'Du bewirbst dich — Valiantsina prüft persönlich (keine Bots)',
-              'Bei Aufnahme: kostenloses Profil + aktive Vermittlung',
+              'Du erzählst deine Idee — in eigenen Worten, ein Text reicht',
+              'Ich lese persönlich mit und mache dir einen konkreten Vorschlag',
               'Provision nur bei erfolgreicher Buchung: 15% — du zahlst nur, wenn du verdienst',
             ] : [
-              'You apply — Valiantsina reviews personally (no bots)',
-              'If accepted: free profile + active representation',
+              'You tell me your idea — in your own words, one message is enough',
+              'I personally read it and send back a concrete proposal',
               'Commission only on successful bookings: 15% — you only pay when you earn',
             ]).map((item, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-warm-muted">
@@ -1297,7 +1312,7 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           onClick={() => navigate('/join/start')}
           className="w-full py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition shadow-lg mb-4"
         >
-          {locale === 'de' ? 'Jetzt bewerben →' : 'Apply now →'}
+          {locale === 'de' ? 'Idee erzählen →' : 'Share your idea →'}
         </button>
         <p className="text-xs text-warm-faint font-medium">
           {locale === 'de' ? 'Bereits eingetragen? Dein Fortschritt wird gespeichert.' : 'Already listed? Your progress is saved.'}
@@ -1804,14 +1819,13 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     return (
       <div className="min-h-[calc(100vh-64px)] mt-16 flex items-center justify-center px-4">
         <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16 max-w-lg w-full text-center">
-          <div className="text-5xl mb-6">🎉</div>
           <h2 className="text-3xl font-bold mb-4 tracking-tight text-charcoal">
             {locale === 'de' ? 'Gesendet!' : 'Sent!'}
           </h2>
           <p className="text-warm-muted mb-2 font-medium text-base leading-relaxed">
             {locale === 'de'
-              ? 'Valiantsina wird deine Bewerbung persönlich prüfen — innerhalb von 24 Stunden hörst du von ihr. ❤️'
-              : 'Valiantsina will review your application personally within 24 hours. ❤️'}
+              ? 'Valiantsina prüft deine Bewerbung persönlich. Du hörst innerhalb von 24 Stunden von ihr.'
+              : 'Valiantsina reviews your application personally. You will hear from her within 24 hours.'}
           </p>
           <p className="text-xs text-warm-faint font-mono mt-6">ID: {submissionId}</p>
           <Link to="/catalog" className="inline-block mt-10 px-10 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition">
@@ -1912,7 +1926,7 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             </div>
           </div>
           <p className="text-sm font-semibold text-charcoal leading-snug mb-1">
-            {locale === 'de' ? 'Willkommen in der Berlintina-Community 🎭' : 'Welcome to the Berlintina community 🎭'}
+            {locale === 'de' ? 'Willkommen bei Berlintina' : 'Welcome to Berlintina'}
           </p>
           <p className="text-xs text-warm-muted leading-relaxed">
             {locale === 'de'
@@ -2512,7 +2526,7 @@ const App: React.FC = () => {
           <Route path="blog" element={<Blog locale={locale} />} />
           <Route path="blog/:slug" element={<BlogPostPage locale={locale} />} />
           <Route path="artist" element={<ArtistPortal locale={locale} />} />
-          <Route path="join" element={<Join locale={locale} />} />
+          <Route path="join" element={<JoinLanding locale={locale} />} />
           <Route path="join/start" element={<Join locale={locale} />} />
           <Route path="about" element={<About locale={locale} />} />
           <Route path="impressum" element={<Impressum locale={locale} />} />
