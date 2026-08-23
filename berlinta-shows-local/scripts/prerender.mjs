@@ -157,15 +157,134 @@ const MUSS_ENTHALTEN = {
  */
 const HUELLE = await readFile(join(DIST, "index.html"));
 
+/**
+ * Zählt mit, wie viele Shows die API im laufenden Durchgang geliefert hat (siehe Proxy).
+ * `null` = noch nicht abgefragt oder Antwort unbrauchbar.
+ */
+let apiShowAnzahl = null;
+
+/** Die kanonische Adresse dieser Seite. Muss zur sitemap.xml passen (dort ohne Schrägstrich). */
+const SEITEN_URL = "https://berlintina.de";
+
+/**
+ * Den Kopf des Schnappschusses in Ordnung bringen.
+ *
+ * Hintergrund: index.html trägt einen Satz Vorgabe-Tags („Default SEO — overridden
+ * per-page by React PageSEO component"), und die App setzt zur Laufzeit ihre eigenen
+ * dazu. Im Browser fällt das nicht auf. Im eingefrorenen HTML stehen dann BEIDE — gemessen
+ * am ersten Durchlauf: /about, /catalog, /impressum und /datenschutz hatten je zwei
+ * <title>, zwei description und zwei canonical.
+ *
+ * Zwei Sonderfälle, die dieselbe Ursache haben:
+ *   - /join und /blog setzen gar keine eigenen Tags → ihre canonical zeigte auf die
+ *     Startseite. Genau so bittet man Google, die Seite nicht eigenständig zu führen.
+ *   - Auf / steht die Vorgabe hinter dem App-Titel, ist aber die ausführlichere.
+ *
+ * Regeln hier, jede bewusst:
+ *   1. Bei doppeltem <title>/description gewinnt der App-Wert — das ist die im Kommentar
+ *      der index.html erklärte Absicht („overridden per-page"). Entfernt wird gezielt der
+ *      bekannte Vorgabe-Wert, nicht „der zweite" — eine Reihenfolge-Annahme hielte nur bis
+ *      zum nächsten React-Update.
+ *   2. canonical und og:url werden nicht repariert, sondern gesetzt: jede Seite verweist
+ *      auf sich selbst. Das ist keine Geschmacksfrage, sondern die einzige richtige
+ *      Antwort, und sie wirkt auch für die Routen ohne eigene Tags.
+ */
+function kopfNormalisieren(html, route) {
+  const vorgabe = (muster) => {
+    const t = HUELLE.toString("utf8").match(muster);
+    return t ? t[1] : null;
+  };
+  const vorgabeTitel = vorgabe(/<title>(.*?)<\/title>/s);
+  const vorgabeBeschreibung = vorgabe(/<meta\s+name="description"\s+content="(.*?)"/s);
+
+  let ergebnis = html;
+
+  // Vergleich muss entity-normalisiert laufen: in der Quelle steht `&`, Chrome schreibt
+  // beim Serialisieren `&amp;`. Ein roher Textvergleich trifft deshalb nie — gemessen,
+  // nicht vermutet: der erste Anlauf ließ alle Dubletten stehen und meldete trotzdem
+  // Erfolg, weil ein nicht gefundenes replace() klaglos das Original zurückgibt.
+  const gleich = (a, b) => {
+    const n = (s) =>
+      s
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;|&apos;/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+    return n(a) === n(b);
+  };
+
+  // 1. Dubletten: den bekannten Vorgabe-Wert entfernen, sofern ein zweiter Tag da ist.
+  const titel = [...ergebnis.matchAll(/<title>(.*?)<\/title>/gs)];
+  if (titel.length > 1 && vorgabeTitel) {
+    const treffer = titel.find((m) => gleich(m[1], vorgabeTitel));
+    if (treffer) ergebnis = ergebnis.replace(treffer[0], "");
+  }
+  const beschreibungen = [...ergebnis.matchAll(/<meta\s+name="description"\s+content="(.*?)"\s*\/?>/gs)];
+  if (beschreibungen.length > 1 && vorgabeBeschreibung) {
+    const treffer = beschreibungen.find((m) => gleich(m[1], vorgabeBeschreibung));
+    if (treffer) ergebnis = ergebnis.replace(treffer[0], "");
+  }
+
+  // Positiver Nachweis, dass die Aufräumarbeit auch wirklich stattgefunden hat. Ohne diese
+  // Prüfung meldet ein wirkungsloses replace() einen grünen Build mit doppeltem Kopf.
+  const uebrig = {
+    title: [...ergebnis.matchAll(/<title>/g)].length,
+    description: [...ergebnis.matchAll(/<meta\s+name="description"/g)].length,
+  };
+  for (const [was, anzahl] of Object.entries(uebrig)) {
+    if (anzahl > 1) throw new Error(`${anzahl}× <${was}> im Kopf — Dublette nicht entfernt`);
+  }
+
+  // 2. canonical + og:url: alle vorhandenen raus, genau einen richtigen rein.
+  ergebnis = ergebnis
+    .replace(/\s*<link\s+rel="canonical"[^>]*>/gs, "")
+    .replace(/\s*<meta\s+property="og:url"[^>]*>/gs, "");
+
+  const eigeneUrl = route === "/" ? `${SEITEN_URL}/` : `${SEITEN_URL}${route}`;
+  const einfuegen =
+    `<link rel="canonical" href="${eigeneUrl}">` + `<meta property="og:url" content="${eigeneUrl}">`;
+  ergebnis = ergebnis.replace(/<\/head>/i, `${einfuegen}</head>`);
+
+  return ergebnis;
+}
+
 const server = createServer(async (req, res) => {
   const roh = req.url ?? "/";
   const pfad = decodeURIComponent(roh.split("?")[0]);
 
   // API-Anfragen an die laufende Seite weiterreichen (siehe API_ORIGIN oben).
   if (pfad.startsWith("/api/")) {
+    // NUR Lesezugriffe. Beim Prerender von /join feuert die Seite unter anderem
+    // POST /api/conversation/start — würde die Weiterleitung die Methode still auf GET
+    // umschreiben, liefe jeder Railway-Build gegen echte Schreib-Endpunkte der
+    // Produktion (Datenbankzeile, womöglich ein bezahlter KI-Aufruf). Dass genau dieser
+    // Endpunkt `app.post` ist und ein GET dort ins Leere liefe, wäre Glück, kein Schutz.
+    // Deshalb hier ausdrücklich: alles außer GET/HEAD wird lokal mit 405 beantwortet und
+    // erreicht die Produktion nie.
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      res.writeHead(405, { "Content-Type": "application/json" });
+      return res.end('{"error":"prerender proxy is read-only"}');
+    }
     try {
       const antwort = await fetch(API_ORIGIN + roh, { headers: { accept: "application/json" } });
       const koerper = Buffer.from(await antwort.arrayBuffer());
+
+      // Mitzählen, was die API wirklich geliefert hat — daran hängt der Inhalts-Guard
+      // weiter unten. „Keine Shows in der Datenbank" ist ein zulässiger Zustand und darf
+      // den Deploy nicht blockieren; „Shows da, aber nicht im HTML gelandet" muss es.
+      if (pfad === "/api/shows") {
+        try {
+          const daten = JSON.parse(koerper.toString("utf8"));
+          const liste = Array.isArray(daten) ? daten : (daten.shows ?? daten.data ?? []);
+          if (Array.isArray(liste)) apiShowAnzahl = liste.length;
+        } catch {
+          /* keine verwertbare Antwort → apiShowAnzahl bleibt null */
+        }
+      }
+
       res.writeHead(antwort.status, {
         "Content-Type": antwort.headers.get("content-type") ?? "application/json",
       });
@@ -234,16 +353,25 @@ try {
       // am Ende ein grüner Build mit leeren Seiten vor.
       if (zeichen < 300) throw new Error(`nur ${zeichen} Zeichen Text — Schnappschuss wäre leer`);
 
+      // Inhalts-Guard, aber nur wo er etwas aussagt: Wenn die API selbst 0 Shows meldet,
+      // ist ein leerer Katalog die Wahrheit und kein Fehler — dann darf er den Deploy
+      // nicht blockieren (sonst hängt an einer zurückgezogenen Show auch jede unbeteiligte
+      // Änderung). Blockiert wird nur der gefährliche Fall: Daten sind da, kommen aber
+      // nicht im HTML an.
       const muster = MUSS_ENTHALTEN[route];
-      if (muster && !muster.test(html)) {
-        throw new Error(
-          `ohne echten Inhalt (Muster ${muster} fehlt) — kamen die Daten an? API_ORIGIN = ${API_ORIGIN}`,
-        );
+      if (muster && apiShowAnzahl !== 0 && !muster.test(html)) {
+        const woher = apiShowAnzahl === null ? "API-Antwort unlesbar" : `${apiShowAnzahl} Shows von der API`;
+        throw new Error(`${woher}, aber nichts davon im HTML (Muster ${muster}) — API_ORIGIN = ${API_ORIGIN}`);
       }
+      if (muster && apiShowAnzahl === 0) {
+        console.log(`    (API meldet 0 Shows — leerer Katalog ist hier die Wahrheit, kein Fehler)`);
+      }
+
+      const fertig = kopfNormalisieren(html, route);
 
       const ziel = route === "/" ? join(DIST, "index.html") : join(DIST, route.slice(1), "index.html");
       await mkdir(dirname(ziel), { recursive: true });
-      await writeFile(ziel, html, "utf8");
+      await writeFile(ziel, fertig, "utf8");
       console.log(`  ✓ ${route.padEnd(14)} → ${ziel.replace(DIST + "/", "dist/")} (${zeichen} Zeichen Text)`);
       geschrieben++;
     } catch (e) {
