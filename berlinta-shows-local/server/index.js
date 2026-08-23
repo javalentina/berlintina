@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import express from 'express';
 
@@ -2300,7 +2301,35 @@ app.delete('/api/admin/blog/:id', requireAdmin, async (req, res) => {
 
 // ── Serve built frontend + SPA fallback ──────────────────────────────────────
 const distPath = join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
+
+// Prerenderte Seiten zuerst: für die Routen aus der sitemap.xml liegt nach dem Build ein
+// fertiger HTML-Schnappschuss unter dist/<route>/index.html (scripts/prerender.mjs).
+// Ohne diesen Block würde der SPA-Fallback weiter unten die leere Hülle ausliefern —
+// dann wäre der ganze Prerender-Schritt wirkungslos, und zwar unbemerkt, weil beides 200
+// antwortet.
+//
+// Warum nicht einfach express.static das erledigen lassen: static antwortet auf ein
+// Verzeichnis mit einer 301 auf die Fassung MIT Schrägstrich. Verlinkt und in der Sitemap
+// steht aber die Fassung OHNE — jeder Direktaufruf und jeder Crawler liefe erst über eine
+// Weiterleitung. Deshalb hier direkt ausliefern und `redirect: false` darunter.
+app.get('*', (req, res, next) => {
+  if (req.path === '/' || req.path.startsWith('/api/')) return next();
+
+  // Nur harmlose Routennamen. Diese Prüfung ist der Schutz gegen Pfad-Ausbrüche wie
+  // `/../../etc/passwd`: erlaubt sind ausschliesslich Buchstaben, Ziffern, Bindestrich,
+  // Unterstrich und Schrägstrich — ein Punkt kommt gar nicht erst durch. Das ergäbe sich
+  // nebenbei auch aus einem Dateiendungs-Filter, aber Sicherheit als Nebenwirkung hält
+  // nur, bis jemand den Filter aus einem anderen Grund lockert.
+  const route = req.path.replace(/^\/+|\/+$/g, '');
+  if (!/^[A-Za-z0-9\-_]+(?:\/[A-Za-z0-9\-_]+)*$/.test(route)) return next();
+
+  const datei = join(distPath, route, 'index.html');
+  if (existsSync(datei)) return res.sendFile(datei);
+  next(); // kein Schnappschuss (z.B. Build ohne Prerender) → normaler SPA-Weg
+});
+
+app.use(express.static(distPath, { redirect: false }));
+
 app.get('*', (_req, res) => {
   res.sendFile(join(distPath, 'index.html'));
 });

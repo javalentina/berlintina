@@ -1,0 +1,17 @@
+# Railway baut mit nixpacks (so steht es in railway.toml). Der Prerender-Schritt braucht
+# einen echten Browser — ohne diese Zeile findet puppeteer-core auf dem Build-Server kein
+# Chrome und der Build bricht ab.
+#
+# Dass er abbricht, ist gewollt: ein stiller Rückfall auf leere Seiten wäre schlimmer, weil
+# ihn niemand bemerkt. Ein abgebrochener Railway-Build nimmt die Seite nicht offline — die
+# zuletzt erfolgreich gebaute Fassung läuft weiter.
+#
+# Bewusst NUR die Setup-Phase: den Build-Befehl gibt railway.toml vor
+# (`buildCommand = "npm run build"`). Stünde er hier zusätzlich, gäbe es zwei Wahrheiten.
+# `npm run build` löst über `postbuild` in package.json den Prerender von selbst aus.
+#
+# Kein fest verdrahteter Chrome-Pfad: nixpacks legt `chromium` in den PATH, und
+# scripts/prerender.mjs sucht dort (und in den üblichen Systempfaden) danach. Eine feste
+# Pfadangabe wäre eine Wette, die man erst am roten Build überprüfen kann.
+[phases.setup]
+nixPkgs = ["nodejs_20", "chromium"]
