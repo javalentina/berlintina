@@ -214,7 +214,7 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
               <a href="mailto:info@berlintina.de" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">info@berlintina.de</a>
               <a href="tel:+491608106880" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">+49 160 8106880</a>
               <a href="https://wa.me/491608106880" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">WhatsApp</a>
-              <a href="https://www.instagram.com/berlintina.shows" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Instagram</a>
+              <a href="https://www.instagram.com/berlin.tina" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Instagram</a>
             </div>
           </div>
           <div className="col-span-12 md:col-span-3">
@@ -266,7 +266,7 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           jobTitle: 'Founder & Curator',
           worksFor: { '@type': 'Organization', name: 'Berlintina' },
           url: 'https://berlintina.de/about',
-          sameAs: ['https://www.instagram.com/berlintina.shows'],
+          sameAs: ['https://www.instagram.com/berlin.tina'],
         }}
       />
       <div className="flex flex-col items-center text-center mb-24">
@@ -805,7 +805,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             email: 'info@berlintina.de',
             address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
             areaServed: { '@type': 'City', name: 'Berlin' },
-            sameAs: ['https://www.instagram.com/berlintina.shows'],
+            sameAs: ['https://www.instagram.com/berlin.tina'],
             priceRange: '€€–€€€',
           },
           {
@@ -1076,12 +1076,12 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 : "Berlintina is a young platform — but Valiantsina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
             </p>
             <a
-              href="https://www.instagram.com/berlintina.shows"
+              href="https://www.instagram.com/berlin.tina"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity no-underline"
             >
-              @berlintina.shows <ArrowUpRight className="w-3.5 h-3.5" />
+              @berlin.tina <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </motion.div>
         </div>
