@@ -604,6 +604,7 @@ KERN-REGELN:
 ANTWORTFORMAT (reines JSON, kein Markdown):
 {
   "message": "Deine Antwort an den Künstler",
+  "artistName": "NUR der Name der Person/Gruppe, falls er in der Nachricht erkennbar ist — niemals der ganze Satz",
   "showTitle": "Titel falls bekannt oder ausgewählt",
   "salesPitchText": "Einzeiler/Tagline der Show für Eventplaner",
   "shortDescriptionFacts": "Vollständige Show-Beschreibung in Producer-Stimme (mindestens 100 Zeichen wenn Phase description_generation)",
@@ -637,6 +638,7 @@ CORE RULES:
 RESPONSE FORMAT (pure JSON, no markdown):
 {
   "message": "Your reply to the artist",
+  "artistName": "ONLY the person's/group's name, if recognizable in the message — never the whole sentence",
   "showTitle": "title if known or selected",
   "salesPitchText": "one-liner/tagline for event planners",
   "shortDescriptionFacts": "complete show description in producer voice (at least 100 chars if stage is description_generation)",

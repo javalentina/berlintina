@@ -1342,17 +1342,6 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   );
 };
 
-// --- Typing indicator: 3 animated dots ---
-const TypingIndicator: React.FC = () => (
-  <div className="flex justify-start">
-    <div className="bg-surface-alt rounded-[1.5rem] rounded-bl-none px-5 py-3.5 flex items-center gap-1.5 shadow-sm">
-      {[0, 160, 320].map((delay) => (
-        <span key={delay} className="typing-dot w-2 h-2 rounded-full bg-warm-muted inline-block" style={{ animationDelay: `${delay}ms` }} />
-      ))}
-    </div>
-  </div>
-);
-
 // --- Progress pills for submission draft ---
 const PROGRESS_KEYS = [
   { key: 'artistName', de: 'Name', en: 'Name' },
@@ -1833,22 +1822,23 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   if (submissionId) {
     // Fire confetti
     setTimeout(() => {
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7', '#ec4899', '#f59e0b'] });
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#FF8000', '#141313', '#F7F5F2'] });
     }, 100);
     return (
-      <div className="min-h-[calc(100vh-64px)] mt-16 flex items-center justify-center px-4">
-        <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16 max-w-lg w-full text-center">
-          <h2 className="text-3xl font-bold mb-4 tracking-tight text-charcoal">
-            {locale === 'de' ? 'Gesendet!' : 'Sent!'}
+      <div className="min-h-[calc(100vh-64px)] mt-16 flex items-center justify-center px-4 bg-background">
+        <div className="max-w-md w-full text-center">
+          <span className="label-style block mb-6">{locale === 'de' ? 'Erledigt' : 'Done'}</span>
+          <h2 className="font-display text-4xl font-bold mb-4 tracking-tight text-foreground">
+            {locale === 'de' ? 'Gesendet.' : 'Sent.'}
           </h2>
-          <p className="text-warm-muted mb-2 font-medium text-base leading-relaxed">
+          <p className="text-muted-foreground mb-2 text-base leading-relaxed">
             {locale === 'de'
               ? 'Valiantsina prüft deine Bewerbung persönlich. Du hörst innerhalb von 24 Stunden von ihr.'
               : 'Valiantsina reviews your application personally. You will hear from her within 24 hours.'}
           </p>
-          <p className="text-xs text-warm-faint font-mono mt-6">ID: {submissionId}</p>
-          <Link to="/catalog" className="inline-block mt-10 px-10 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition">
-            {locale === 'de' ? 'Shows entdecken' : 'Discover shows'}
+          <p className="text-xs text-muted-foreground/60 font-mono-ui mt-6">ID: {submissionId}</p>
+          <Link to="/catalog" className="inline-flex items-center gap-2 mt-10 bg-accent text-accent-foreground px-7 py-3.5 rounded-full font-display font-bold text-sm hover:opacity-90 transition-opacity no-underline">
+            {locale === 'de' ? 'Shows entdecken' : 'Discover shows'} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
@@ -1859,22 +1849,23 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     const acc = returnArtist.artistAccount;
     const label = [acc?.instagramHandle ? `@${acc.instagramHandle}` : null, acc?.websiteUrl].filter(Boolean).join(' • ') || (locale === 'de' ? 'Du' : 'You');
     return (
-      <div className="max-w-2xl mx-auto px-4 py-24">
-        <div className="bg-surface rounded-[2.5rem] border border-warm-border shadow-2xl p-12 md:p-16">
-          <h2 className="font-display text-2xl font-normal mb-4 tracking-tight text-center text-charcoal">
-            {locale === 'de' ? 'Willkommen zurück!' : 'Welcome back!'}
+      <div className="min-h-[calc(100vh-64px)] mt-16 flex items-center justify-center px-4 bg-background">
+        <div className="max-w-md w-full text-center">
+          <span className="label-style block mb-6">{locale === 'de' ? 'Willkommen zurück' : 'Welcome back'}</span>
+          <h2 className="font-display text-3xl font-bold mb-4 tracking-tight text-foreground">
+            {locale === 'de' ? 'Schön, dich wiederzusehen.' : 'Good to see you again.'}
           </h2>
-          <p className="text-warm-muted mb-8 text-center font-medium">
+          <p className="text-muted-foreground mb-2">
             {locale === 'de'
-              ? 'Soll ich deine gespeicherten Artist-Daten verwenden?'
-              : 'Should I use your saved artist details?'}
+              ? 'Soll ich deine gespeicherten Angaben verwenden?'
+              : 'Should I use your saved details?'}
           </p>
-          {label && <p className="text-sm text-warm-faint text-center mb-8">({label})</p>}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button type="button" onClick={() => setWelcomeBackChoice('use')} className="px-8 py-4 bg-terracotta text-white rounded-2xl font-semibold text-sm hover:bg-terracotta-dark transition">
+          {label && <p className="text-sm text-muted-foreground/60 mb-8">({label})</p>}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+            <button type="button" onClick={() => setWelcomeBackChoice('use')} className="bg-accent text-accent-foreground px-7 py-3.5 rounded-full font-display font-bold text-sm hover:opacity-90 transition-opacity">
               {locale === 'de' ? 'Ja, verwenden' : 'Yes, use them'}
             </button>
-            <button type="button" onClick={() => { clearStoredArtistToken(); setWelcomeBackChoice('fresh'); }} className="px-8 py-4 bg-surface border-2 border-warm-border text-warm-muted rounded-2xl font-semibold text-sm hover:border-terracotta hover:text-terracotta transition">
+            <button type="button" onClick={() => { clearStoredArtistToken(); setWelcomeBackChoice('fresh'); }} className="px-7 py-3.5 rounded-full border border-foreground/15 text-muted-foreground font-display font-bold text-sm hover:border-foreground/40 hover:text-foreground transition-colors">
               {locale === 'de' ? 'Nein, neu starten' : 'No, start fresh'}
             </button>
           </div>
@@ -1886,6 +1877,18 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const filledCount = PROGRESS_KEYS.filter(p => submissionDraft[p.key] && String(submissionDraft[p.key]).trim()).length;
 
   const canFinish = !!(submissionDraft.showTitle && String(submissionDraft.showTitle).trim() && submissionDraft.artistName && String(submissionDraft.artistName).trim());
+
+  const isFilled = (k: string) => !!(submissionDraft[k] && String(submissionDraft[k]).trim());
+  const WIZARD_STEPS = [
+    { label: locale === 'de' ? 'Idee' : 'Idea', keys: ['artistName'] },
+    { label: locale === 'de' ? 'Show' : 'Show', keys: ['showTitle', 'shortDescriptionFacts'] },
+    { label: locale === 'de' ? 'Details' : 'Details', keys: ['durationMinutes'] },
+    { label: locale === 'de' ? 'Kontakt' : 'Contact', keys: ['submitterEmail'] },
+  ];
+  const currentStep = submissionId
+    ? WIZARD_STEPS.length
+    : WIZARD_STEPS.findIndex(s => !s.keys.every(isFilled));
+  const activeStepIndex = currentStep === -1 ? WIZARD_STEPS.length - 1 : currentStep;
 
   const handleFinish = async (draftOverride?: Record<string, unknown>) => {
     const d = draftOverride ?? submissionDraft;
@@ -1926,97 +1929,99 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     }
   };
 
+  const recentMessages = messages.slice(-6);
+  const hiddenCount = messages.length - recentMessages.length;
+
   return (
-    <div className="flex bg-parchment min-h-[calc(100vh-64px)] mt-16">
+    <div className="flex bg-background min-h-[calc(100vh-64px)] mt-16">
 
-      {/* ── LEFT: Chat Panel (38%) ── */}
-      <div className="w-[38%] min-w-[340px] flex-shrink-0 flex flex-col bg-surface border-r border-warm-border h-[calc(100vh-64px)] sticky top-16">
+      {/* ── LEFT: Guided panel (38%) ── */}
+      <div className="w-[38%] min-w-[360px] flex-shrink-0 flex flex-col bg-background border-r border-foreground/10 h-[calc(100vh-64px)] sticky top-16">
 
-        {/* Community hero header */}
-        <div className="px-6 pt-6 pb-4 border-b border-warm-border flex-shrink-0 bg-gradient-to-b from-terracotta/5 to-transparent">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-black text-lg shadow-md">V</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-bold text-charcoal leading-tight">Valiantsina</p>
-              <p className="text-xs text-green-600 font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                {locale === 'de' ? 'Gründerin · Berlin' : 'Founder · Berlin'}
-              </p>
-            </div>
+        {/* Step indicator */}
+        <div className="px-6 pt-8 pb-6 border-b border-foreground/10 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-5">
+            {WIZARD_STEPS.map((step, i) => (
+              <React.Fragment key={step.label}>
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono-ui text-xs w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 border transition-colors ${
+                    i < activeStepIndex ? 'bg-accent border-accent text-accent-foreground'
+                    : i === activeStepIndex ? 'border-accent text-accent font-bold'
+                    : 'border-foreground/15 text-muted-foreground/50'
+                  }`}>
+                    {i < activeStepIndex ? '✓' : i + 1}
+                  </span>
+                  <span className={`text-xs font-semibold hidden sm:inline ${i === activeStepIndex ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+                    {step.label}
+                  </span>
+                </div>
+                {i < WIZARD_STEPS.length - 1 && <span className="flex-1 h-px bg-foreground/10" />}
+              </React.Fragment>
+            ))}
           </div>
-          <p className="text-sm font-semibold text-charcoal leading-snug mb-1">
-            {locale === 'de' ? 'Willkommen bei Berlintina' : 'Welcome to Berlintina'}
-          </p>
-          <p className="text-xs text-warm-muted leading-relaxed">
+          <h1 className="font-display text-2xl font-bold text-foreground tracking-tight mb-1.5">
+            {locale === 'de' ? 'Du hast eine Idee?' : 'Got an idea?'}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {locale === 'de'
-              ? 'Ich begleite dich Schritt für Schritt — in 5 Minuten ist dein Profil fertig.'
-              : "I'll guide you step by step — your profile is ready in 5 minutes."}
+              ? 'Erzähl mir davon — ich lese mit und wir bauen deine Show-Seite gemeinsam auf.'
+              : "Tell me about it — I'll read along as we build your show page together."}
           </p>
-
-          {/* Progress bar */}
-          {filledCount > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-warm-muted">
-                  {Math.min(filledCount, PROGRESS_KEYS.length)}/{PROGRESS_KEYS.length} {locale === 'de' ? 'ausgefüllt' : 'filled'}
-                </span>
-                <span className="text-xs font-bold text-terracotta">
-                  {Math.round((filledCount / PROGRESS_KEYS.length) * 100)}%
-                </span>
-              </div>
-              <div className="h-1.5 rounded-full bg-surface-alt overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-terracotta transition-all duration-700"
-                  style={{ width: `${Math.round((filledCount / PROGRESS_KEYS.length) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Messages */}
-        <div ref={messagesContainerRef} className="flex-grow overflow-y-auto px-5 py-5 space-y-4 flex flex-col">
+        {/* Conversation */}
+        <div ref={messagesContainerRef} className="flex-grow overflow-y-auto px-6 py-6 space-y-5 flex flex-col">
           {resolvingToken && messages.length === 0 && (
             <div className="flex-grow flex items-center justify-center">
               <div className="flex items-center gap-1.5">
-                {[0, 160, 320].map(d => <span key={d} className="typing-dot w-2.5 h-2.5 rounded-full bg-warm-border inline-block" style={{ animationDelay: `${d}ms` }} />)}
+                {[0, 160, 320].map(d => <span key={d} className="typing-dot w-2 h-2 rounded-full bg-foreground/20 inline-block" style={{ animationDelay: `${d}ms` }} />)}
               </div>
             </div>
           )}
-          {apiError && <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">{apiError}</div>}
-          {submitError && <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">{submitError}</div>}
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'ai' ? 'items-end gap-2.5' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
-              {m.role === 'ai' && (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs mb-0.5 shadow-sm">V</div>
+          {apiError && <div className="p-4 border border-amber-300 bg-amber-50 text-amber-800 text-sm font-medium">{apiError}</div>}
+          {submitError && <div className="p-4 border border-red-300 bg-red-50 text-red-800 text-sm font-medium">{submitError}</div>}
+
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => messagesContainerRef.current?.scrollTo({ top: 0 })}
+              className="label-style text-left hover:text-foreground transition-colors"
+            >
+              {locale === 'de' ? `${hiddenCount} frühere Antwort(en) ausgeblendet` : `${hiddenCount} earlier reply(ies) hidden`}
+            </button>
+          )}
+
+          {recentMessages.map((m, i) => (
+            <div key={i} className={`animate-in fade-in slide-in-from-bottom-1 duration-200 ${m.role === 'user' ? 'text-right' : ''}`}>
+              {m.role === 'ai' ? (
+                <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap font-medium">{m.text}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap inline-block max-w-[85%]">{m.text}</p>
               )}
-              <div className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                m.role === 'ai'
-                  ? 'bg-terracotta-light text-charcoal rounded-2xl rounded-bl-none border border-terracotta/15 shadow-sm'
-                  : 'bg-[#0084ff] text-white rounded-2xl rounded-br-none shadow-sm'
-              }`}>
-                {m.text}
-              </div>
             </div>
           ))}
-          {loading && messages.length > 0 && <TypingIndicator />}
+          {loading && messages.length > 0 && (
+            <div className="flex gap-1.5">
+              {[0, 160, 320].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-foreground/30 inline-block" style={{ animationDelay: `${d}ms` }} />)}
+            </div>
+          )}
           {!loading && quickReplies.length > 0 && (
-            <div className="flex flex-wrap gap-2 pl-10">
+            <div className="flex flex-wrap gap-2">
               {quickReplies.map((q, i) => (
                 <button key={i} type="button" onClick={() => {
                   if (lastNextSlot === 'has_show') {
                     const value = (q === 'Ja, habe eine Show' || q === 'Yes, I have a show') ? 'HAS_SHOW' : (q === 'Nein, brainstormen' || q === 'No, brainstorm') ? 'NO_SHOW' : undefined;
                     sendMessage(q, value ? { action: 'BUTTON', value } : undefined);
                   } else { sendMessage(q); }
-                }} disabled={loading} className="px-4 py-2 rounded-xl bg-surface border-2 border-warm-border text-sm font-semibold text-warm-muted hover:border-terracotta hover:text-terracotta transition disabled:opacity-50">
+                }} disabled={loading} className="px-4 py-2 rounded-full border border-foreground/15 text-sm font-semibold text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-50">
                   {q}
                 </button>
               ))}
             </div>
           )}
           {showMediaInput && (
-            <div className="pl-10 space-y-2.5">
-              <label className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-surface border border-warm-border cursor-pointer text-sm font-semibold text-warm-muted hover:bg-surface-alt">
+            <div className="space-y-2.5">
+              <label className="flex items-center gap-2.5 px-4 py-2.5 rounded-full border border-foreground/15 cursor-pointer text-sm font-semibold text-muted-foreground hover:border-foreground/30 w-fit">
                 <span>{photoFiles.length > 0 ? `${photoFiles.length} ${locale === 'de' ? 'Foto(s) hinzugefügt' : 'photo(s) added'}` : (locale === 'de' ? 'Fotos hochladen' : 'Upload photos')}</span>
                 <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => {
                   const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
@@ -2029,11 +2034,11 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                   placeholder={locale === 'de' ? 'YouTube-Link (optional)' : 'YouTube link (optional)'}
                   value={pendingVideoUrl}
                   onChange={e => setPendingVideoUrl(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface border border-warm-border text-sm font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
+                  className="flex-1 px-4 py-2.5 rounded-full border border-foreground/15 bg-background text-sm font-medium text-foreground focus:outline-none focus:border-accent placeholder:text-muted-foreground/50"
                 />
                 {pendingVideoUrl && (
                   <button type="button" onClick={() => sendMessage(locale === 'de' ? 'Video hinzugefügt' : 'Video added')}
-                    className="px-4 py-2.5 rounded-xl bg-terracotta text-white text-sm font-semibold">
+                    className="px-4 py-2.5 rounded-full bg-accent text-accent-foreground text-sm font-semibold">
                     OK
                   </button>
                 )}
@@ -2043,63 +2048,63 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Finish button */}
+        {/* Finish */}
         {canFinish && (
-          <div className="px-4 pt-2 flex-shrink-0 space-y-2.5">
+          <div className="px-6 pt-2 flex-shrink-0 space-y-2.5 border-t border-foreground/10 pt-5">
             {!(submissionDraft.submitterEmail && String(submissionDraft.submitterEmail).includes('@')) && (
               <input
                 type="email"
                 placeholder={locale === 'de' ? 'Deine E-Mail-Adresse (für die Bestätigung)' : 'Your email address (for confirmation)'}
                 value={String(submissionDraft.submitterEmail || '')}
                 onChange={(e) => setSubmissionDraft((d) => ({ ...d, submitterEmail: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-surface border border-warm-border text-sm font-medium text-charcoal focus:outline-none focus:ring-2 focus:ring-terracotta/20 placeholder:text-warm-faint"
+                className="w-full px-4 py-3 rounded-full border border-foreground/15 bg-background text-sm font-medium text-foreground focus:outline-none focus:border-accent placeholder:text-muted-foreground/50"
               />
             )}
-            {submitError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">{submitError}</div>}
+            {submitError && <div className="p-3 border border-red-300 bg-red-50 text-red-800 text-sm font-medium">{submitError}</div>}
             <button
               type="button"
               onClick={() => handleFinish()}
               disabled={submitting}
-              className="w-full py-3.5 bg-terracotta text-white rounded-xl font-bold text-base hover:bg-terracotta-dark transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+              className="w-full py-3.5 bg-accent text-accent-foreground rounded-full font-display font-bold text-base hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {submitting
-                ? <span className="flex gap-1">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
-                : <>{locale === 'de' ? 'Show einreichen' : 'Submit show'} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></>
+                ? <span className="flex gap-1">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-accent-foreground/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
+                : <>{locale === 'de' ? 'Show einreichen' : 'Submit show'} <ArrowRight className="w-4 h-4" /></>
               }
             </button>
           </div>
         )}
 
         {/* Input */}
-        <div className="border-t border-warm-border bg-surface flex-shrink-0">
+        <div className="border-t border-foreground/10 bg-background flex-shrink-0">
           {/https?:\/\//.test(input) && (
-            <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-xs text-warm-muted font-semibold">
-              <span>{locale === 'de' ? 'Website wird analysiert…' : 'Analyzing your website…'}</span>
+            <div className="px-6 pt-3 pb-0">
+              <span className="label-style">{locale === 'de' ? 'Website wird analysiert…' : 'Analyzing your website…'}</span>
             </div>
           )}
-          <div className="p-4 flex gap-2.5">
+          <div className="p-6 flex gap-2.5">
             <input type="text" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} className="hidden" aria-hidden="true" tabIndex={-1} />
             <input
               type="text"
               placeholder={locale === 'de' ? 'Antworten oder URL einfügen…' : 'Reply or paste your URL…'}
-              className="flex-grow px-4 py-3 rounded-xl bg-surface-alt text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta/20 transition text-charcoal disabled:opacity-50 placeholder:text-warm-faint"
+              className="flex-grow px-4 py-3 rounded-full border border-foreground/15 bg-background text-sm font-medium focus:outline-none focus:border-accent transition-colors text-foreground disabled:opacity-50 placeholder:text-muted-foreground/50"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
               disabled={loading || submitting || !conversationId}
             />
             <button onClick={() => sendMessage()} disabled={(!input.trim()) || loading || submitting || !conversationId}
-              className="w-11 h-11 bg-terracotta text-white rounded-xl hover:bg-terracotta-dark transition flex items-center justify-center shadow-md disabled:opacity-20 flex-shrink-0 self-end">
+              className="w-11 h-11 bg-accent text-accent-foreground rounded-full hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-20 flex-shrink-0 self-end">
               {loading
-                ? <span className="flex gap-0.5">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-white/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
-                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                ? <span className="flex gap-0.5">{[0, 100, 200].map(d => <span key={d} className="typing-dot w-1.5 h-1.5 rounded-full bg-accent-foreground/70 inline-block" style={{ animationDelay: `${d}ms` }} />)}</span>
+                : <ArrowRight className="w-4 h-4" />
               }
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── RIGHT: Live Preview (65%) ── */}
+      {/* ── RIGHT: Live Preview (62%) ── */}
       <div className="flex-1 overflow-hidden h-[calc(100vh-64px)] sticky top-16">
         <ShowPreview
           draft={submissionDraft}
