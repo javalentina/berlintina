@@ -187,6 +187,7 @@ export interface AdminShowFull {
   faq_language?: string | null;
   faq_custom?: string | null;
   faq_travel?: string | null;
+  partner_link_url?: string | null;
 }
 
 export interface AdminShowUpdatePayload {
@@ -218,6 +219,8 @@ export interface AdminShowUpdatePayload {
   faq_language?: string;
   faq_custom?: string;
   faq_travel?: string;
+  /** Kuratierter Link nach außen. Leerstring bedeutet ausdrücklich „Link entfernen". */
+  partner_link_url?: string;
 }
 
 export async function adminGetShows(): Promise<{ shows: AdminShowListItem[] }> {

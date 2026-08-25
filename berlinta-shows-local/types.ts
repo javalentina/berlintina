@@ -65,6 +65,12 @@ export interface Show {
   faqLanguage?: string;
   faqCustom?: string;
   faqTravel?: string;
+  /**
+   * Kuratierter Link von der Showseite nach außen (Issue #14). Wird ausschließlich
+   * redaktionell im CMS gesetzt, nie aus den Onboarding-Angaben übernommen.
+   * Leer heißt: auf der Seite erscheint nichts.
+   */
+  partnerLinkUrl?: string;
 }
 
 export interface CustomerBrief {
