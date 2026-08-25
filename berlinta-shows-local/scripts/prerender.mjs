@@ -568,6 +568,47 @@ try {
         console.log(`    (API meldet 0 Shows — leerer Katalog ist hier die Wahrheit, kein Fehler)`);
       }
 
+      /**
+       * Werkstatt-Text im Kundentext.
+       *
+       * Anlass, live gemessen am 24.08.2026: auf /show/unterhaltsam-bi9pbk stand mitten im
+       * Verkaufstext die Herleitung einer KI —
+       *   „This wording is partly based on the site's message ‚We are your best choice!',
+       *    the emphasis on stylish/elegant modern music, and public profile language about
+       *    creating warm live music that doesn't"
+       * — im Satz abbrechend, für jeden Besucher lesbar und seit dem Prerender auch für
+       * Suchmaschinen. Der Kunde erfährt dabei, dass der Text aus fremden Profilen
+       * zusammengesetzt wurde. Die Showtexte entstehen teils über /api/ai/polish-text und
+       * /api/scrape-url; solche Reste sind also kein Einzelfall, sondern eine Familie.
+       *
+       * ⚠️ EHRLICH: das ist ein VERBOTS-Guard. Er fängt nur Formulierungen, die schon
+       * jemand gesehen hat — ein Modell kann sich morgen anders verplappern. Er ersetzt
+       * kein Gegenlesen; er sorgt dafür, dass die BEKANNTE Familie nie wieder live geht.
+       * (Anwesenheit statt Abwesenheit zu prüfen geht hier nicht: „der Text redet nicht
+       * über sich selbst" ist keine Eigenschaft, die man positiv messen kann.)
+       */
+      const WERKSTATT = [
+        /[Tt]his (?:wording|text|description) (?:is|was)/,
+        /based on the (?:site|website|public)/i,
+        /public profile language/i,
+        /[Tt]he website emphasi[sz]es/,
+        /according to (?:the|their) (?:website|profile)/i,
+        /\bAs an AI\b/i,
+        /language model/i,
+        /couldn'?t (?:find|verify)/i,
+        /Lorem ipsum/i,
+      ];
+      const sichtbar = entityFrei(html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<[^>]+>/g, " "));
+      for (const muster of WERKSTATT) {
+        const treffer = sichtbar.match(new RegExp(muster.source + ".{0,70}", muster.flags));
+        if (treffer) {
+          throw new Error(
+            `${route}: Werkstatt-Text im Kundentext — „${treffer[0].trim().slice(0, 90)}…" ` +
+              `(Muster ${muster}). Der Text gehoert in den Daten korrigiert, nicht hier.`,
+          );
+        }
+      }
+
       const fertig = kopfNormalisieren(html, route);
 
       const ziel = route === "/" ? join(DIST, "index.html") : join(DIST, route.slice(1), "index.html");
