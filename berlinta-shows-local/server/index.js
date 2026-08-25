@@ -1519,7 +1519,17 @@ app.get('/api/shows/page', async (req, res) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 12));
     const category = req.query.category;
     const search = req.query.search;
-    let q = supabase.from('shows').select('*', { count: 'exact' }).eq('status', 'PUBLISHED');
+    /*
+     * Diese Liste ist dieselbe Allowlist wie in /api/shows — hier stand vorher `select('*')`.
+     * Das lieferte jede Spalte der Zeile mit aus, auch `artist_email`: die E-Mail-Adresse des
+     * Künstlers war über `/api/shows/page` ohne Anmeldung abrufbar (live nachgemessen am
+     * 25.08.2026). Der Katalog braucht sie nicht — `rowToShow()` in services/showsService.ts
+     * liest ausschließlich Felder, die in der Allowlist stehen.
+     *
+     * Wer hier künftig eine Spalte braucht, trägt sie in OEFFENTLICHE_SHOW_SPALTEN nach.
+     * `select('*')` zurückzuholen macht jede neue Spalte auf `shows` still öffentlich.
+     */
+    let q = supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN, { count: 'exact' }).eq('status', 'PUBLISHED');
     if (category && category !== 'ALL') q = q.eq('category', category);
     if (search && typeof search === 'string' && search.trim()) {
       const term = search.trim().replace(/,/g, ' ');
