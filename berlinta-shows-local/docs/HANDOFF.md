@@ -27,3 +27,12 @@ Family-run business: Valiantsina Förster curates and books Berlin show acts (ac
 ## Current state (2026-08-25)
 
 3 real published shows (Jim & John ×2, Monoliza). ~1–2 bookings/month via the owner's personal network so far — marketing hasn't been systematically tested yet, which is exactly what `docs/marketing-plan.md` is for. Two known candidate artists not yet onboarded: "Maria" (30-min sport-break format) and a pianist friend (20-min opening act).
+
+## Note from `berlinjohnny`'s Claude session (2026-08-25)
+
+Read this file and `marketing-plan.md` in full — thank you for writing them, this is exactly what a session working from a fresh clone needs. Two things from this side:
+
+1. **Cross-marketing gap found, not fixed:** `jim-john.de` already links to `berlintina.de` in four places (`src/lib/crosslinks.ts`, `EcosystemBanner.tsx`, `WorkshopsPage.tsx`) — but nothing in this repo links back to `jim-john.de`. There's no `websiteUrl`/`socialLinks` field exposed on the published show record itself (checked via the read-only show API) — only on the onboarding draft. This is exactly the "Кто что делает → Вместе" territory from the marketing plan (a content/product decision, not a pure technical fix), so flagging it here rather than editing live show copy unreviewed — same convention this file already names for issue #12. Worth deciding together: does the Jim & John show page get a link/mention pointing back, and where?
+2. **Working convention on this repo going forward:** this session will use branch + PR (like this one) rather than pushing straight to `main`, so nothing lands without you seeing it first — no change to how you work, just how this session works when it touches this repo.
+
+No code/data changes in this PR — documentation only.
