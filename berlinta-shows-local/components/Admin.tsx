@@ -674,6 +674,7 @@ const ShowEditInner: React.FC = () => {
   const [faqLanguage, setFaqLanguage] = useState('');
   const [faqCustom, setFaqCustom] = useState('');
   const [faqTravel, setFaqTravel] = useState('');
+  const [partnerLinkUrl, setPartnerLinkUrl] = useState('');
   const [testimonials, setTestimonials] = useState<{ quote: string; name: string }[]>([]);
 
   useEffect(() => {
@@ -693,6 +694,7 @@ const ShowEditInner: React.FC = () => {
       setFaqOutdoor(s.faq_outdoor || ''); setFaqStage(s.faq_stage || '');
       setFaqLanguage(s.faq_language || ''); setFaqCustom(s.faq_custom || '');
       setFaqTravel(s.faq_travel || '');
+      setPartnerLinkUrl(s.partner_link_url || '');
       setTestimonials(Array.isArray(s.testimonials) && s.testimonials.length ? [...s.testimonials] : []);
     }).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, [id]);
@@ -735,6 +737,11 @@ const ShowEditInner: React.FC = () => {
         faq_outdoor: faqOutdoor.trim() || undefined, faq_stage: faqStage.trim() || undefined,
         faq_language: faqLanguage.trim() || undefined, faq_custom: faqCustom.trim() || undefined,
         faq_travel: faqTravel.trim() || undefined,
+        // Bewusst OHNE `|| undefined`: die anderen Felder senden bei leerer Eingabe
+        // `undefined`, das fällt aus dem JSON heraus und der Server lässt den alten Wert
+        // stehen — ein einmal gesetzter Wert wäre über das CMS nicht mehr löschbar.
+        // Hier geht immer ein String raus, und der Server macht aus '' ein NULL.
+        partner_link_url: partnerLinkUrl.trim(),
         notify_artist: false,
       });
       setSaved(true); setTimeout(() => setSaved(false), 3000);
@@ -787,6 +794,12 @@ const ShowEditInner: React.FC = () => {
         </div>
         <Field label="Description / facts"><textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} className={ta} /></Field>
         <Field label="Sales pitch"><textarea value={pitch} onChange={e => setPitch(e.target.value)} rows={2} className={ta} /></Field>
+        {/* Kuratierter Link nach außen (Issue #14). Steht hier, weil er auf der öffentlichen
+            Showseite genau an dieser Stelle erscheint: unter „Über die Künstler", direkt nach
+            dem Sales Pitch. Leer lassen heißt, dort steht nichts. Der Server nimmt nur
+            http(s) an und leitet den Anzeigetext aus der Domain ab — es gibt bewusst kein
+            zweites Feld für eine eigene Beschriftung. */}
+        <Field label="Public partner link (optional)"><input type="url" value={partnerLinkUrl} onChange={e => setPartnerLinkUrl(e.target.value)} className={inp} placeholder="https://jim-john.de" /></Field>
       </Section>
 
       <Section title="Photos & Videos">

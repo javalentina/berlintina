@@ -1477,6 +1477,33 @@ app.get('/api/health', (req, res) => {
  * Die Admin-Endpunkte (`requireAdmin`) behalten `select('*')`: dort ist der Zugriff
  * geprüft, und die Verwaltung braucht die vollständige Zeile.
  */
+/**
+ * Prüft einen redaktionell gesetzten Link, bevor er auf einer öffentlichen Seite landet.
+ *
+ * Zurück kommt entweder eine normalisierte http(s)-URL oder `null` — nie der Rohwert.
+ * Damit kann über das CMS kein `javascript:`- oder `data:`-Ziel in ein href geschrieben
+ * werden, auch nicht versehentlich per Copy-Paste. Ein leeres Feld heißt „Link entfernen".
+ */
+function sichereWebUrl(wert) {
+  if (wert == null) return null;
+  const roh = String(wert).trim();
+  if (roh === '') return null;
+  // Wer im CMS „jim-john.de" tippt, meint eine Website und keinen Fehler. Ohne diese
+  // Ergänzung wäre der Eintrag nicht parsebar und würde still verworfen — das Feld sähe
+  // nach dem Speichern einfach wieder leer aus, ohne Hinweis worauf. Ergänzt wird nur,
+  // wenn gar kein Schema dasteht; „javascript:…" behält seins und fällt unten durch.
+  const hatSchema = /^[a-z][a-z0-9+.-]*:/i.test(roh);
+  const kandidat = hatSchema ? roh : `https://${roh}`;
+  try {
+    const url = new URL(kandidat);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    if (!url.hostname || !url.hostname.includes('.')) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 const OEFFENTLICHE_SHOW_SPALTEN = [
   'id', 'slug', 'short_id', 'status', 'title', 'category', 'artist_name',
   'sales_pitch_text', 'short_description_facts', 'ideal_for', 'vibe_tags',
@@ -1486,6 +1513,7 @@ const OEFFENTLICHE_SHOW_SPALTEN = [
   'light_short', 'sound_short', 'timings_short', 'rider_pdf_url',
   'price_min', 'price_max', 'price_type',
   'faq_stage', 'faq_travel', 'faq_language', 'faq_outdoor', 'faq_custom',
+  'partner_link_url',
   'created_at',
   // Diese vier liest services/showsService.ts aus der Antwort und bildet sie auf sein
   // Modell ab (artistId, instrumentationText, extractedTags, languageOptions). Nimmt man
@@ -1977,6 +2005,10 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
     if (body.faq_language !== undefined) updates.faq_language = body.faq_language === '' || body.faq_language == null ? null : String(body.faq_language).trim();
     if (body.faq_custom !== undefined) updates.faq_custom = body.faq_custom === '' || body.faq_custom == null ? null : String(body.faq_custom).trim();
     if (body.faq_travel !== undefined) updates.faq_travel = body.faq_travel === '' || body.faq_travel == null ? null : String(body.faq_travel).trim();
+    // Kuratierter Partner-Link (Issue #14). sichereWebUrl() liefert null statt Rohwert,
+    // wenn das Ziel kein http(s) ist — ein ungültiger Eintrag löscht das Feld, statt ein
+    // unbrauchbares href auf die öffentliche Showseite zu schreiben.
+    if (body.partner_link_url !== undefined) updates.partner_link_url = sichereWebUrl(body.partner_link_url);
 
     const newPhotoUrls = [];
     if (body.photoBase64 && typeof body.photoBase64 === 'string') {

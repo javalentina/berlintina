@@ -31,6 +31,21 @@ function getVideoEmbedUrl(url: string, preview15s = false): string | null {
   } catch { return null; }
 }
 
+/**
+ * Anzeigetext für den kuratierten Partner-Link: die blanke Domain, ohne `www.`.
+ *
+ * Bewusst abgeleitet statt gepflegt. Ein zweites Textfeld im CMS wäre eine Einladung,
+ * Werbetext zu erfinden („Präsentiert von…"), und würde irgendwann von der URL abweichen.
+ * Die Domain sagt dem Leser genau das, was er wissen muss: wohin der Klick führt.
+ */
+function linkBeschriftung(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
 // ── Inline edit helper (admin only) ─────────────────────────────────────────
 function InlineEdit({ value, onChange, as = 'textarea', className = '', placeholder = '—', rows = 4 }: {
   value: string; onChange: (v: string) => void;
@@ -423,7 +438,9 @@ export const ShowDetailPage: React.FC<Props> = ({
             )}
 
             {/* Artist bio */}
-            {(show.salesPitchText || editProps) && (
+            {/* partnerLinkUrl gehört in die Bedingung: sonst verschluckt eine Show ohne
+                Pitch-Text den Link mit, obwohl die Redaktion ihn gesetzt hat. */}
+            {(show.salesPitchText || show.partnerLinkUrl || editProps) && (
               <section className="mt-10">
                 <h2 className="font-display text-2xl font-bold text-foreground mb-4">{t.aboutArtist}</h2>
                 {editProps ? (
@@ -439,6 +456,20 @@ export const ShowDetailPage: React.FC<Props> = ({
                   <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
                     {show.salesPitchText}
                   </p>
+                )}
+
+                {/* Kuratierter Link nach außen (Issue #14). Erscheint nur, wenn die Redaktion
+                    im CMS einen Wert gesetzt hat — ohne Wert steht hier nichts, die Seite sieht
+                    dann exakt aus wie vorher. */}
+                {show.partnerLinkUrl && (
+                  <a
+                    href={show.partnerLinkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-4 text-sm font-medium text-foreground underline underline-offset-4 decoration-border hover:decoration-foreground transition-colors"
+                  >
+                    {linkBeschriftung(show.partnerLinkUrl)} →
+                  </a>
                 )}
               </section>
             )}

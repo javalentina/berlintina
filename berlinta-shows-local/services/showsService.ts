@@ -56,6 +56,7 @@ type ShowRow = {
   faq_language?: string | null;
   faq_custom?: string | null;
   faq_travel?: string | null;
+  partner_link_url?: string | null;
 };
 
 function rowToShow(row: ShowRow): Show {
@@ -98,6 +99,7 @@ function rowToShow(row: ShowRow): Show {
     faqLanguage: row.faq_language ?? undefined,
     faqCustom: row.faq_custom ?? undefined,
     faqTravel: row.faq_travel ?? undefined,
+    partnerLinkUrl: row.partner_link_url ?? undefined,
   };
 }
 
