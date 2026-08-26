@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import crypto from 'crypto';
+import dns from 'dns/promises';
+import net from 'net';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -8,13 +10,36 @@ import express from 'express';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import cors from 'cors';
+import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import nodemailer from 'nodemailer';
 import OpenAI from 'openai';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 
+const SUPABASE_STORAGE_ORIGIN = 'https://frhntbdimtkoifhrehhx.supabase.co';
+
 const app = express();
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', SUPABASE_STORAGE_ORIGIN, 'https://www.google-analytics.com', 'https://img.youtube.com'],
+      connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com', 'https://*.analytics.google.com'],
+      frameSrc: ['https://www.youtube.com'],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors({
   origin: [
     'https://berlintina.de',
@@ -72,17 +97,34 @@ const aiLimiter = rateLimit({
   message: { error: 'Too many AI requests. Please wait a moment.' },
 });
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password';
+const artistAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: { error: 'Too many requests. Please try again later.' },
+});
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || null;
 function requireAdmin(req, res, next) {
   if (!ADMIN_PASSWORD) {
     return res.status(503).json({ error: 'Admin not configured. Set ADMIN_PASSWORD.' });
   }
   const auth = req.headers.authorization;
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-admin-token'];
-  if (token !== ADMIN_PASSWORD) {
+  if (typeof token !== 'string' || !timingSafeStringEqual(token, ADMIN_PASSWORD)) {
     return res.status(401).json({ error: 'Invalid or missing admin token.' });
   }
   next();
+}
+
+function timingSafeStringEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    // still run a comparison of equal length so failure timing doesn't leak length
+    crypto.timingSafeEqual(bufA, Buffer.alloc(bufA.length));
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 // --- Artist notification email (optional; visibility does not depend on it) ---
@@ -314,6 +356,67 @@ async function geminiPolishText(rawText, field, locale) {
   return ((response.text ?? rawText) || '').trim();
 }
 
+// --- SSRF-safe outbound fetch (used for scraping artist-submitted URLs) ---
+function isPrivateOrReservedIp(ip) {
+  if (net.isIPv6(ip)) {
+    const v = ip.toLowerCase();
+    if (v === '::1') return true; // loopback
+    if (v.startsWith('fe80:') || v.startsWith('fe8') || v.startsWith('fe9') || v.startsWith('fea') || v.startsWith('feb')) return true; // link-local
+    if (v.startsWith('fc') || v.startsWith('fd')) return true; // unique local
+    const mapped = v.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapped) return isPrivateOrReservedIp(mapped[1]);
+    return false;
+  }
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return true; // malformed — treat as unsafe
+  const [a, b] = parts;
+  if (a === 10) return true; // 10.0.0.0/8
+  if (a === 127) return true; // loopback
+  if (a === 0) return true; // "this network"
+  if (a === 169 && b === 254) return true; // link-local incl. cloud metadata (169.254.169.254)
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+  if (a === 192 && b === 168) return true; // 192.168.0.0/16
+  if (a === 100 && b >= 64 && b <= 127) return true; // 100.64.0.0/10 carrier-grade NAT
+  if (a >= 224) return true; // multicast/reserved
+  return false;
+}
+
+async function assertPublicHttpUrl(urlString) {
+  const parsed = new URL(urlString);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Only http(s) URLs are allowed.');
+  }
+  const hostname = parsed.hostname;
+  if (net.isIP(hostname)) {
+    if (isPrivateOrReservedIp(hostname)) throw new Error('URL points to a private or reserved address.');
+    return;
+  }
+  const records = await dns.lookup(hostname, { all: true, verbatim: true });
+  if (!records.length) throw new Error('Could not resolve host.');
+  for (const rec of records) {
+    if (isPrivateOrReservedIp(rec.address)) throw new Error('URL resolves to a private or reserved address.');
+  }
+}
+
+// Fetches url with SSRF protection: rejects the target and every redirect hop
+// that resolves to a private/loopback/link-local address (defends against
+// user-submitted URLs used to reach internal services or cloud metadata).
+async function fetchPublicUrlSafe(urlString, options = {}, maxRedirects = 3) {
+  let current = urlString;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    await assertPublicHttpUrl(current);
+    const response = await fetch(current, { ...options, redirect: 'manual' });
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get('location');
+      if (!location) return response;
+      current = new URL(location, current).toString();
+      continue;
+    }
+    return response;
+  }
+  throw new Error('Too many redirects.');
+}
+
 // --- Website scraping helper ---
 function extractTextFromHtml(html) {
   return String(html || '')
@@ -334,7 +437,7 @@ async function scrapeWebsiteForShow(url, locale) {
   const loc = locale === 'en' ? 'en' : 'de';
   let html = '';
   try {
-    const response = await fetch(url, {
+    const response = await fetchPublicUrlSafe(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Berlintina-Bot/1.0)' },
       signal: AbortSignal.timeout(8000),
     });
@@ -2147,7 +2250,7 @@ async function createArtistToken(artistAccountId) {
   return token;
 }
 
-app.post('/api/artist/resolve', async (req, res) => {
+app.post('/api/artist/resolve', artistAuthLimiter, async (req, res) => {
   try {
     if (!supabase) {
       return res.json({ isReturning: false });
@@ -2274,7 +2377,7 @@ app.post('/api/submissions', submissionsLimiter, async (req, res) => {
 });
 
 // --- Artist portal: list own published shows ---
-app.get('/api/artist/shows', async (req, res) => {
+app.get('/api/artist/shows', artistAuthLimiter, async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: 'Not configured.' });
     const artistToken = req.headers['x-artist-token'];
@@ -2491,6 +2594,17 @@ async function ensureStorageBucket() {
     console.warn('Storage bucket setup:', e?.message || e);
   }
 }
+
+// Keep one bad request from taking the whole site down: every route already
+// wraps its own logic in try/catch, so a promise rejection or thrown error
+// reaching here means something slipped through — log it and stay up rather
+// than let Node's default handling kill the process (and every open request).
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
 
 ensureStorageBucket().then(() => {
   app.listen(PORT, () => {
