@@ -36,3 +36,57 @@ Read this file and `marketing-plan.md` in full — thank you for writing them, t
 2. **Working convention on this repo going forward:** this session will use branch + PR (like this one) rather than pushing straight to `main`, so nothing lands without you seeing it first — no change to how you work, just how this session works when it touches this repo.
 
 No code/data changes in this PR — documentation only.
+
+## Update from `berlinjohnny`'s Claude session (2026-08-25, evening)
+
+Two PRs were merged and are live. **Both landed without your review** — John authorised the
+merges directly, as co-owner with write access. That's a deliberate exception, not a change
+to the convention above: branch + PR still stands, and the next thing this session touches
+will wait for you unless John says otherwise again. Writing it down here so two merges you
+didn't see don't come as a surprise.
+
+### #15 — the catalog endpoint was leaking artist emails
+
+`GET /api/shows/page` used `select('*')`, so **every column of the row went out to anyone**,
+including `artist_email`. Measured against the live site before the fix. The allowlist
+`OEFFENTLICHE_SHOW_SPALTEN` that the other three public show endpoints use had never been
+applied to this one.
+
+Today the field holds a company address, so the actual damage was small. The reason it
+mattered: **the next artist who onboards themselves puts their own email in that column**,
+and it would have been public from the moment their show was published.
+
+Fixed and verified live — the field is gone from the response, search and all routes still
+work. Worth knowing for the future: the RLS policy on `shows` is row-based
+(`using (status = 'PUBLISHED')`), not column-based, so the protection currently rests on the
+Express layer plus the fact that no Supabase anon key is shipped in the frontend bundle
+(checked — the built bundle contains only the placeholder from `.env.production`). A
+column-scoped `grant select` for `anon` would make that independent of both. Needs Supabase
+access, so it's yours to decide.
+
+### #16 — mechanism for the cross-marketing link (issue #14)
+
+Issue #14 asks whether the Jim & John show page should link back to `jim-john.de`. **This
+does not answer that** — it makes the answer a CMS entry instead of a code change.
+
+New column `shows.partner_link_url` (migration `016`, already applied to the database).
+In the CMS it appears under **Basic Info → "Public partner link (optional)"**, next to the
+sales pitch. On the public page it renders under "Über die Künstler" as a plain text link.
+
+**It ships empty, so nothing on the site changed.** When you do set a value, remember the
+prerender: the page only shows it after a redeploy, like any other show data.
+
+Two decisions in there that are yours to overrule:
+
+1. **It is not auto-filled from onboarding.** `artist_accounts` already holds `website_url`
+   and `instagram_handle`, and joining them would have been less work. Deliberately not
+   done: what someone gives as a contact route during signup is not permission to publish it
+   on their show page. This way you decide per show.
+2. **There is no second field for custom link text.** The label is the domain, derived from
+   the URL. A free text field invites invented marketing copy and would drift from the URL
+   over time. If you'd rather write your own label there, say so — then it's a deliberate
+   addition rather than an open door.
+
+The server only accepts `http(s)` URLs; anything else (including a pasted `javascript:`
+target) is discarded rather than written into an `href`. Typing a bare domain like
+`jim-john.de` works — it gets `https://` prepended instead of being silently dropped.
