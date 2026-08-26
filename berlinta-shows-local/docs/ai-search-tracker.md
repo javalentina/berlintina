@@ -2,6 +2,8 @@
 
 Manual monthly check — no free automated tool covers ChatGPT/Perplexity/Google AI Overview together, so this is done by hand. Takes ~15 minutes: open each query in each tool, note the result.
 
+**Interactive tool (use this, not the table below by hand):** https://claude.ai/code/artifact/911be9fc-46e2-4517-96b7-e419cd19e369 — "Sichtbarkeits-Radar". Same queries, but tracks history per query/engine, shows a citation-rate stat, and saves itself (no spreadsheet editing). The table below stays as a static record/fallback.
+
 **How:** once a month (or more often while testing growth hypotheses through December 2026), ask each query below in ChatGPT, Perplexity, and Google (watch for an AI Overview box above the normal results). Record whether Berlintina is mentioned, and who is mentioned instead if not.
 
 ## Queries to test
