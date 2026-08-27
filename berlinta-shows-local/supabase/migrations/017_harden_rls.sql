@@ -17,13 +17,12 @@
 alter table public.artist_accounts enable row level security;
 alter table public.artist_tokens enable row level security;
 
--- 2) agency_conversations / artist_conversations (migration 005) were given
---    "for all using (true) with check (true)" — anon could select, update or
---    delete every row, including other people's conversation transcripts.
---    The app only ever writes these via the service-role backend, so drop
---    the permissive policy and leave the tables closed.
-drop policy if exists "Allow all agency_conversations" on public.agency_conversations;
-drop policy if exists "Allow all artist_conversations" on public.artist_conversations;
+-- 2) agency_conversations / artist_conversations: migration 005 gave these
+--    "for all using (true) with check (true)" in this repo, but running this
+--    migration against production (2026-08-27) showed the tables don't
+--    actually exist there — migration 005 was apparently never applied.
+--    Nothing to fix; noted here so the gap isn't rediscovered from scratch.
+--    If these tables get created later, don't reuse the "for all" policy.
 
 -- 3) submissions-media storage bucket (migration 004) allowed anon to INSERT
 --    directly into storage, bypassing the honeypot/rate-limiting on
