@@ -222,6 +222,13 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
             <div className="flex flex-col gap-3">
               <Link to="/datenschutz" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Datenschutz</Link>
               <Link to="/impressum" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Impressum</Link>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event('cookie-consent:reopen'))}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                {locale === 'de' ? 'Cookie-Einstellungen' : 'Cookie Settings'}
+              </button>
               <Link to="/join/start" className="text-sm text-muted-foreground hover:text-foreground transition-colors no-underline">Künstler werden ↗</Link>
             </div>
           </div>
@@ -429,15 +436,20 @@ const Datenschutz: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
         </p>
       </section>
       <section>
-        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '7. Cookies' : '7. Cookies'}</h2>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '7. Cookies & Google Analytics' : '7. Cookies & Google Analytics'}</h2>
         <p className="text-warm-muted">
           {locale === 'de'
-            ? 'Diese Website verwendet ausschließlich technisch notwendige Cookies (z. B. Sitzungsdaten, Spracheinstellung). Es werden keine Tracking- oder Werbe-Cookies eingesetzt.'
-            : 'This website uses only technically necessary cookies (e.g. session data, language setting). No tracking or advertising cookies are used.'}
+            ? 'Diese Website verwendet technisch notwendige Speicherung im Browser (z. B. Spracheinstellung, Design-Modus), die keine Einwilligung erfordert.'
+            : 'This website uses technically necessary browser storage (e.g. language setting, display mode) that does not require consent.'}
+        </p>
+        <p className="text-warm-muted mt-3">
+          {locale === 'de'
+            ? 'Zusätzlich setzen wir Google Analytics 4 (Google Ireland Limited) ein, um zu verstehen, wie Besucher die Seite nutzen. IP-Adressen werden anonymisiert übertragen. Google Analytics wird erst aktiv, wenn Sie im Cookie-Banner zustimmen — Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Dabei können Daten auch an Google-Server in den USA übermittelt werden. Sie können Ihre Einwilligung jederzeit über "Cookie-Einstellungen" im Footer widerrufen oder ändern.'
+            : 'We also use Google Analytics 4 (Google Ireland Limited) to understand how visitors use the site. IP addresses are transmitted anonymized. Google Analytics only becomes active once you consent via the cookie banner — the legal basis is your consent (Art. 6(1)(a) GDPR). Data may also be transferred to Google servers in the US. You can withdraw or change your consent at any time via "Cookie Settings" in the footer.'}
         </p>
       </section>
       <p className="text-warm-faint text-xs pt-4 border-t border-warm-border">
-        {locale === 'de' ? 'Stand: März 2026' : 'Last updated: March 2026'}
+        {locale === 'de' ? 'Stand: August 2026' : 'Last updated: August 2026'}
       </p>
     </div>
   </div>

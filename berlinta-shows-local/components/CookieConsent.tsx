@@ -15,11 +15,14 @@ export const CookieConsent: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => 
     } catch {
       setVisible(true);
     }
+    const reopen = () => setVisible(true);
+    window.addEventListener('cookie-consent:reopen', reopen);
+    return () => window.removeEventListener('cookie-consent:reopen', reopen);
   }, []);
 
   const choose = (granted: boolean) => {
     try { localStorage.setItem('cookie_consent', granted ? 'granted' : 'denied'); } catch {}
-    if (granted) window.gtag?.('consent', 'update', { analytics_storage: 'granted' });
+    window.gtag?.('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
     setVisible(false);
   };
 
