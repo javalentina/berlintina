@@ -1,8 +1,8 @@
 # Berlintina
 
-> Berlintina is a boutique artist booking agency in Berlin, run personally by Valiantsina. It connects event organisers (corporate, weddings, festivals) with personally vetted Berlin performers — acrobatics, live music, dance, classical ensembles and more.
+> Berlintina is a boutique artist booking agency in Berlin, run personally by Berlintina. It connects event organisers (corporate, weddings, festivals) with personally vetted Berlin performers — acrobatics, live music, dance, classical ensembles and more.
 
-Berlintina does not operate as an open marketplace. Every act listed has been personally seen or vetted by Valiantsina. Enquiries are free; a booking fee of 15–20% of the agreed artist fee applies only when a booking is made, always communicated transparently upfront before booking.
+Berlintina does not operate as an open marketplace. Every act listed has been personally seen or vetted by Berlintina. Enquiries are free; a booking fee of 15–20% of the agreed artist fee applies only when a booking is made, always communicated transparently upfront before booking.
 
 ## Key facts
 
@@ -16,7 +16,7 @@ Berlintina does not operate as an open marketplace. Every act listed has been pe
 
 - [Homepage](https://berlintina.de/): overview, curated act highlights, FAQ
 - [Shows catalog](https://berlintina.de/catalog): all currently bookable acts, filterable by category
-- [About](https://berlintina.de/about): who Valiantsina is and how curation works
+- [About](https://berlintina.de/about): who Berlintina is and how curation works
 - [For Artists](https://berlintina.de/join): how performers apply to join the roster
 - [Impressum](https://berlintina.de/impressum) / [Datenschutz](https://berlintina.de/datenschutz): legal and privacy information
 

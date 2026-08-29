@@ -82,7 +82,7 @@ Berlintina сейчас на старте: 1–2 бронирования в м�
 3. Follow-up через 5 дней, если тишина
 
 **Черновик тона** (не спам, а личное представление):
-> "Hallo [Name], ich bin Valiantsina von Berlintina — ich vermittle persönlich kuratierte Showacts in Berlin, z. B. [Jim & John / Akrobatik-Duo]. Falls Sie in den nächsten Monaten ein Event planen, melde ich mich gern mit ein paar Vorschlägen — ganz unverbindlich."
+> "Hallo [Name], ich bin Berlintina — ich vermittle persönlich kuratierte Showacts in Berlin, z. B. [Jim & John / Akrobatik-Duo]. Falls Sie in den nächsten Monaten ein Event planen, melde ich mich gern mit ein paar Vorschlägen — ganz unverbindlich."
 
 *Я готовлю список контактов и тексты. Отправка — только ты, это должно звучать как ты, не как рассылка.*
 

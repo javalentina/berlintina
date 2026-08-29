@@ -262,14 +262,14 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
       <PageSEO
-        title={locale === 'de' ? 'Über Berlintina — Valiantsina, Boutique-Künstleragentur Berlin' : 'About Berlintina — Valiantsina, Boutique Artist Agency Berlin'}
+        title={locale === 'de' ? 'Über Berlintina — Boutique-Künstleragentur Berlin' : 'About Berlintina — Boutique Artist Agency Berlin'}
         description={locale === 'de'
-          ? 'Hinter Berlintina steht Valiantsina — eine persönlich kuratierte Künstleragentur in Berlin für Showacts, Live-Musik, Akrobatik und mehr.'
-          : 'Berlintina is Valiantsina — a personally curated artist agency in Berlin for show acts, live music, acrobatics and more.'}
+          ? 'Berlintina ist eine persönlich kuratierte Künstleragentur in Berlin für Showacts, Live-Musik, Akrobatik und mehr.'
+          : 'Berlintina is a personally curated artist agency in Berlin for show acts, live music, acrobatics and more.'}
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'Person',
-          name: 'Valiantsina Förster',
+          name: 'Berlintina',
           jobTitle: 'Founder & Curator',
           worksFor: { '@type': 'Organization', name: 'Berlintina' },
           url: 'https://berlintina.de/about',
@@ -278,14 +278,14 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       />
       <div className="flex flex-col items-center text-center mb-24">
         <div className="w-40 h-40 rounded-3xl overflow-hidden shadow-2xl mb-12">
-          <img src="/images/valiantsina.png" alt="Valiantsina — Berlintina" className="w-full h-full object-cover object-top" />
+          <img src="/images/valiantsina.png" alt="Berlintina — Gründerin und Kuratorin" className="w-full h-full object-cover object-top" />
         </div>
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal mb-6 sm:mb-8 tracking-tight">
-          {locale === 'de' ? 'Hallo, ich bin Valiantsina.' : "Hi, I'm Valiantsina."}
+          {locale === 'de' ? 'Hallo, ich bin Berlintina.' : "Hi, I'm Berlintina."}
         </h1>
         <div className="max-w-3xl text-left space-y-6 text-muted-foreground text-lg leading-relaxed">
           <p className="text-foreground font-display font-bold text-xl">
-            {locale === 'de' ? 'Berlintina bin ich — Valiantsina.' : 'Berlintina is me — Valiantsina.'}
+            {locale === 'de' ? 'Berlintina — das bin ich.' : 'Berlintina — that is me.'}
           </p>
           <p>
             {locale === 'de'
@@ -801,8 +801,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         ? 'Berlintina | Showacts & Künstler Berlin buchen — persönlich kuratiert'
         : 'Berlintina | Book Show Acts & Artists in Berlin — Personally Curated'}
       description={locale === 'de'
-        ? 'Berliner Showacts, Akrobatik, Live-Musik, Tanz & mehr — persönlich ausgewählt von Valiantsina. Kostenlose Anfrage. Antwort in 24 h.'
-        : 'Berlin show acts, acrobatics, live music, dance & more — personally curated by Valiantsina. Free enquiry. Reply within 24 h.'}
+        ? 'Berliner Showacts, Akrobatik, Live-Musik, Tanz & mehr — persönlich ausgewählt von Berlintina. Kostenlose Anfrage. Antwort in 24 h.'
+        : 'Berlin show acts, acrobatics, live music, dance & more — personally curated by Berlintina. Free enquiry. Reply within 24 h.'}
       structuredData={{
         '@context': 'https://schema.org',
         '@graph': [
@@ -1084,8 +1084,8 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           >
             <p className="text-lg text-foreground leading-relaxed font-body">
               {locale === 'de'
-                ? 'Berlintina ist eine junge Plattform — aber Valiantsina vermittelt seit Jahren persönlich Künstler in Berlin. Die ersten Kundenstimmen folgen nach unseren gemeinsamen Events. Bis dahin: schauen Sie hinter die Kulissen auf Instagram.'
-                : "Berlintina is a young platform — but Valiantsina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
+                ? 'Die Plattform ist jung — aber Berlintina vermittelt seit Jahren persönlich Künstler in Berlin. Die ersten Kundenstimmen folgen nach unseren gemeinsamen Events. Bis dahin: schauen Sie hinter die Kulissen auf Instagram.'
+                : "The platform is young — but Berlintina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
             </p>
             <a
               href="https://www.instagram.com/berlin.tina"
@@ -1282,12 +1282,12 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const benefits = locale === 'de'
     ? [
         'Egal ob fertige Show, erster Auftritt oder nur eine Idee — alles willkommen',
-        'Persönlich gelesen von Valiantsina — keine Bots, keine Formulare',
+        'Persönlich gelesen von Berlintina — keine Bots, keine Formulare',
         'Gefunden von Eventagenturen & Privatkunden in Berlin',
       ]
     : [
         'Finished show, first performance, or just an idea — all welcome',
-        'Personally read by Valiantsina — no bots, no forms',
+        'Personally read by Berlintina — no bots, no forms',
         'Found by event agencies & private customers in Berlin',
       ];
   return (
@@ -1845,8 +1845,8 @@ const Join: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </h2>
           <p className="text-muted-foreground mb-2 text-base leading-relaxed">
             {locale === 'de'
-              ? 'Valiantsina prüft deine Bewerbung persönlich. Du hörst innerhalb von 24 Stunden von ihr.'
-              : 'Valiantsina reviews your application personally. You will hear from her within 24 hours.'}
+              ? 'Berlintina prüft deine Bewerbung persönlich. Du hörst innerhalb von 24 Stunden von ihr.'
+              : 'Berlintina reviews your application personally. You will hear from her within 24 hours.'}
           </p>
           <p className="text-xs text-muted-foreground/60 font-mono-ui mt-6">ID: {submissionId}</p>
           <Link to="/catalog" className="inline-flex items-center gap-2 mt-10 bg-accent text-accent-foreground px-7 py-3.5 rounded-full font-display font-bold text-sm hover:opacity-90 transition-opacity no-underline">
@@ -2210,7 +2210,7 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             <span className="label-style mb-3 block">{locale === 'de' ? 'Alle Künstler' : 'All Artists'}</span>
             <h1 className="heading-lg text-foreground">Shows<span className="text-accent">.</span></h1>
             <p className="body-text text-sm mt-4">
-              {locale === 'de' ? 'Jeder Act wurde von Valiantsina persönlich ausgewählt.' : 'Every act was personally selected by Valiantsina.'}
+              {locale === 'de' ? 'Jeder Act wurde von Berlintina persönlich ausgewählt.' : 'Every act was personally selected by Berlintina.'}
             </p>
           </div>
 
@@ -2255,8 +2255,8 @@ const Catalog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             <span className="label-style mb-3 block">{locale === 'de' ? 'Etwas Individuelles?' : 'Something Custom?'}</span>
             <p className="text-sm text-muted-foreground mb-4">
               {locale === 'de'
-                ? 'Valiantsina hat Zugang zu 50+ weiteren Berliner Künstlern.'
-                : 'Valiantsina has access to 50+ more Berlin artists.'}
+                ? 'Berlintina hat Zugang zu 50+ weiteren Berliner Künstlern.'
+                : 'Berlintina has access to 50+ more Berlin artists.'}
             </p>
             <a
               href={`mailto:info@berlintina.de?subject=${encodeURIComponent(locale === 'de' ? 'Buchungsanfrage' : 'Booking Inquiry')}`}
@@ -2360,7 +2360,7 @@ const Blog: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
       <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4">Blog</h1>
       <p className="text-warm-muted font-medium mb-16">
-        {locale === 'de' ? 'Gedanken, Geschichten & Einblicke von Valiantsina.' : 'Thoughts, stories & insights from Valiantsina.'}
+        {locale === 'de' ? 'Gedanken, Geschichten & Einblicke von Berlintina.' : 'Thoughts, stories & insights from Berlintina.'}
       </p>
       {posts.length === 0 ? (
         <p className="text-warm-faint text-center py-16">
