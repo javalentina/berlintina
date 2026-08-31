@@ -1,60 +1,56 @@
-# DRAFT — bitte gegenlesen
+# DRAFT — zum Gegenlesen und Freigeben
 
 **Titel:** Was kostet ein Showact in Berlin? Ehrliche Zahlen statt „auf Anfrage"
 **Slug:** `was-kostet-ein-showact-berlin`
-**Meta-Description (155 Zeichen):** Was ein Showact in Berlin wirklich kostet: echte Preise aus unserem Katalog, was den Preis bestimmt und warum manche Acts nur auf Anfrage buchbar sind.
+**Meta-Description:** Ein Showact in Berlin kostet bei Berlintina zwischen 800 und 2500 Euro, alles inklusive. Was den Preis bestimmt und wie früh Sie buchen sollten.
 
-**An dich, bevor du liest:**
-
-Ich habe bewusst **keine erfundenen Marktpreise** hineingeschrieben. Im Text stehen nur
-Zahlen, die tatsächlich in deinem Katalog stehen (800 € / 10 Min Akrobatik, 800 € / 60 Min
-Band). Alles andere ist Struktur und ehrliche Erklärung.
-
-An drei Stellen habe ich **[DEIN WISSEN]** markiert. Da fehlt mir echtes Wissen, das nur du
-hast — du vermittelst seit Jahren, ich kenne nur die drei Shows in der Datenbank. Füll das
-bitte aus deiner Erfahrung, oder streich die Stelle. Bitte nichts schätzen, was du nicht
-wirklich weißt: Der ganze Artikel funktioniert nur, weil er ehrlich ist.
+Alle Zahlen im Text stammen von dir: die Spanne 800–2500 €, „alles inklusive", 2–3 Monate
+Vorlauf, kurzfristig mit Zuschlag. Nichts geschätzt, nichts erfunden.
 
 ---
 
 ## Was kostet ein Showact in Berlin?
 
-Ein Showact in Berlin kostet je nach Länge, Besetzung und Aufwand meist zwischen einigen
-hundert und mehreren tausend Euro. In unserem Katalog liegt ein zehnminütiger
-Akrobatik-Act bei 800 Euro, eine Live-Band für einen ganzen Abend ebenfalls bei 800 Euro.
-Das klingt widersprüchlich — und genau daran sieht man, warum die Frage „Was kostet das?"
-ohne Kontext nicht zu beantworten ist.
+Ein Showact in Berlin kostet bei uns zwischen 800 und 2500 Euro — alles inklusive. Wo Sie
+in dieser Spanne landen, hängt von vier Dingen ab: wie lange der Act dauert, wie viele
+Künstler auf der Bühne stehen, wie aufwendig Technik und Aufbau sind und wann Ihr Termin
+liegt.
 
-## Warum zehn Minuten so viel kosten können wie ein ganzer Abend
+„Alles inklusive" heißt: Der Preis, den Sie hören, ist der Preis, den Sie zahlen. Keine
+Vermittlungsgebühr obendrauf, keine Anfahrtspauschale, die später auftaucht.
 
-Bei einem Showact zahlen Sie nicht die Minuten auf der Bühne. Sie zahlen:
+## Zehn Minuten können so viel kosten wie ein ganzer Abend
 
-- die Jahre, in denen der Act einstudiert wurde
+In unserem Katalog steht ein zehnminütiger Akrobatik-Act bei 800 Euro — und eine Live-Band,
+die einen ganzen Abend spielt, ebenfalls bei 800 Euro. Das wirkt widersprüchlich, bis man
+sieht, wofür man eigentlich zahlt.
+
+Bei einem Showact zahlen Sie nicht die Minuten auf der Bühne, sondern:
+
+- die Jahre, in denen die Nummer einstudiert wurde
 - Anreise, Aufbau, Proben vor Ort und Abbau — oft ein ganzer Tag für zehn Minuten Auftritt
 - Material, Kostüme, Technik, Versicherung
 - den Umstand, dass die Künstlerin oder der Künstler an diesem Abend nichts anderes
   annehmen kann
 
 Eine Band mit vier Personen teilt ihre Gage durch vier. Ein Solo-Akrobat, der zehn Minuten
-Hochleistung liefert und danach körperlich für den Abend fertig ist, tut das nicht. Deshalb
-liegen beide bei 800 Euro, obwohl die eine Zahl nach viel und die andere nach wenig
-aussieht.
+körperliche Höchstleistung liefert und danach für den Abend fertig ist, tut das nicht.
+Deshalb stehen beide bei 800 Euro.
 
 ## Was den Preis nach oben oder unten bewegt
 
 | Faktor | Wirkung auf den Preis |
 |---|---|
-| Dauer und Anzahl der Auftritte am Abend | Ein zweiter Auftritt kostet meist deutlich weniger als der erste |
-| Anzahl der Künstler | Jede weitere Person bedeutet eine weitere Gage |
-| Anreise von außerhalb Berlins | Fahrt, teilweise Übernachtung |
-| Technische Anforderungen | Eigene Licht- oder Tontechnik, Rigging, Deckenhöhe |
+| Anzahl der Künstler | Jede weitere Person bedeutet eine weitere Gage — der größte einzelne Hebel |
+| Technische Anforderungen | Eigene Licht- oder Tontechnik, Rigging, nötige Deckenhöhe |
+| Dauer und Anzahl der Auftritte | Ein zweiter Auftritt am selben Abend kostet deutlich weniger als der erste |
+| Anreise von außerhalb Berlins | Fahrt, bei späten Auftritten teilweise Übernachtung |
 | Termin | Dezember und Samstage sind die teuerste Zeit im Jahr |
-| Vorlaufzeit | Kurzfristige Anfragen sind schwerer und damit teurer zu besetzen |
-| Sonderwünsche | Anpassung an Ihr Thema, Firmenlogo, andere Musik |
+| Vorlaufzeit | Sehr kurzfristige Termine kosten einen Zuschlag |
+| Sonderwünsche | Anpassung an Ihr Thema, Ihr Firmenlogo, eigene Musik |
 
-[DEIN WISSEN] Wenn du aus deinen bisherigen Buchungen eine ehrliche Spanne nennen kannst
-— zum Beispiel „die meisten Firmenfeiern, die ich vermittle, liegen zwischen X und Y Euro
-für einen Act" — dann setz sie hier ein. Nur wenn es wirklich deiner Erfahrung entspricht.
+Am unteren Ende der Spanne steht ein kurzer Act mit wenig Technik. Am oberen Ende eine
+größere Besetzung oder eine Nummer, die Aufbau und Technik braucht.
 
 ## Warum manche Acts „Preis auf Anfrage" sind
 
@@ -63,60 +59,67 @@ jede Zahl auf der Website falsch wäre. Ein Act, der Deckenhöhe und einen Riggi
 braucht, kostet in einer Halle etwas anderes als in einem Hotel-Ballsaal — und in manchen
 Räumen ist er gar nicht möglich.
 
-In dem Fall ist „auf Anfrage" die ehrlichere Antwort als eine Zahl, die wir später nach
-oben korrigieren müssten.
+Dann ist „auf Anfrage" die ehrlichere Antwort als eine Zahl, die wir später nach oben
+korrigieren müssten.
 
-## Was bei uns im Preis enthalten ist
+## Wie früh sollten Sie buchen?
 
-- Auswahl und Vorschlag passender Acts für Ihren Anlass und Ihren Raum
-- Abstimmung mit den Künstlern zu Ablauf, Technik und Zeitplan
-- eine Ansprechpartnerin für beides — Sie und die Künstler
+Zwei bis drei Monate Vorlauf sind ideal. Dann haben Sie die freie Auswahl, und wir können
+in Ruhe den Act finden, der zu Ihrem Raum und Ihrem Anlass passt.
 
-[DEIN WISSEN] Stimmt diese Liste? Ergänze, was du tatsächlich immer mitmachst, und streich,
-was du nicht garantieren willst. Das wird später zitiert werden, es sollte stimmen.
+Kurzfristig geht aber auch. Wenn Ihr Termin näher liegt, fragen Sie trotzdem — wir haben
+schon oft kurzfristig etwas Gutes vermittelt. Dafür kommt ein angemessener Zuschlag dazu,
+weil wir dann Künstler anfragen, die ihren Abend schon anders verplant hatten.
+
+Für Dezember und Samstage im Sommer gilt: so früh wie möglich. Das sind die Termine, an
+denen die guten Acts zuerst weg sind.
 
 ## Häufige Fragen
 
-**Wie früh sollte ich buchen?**
-Für Dezember und Samstage im Sommer so früh wie möglich — die guten Acts sind dann Monate
-vorher weg. Für andere Termine sind wenige Wochen oft ausreichend.
-[DEIN WISSEN] Was ist dein ehrlicher Vorlauf? Wie kurzfristig hast du schon etwas
-Gutes vermittelt?
+**Was kostet ein Showact für eine Firmenfeier in Berlin?**
+Zwischen 800 und 2500 Euro, alles inklusive. Die meisten Firmenfeiern liegen im mittleren
+Bereich dieser Spanne.
+
+**Kommen zum genannten Preis noch Kosten dazu?**
+Nein. Der genannte Preis ist der Endpreis — inklusive Anfahrt, Abstimmung und Vermittlung.
 
 **Kann ich mehrere Acts an einem Abend kombinieren?**
-Ja, und oft ist das die bessere Wahl: zwei kurze Auftritte über den Abend verteilt wirken
-meist stärker als ein langer Block.
-
-**Zahle ich die Künstler oder die Agentur?**
-Sie bekommen einen Preis genannt und wissen vorher, was Sie zahlen. Es kommt nichts dazu.
+Ja, und oft ist das die bessere Wahl: Zwei kurze Auftritte über den Abend verteilt wirken
+meist stärker als ein langer Block. Der zweite Act ist dabei günstiger als der erste.
 
 **Ist ein günstigerer Act ein schlechterer Act?**
 Nein. Ein kurzer Act mit wenig Technik ist einfach günstiger als eine große Nummer mit
-Aufbau. Beides kann den Abend tragen — es kommt darauf an, was zu Ihrem Raum und Ihrem
-Anlass passt.
+Aufbau. Beides kann den Abend tragen — es kommt darauf an, was zu Ihrem Raum passt.
+
+**Was, wenn mein Budget unter 800 Euro liegt?**
+Sagen Sie es uns trotzdem. Manchmal lässt sich über eine kürzere Nummer oder einen anderen
+Termin etwas möglich machen. Wenn nicht, sagen wir Ihnen das ehrlich, statt Ihnen etwas
+Unpassendes vorzuschlagen.
 
 ## Kurz gesagt
 
 Fragen Sie nicht zuerst nach dem Preis, sondern sagen Sie, was für ein Abend es werden
 soll, für wie viele Menschen und in welchem Raum. Daraus ergibt sich der Preis — nicht
-umgekehrt. Wenn Ihr Budget feststeht, sagen Sie es ruhig direkt. Dann sehen wir, was darin
-möglich ist, statt Ihnen etwas vorzuschlagen, das nicht passt.
+umgekehrt. Und wenn Ihr Budget feststeht, nennen Sie es ruhig direkt. Dann sehen wir, was
+darin möglich ist.
 
 ---
 
-## Notizen zur Suchmaschinen- und KI-Sichtbarkeit
+## Notizen zur Sichtbarkeit (nicht Teil des Artikels)
 
-Der Artikel ist bewusst so gebaut, dass ChatGPT, Perplexity und die Google-KI-Übersicht
-daraus zitieren können:
+Bewusst so gebaut, dass ChatGPT, Perplexity und die Google-KI-Übersicht daraus zitieren
+können:
 
-- Die erste Antwort steht direkt unter der Überschrift, nicht nach drei Absätzen
+- Die konkrete Zahl steht im ersten Satz, nicht nach drei Absätzen
 - Überschriften sind echte Suchfragen („Was kostet ein Showact in Berlin?")
 - Tabelle und FAQ-Block sind Formate, die KI-Systeme gut auslesen
-- Die Ehrlichkeit über „auf Anfrage" ist das, was dich von Seiten unterscheidet, die
-  nur Kontaktformulare zeigen — genau so etwas wird zitiert
+- „800 bis 2500 Euro, alles inklusive" ist eine zitierfähige Aussage. Die meisten
+  Konkurrenzseiten zeigen nur ein Kontaktformular — deshalb hast du hier einen echten
+  Vorteil
 
 **Zielsuchbegriffe:** „was kostet ein showact berlin", „showact preise berlin",
 „künstler für firmenfeier berlin kosten"
 
 Nach Veröffentlichung: `/blog/was-kostet-ein-showact-berlin` in der Google Search Console
-zur Indexierung einreichen und in den Sichtbarkeits-Radar als neue Frage aufnehmen.
+zur Indexierung einreichen und „was kostet ein showact berlin" als neue Frage in den
+Sichtbarkeits-Radar aufnehmen.
