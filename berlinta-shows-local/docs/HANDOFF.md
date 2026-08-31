@@ -417,3 +417,83 @@ Damit du sie nicht wiederholst:
 
 Viel Erfolg. Die Seite steht technisch gut da — was jetzt fehlt, passiert außerhalb des
 Repos.
+
+## Update from `berlinjohnny`'s Claude session (2026-08-31, evening)
+
+Three optimisations, all merged and verified against the running site. **This session merged
+them itself** — John gave it approval for autonomous optimisation. That reverses what I wrote
+in #17 and #19; it is stated openly in #20 rather than done quietly, and you can reverse it.
+Branch + PR stays either way, so every change is readable before and after.
+
+### #20 — the build could bake API keys into the public bundle
+
+`vite.config.ts` had a `define` block replacing `process.env.OPENAI_API_KEY` /
+`GEMINI_API_KEY` / `API_KEY` with the real values at build time. Whatever `define` replaces
+ends up in the file every visitor downloads.
+
+Two files referenced them — `services/openaiService.ts` and `services/geminiService.ts`,
+both creating clients with `dangerouslyAllowBrowser: true`. **Nothing ever leaked**: neither
+file was imported by anything, so tree-shaking dropped them. Verified against the live
+bundle — zero matches for `sk-`, `AIza`, `eyJ`.
+
+It was a loaded gun, not a leak: one `import` of either file — by someone adding an AI
+feature and finding a plausible existing file — would have published the key, with no error
+and only an import line in the diff. Both files and the `define` block are gone.
+
+### #21 — hashed assets were being re-validated every four hours
+
+`express.static` ran with no cache headers, so Cloudflare applied its 4-hour default to
+everything — including `dist/assets/*`, whose filenames contain a content hash and therefore
+can never go stale. Now `/assets/*` gets `immutable, max-age=1y` and everything else
+`no-cache`.
+
+The split matters: `index.html`, the prerendered pages, `robots.txt`, `sitemap.xml` and
+`llms.txt` keep their names when their content changes. Cached long, visitors would keep old
+HTML pointing at asset files that no longer exist.
+
+Measuring found something reading would not have: **the prerendered pages bypass
+`express.static`** (they come from `res.sendFile` in the `app.get('*')` block above) and
+carried a different header. All three `sendFile` sites now go through one helper.
+
+One thing that is **not** ours: `robots.txt` still returns `max-age=14400` live, even on
+`cf-cache-status: MISS`. The origin sends `no-cache` (checked locally). Cloudflare rewrites
+it for that one file — most likely Bot Fight Mode, which you switched on 27.08. Harmless,
+but worth knowing before someone hunts for it in the code.
+
+### #22 — the browser was downloading a Supabase client it could never use
+
+`services/showsService.ts` had two paths to show data, switched by
+`const useApiForShows = true`. Hard-wired, so the second path never ran — but the static
+`import { supabase }` pulled **all of `@supabase/supabase-js`** into the bundle: GoTrue auth,
+realtime websockets, token refresh. Confirmed in the shipped file (`phx_join`, `gotrue`,
+`onAuthStateChange`). For a client that was `null` in production anyway.
+
+It was also a security liability in waiting: the dead branch queried Supabase directly with
+`select('*')` three times — the exact pattern that leaked `artist_email` in #15. Flipping
+that constant would have brought the leak back *around* the server's column allowlist, since
+that path never touches the server.
+
+Removed the dead branch, `lib/supabase.ts`, `MOCK_SHOWS` and `applyFilters` (both existed
+only for it). Result, measured:
+
+| | raw | gzip |
+|---|---|---|
+| before | 674.50 kB | 202.76 kB |
+| after | **501.02 kB** | **157.09 kB** |
+
+**−22.5 % on every first visit.** `@supabase/supabase-js` stays in dependencies —
+`server/index.js` imports it.
+
+### What I deliberately did not do
+
+John asked about splitting the bundle into vendor + app chunks. After measuring, #22 was the
+bigger lever and the split is now the smaller one: splitting only moves bytes between chunks
+and does nothing for a first-time visitor. With Search Console just set up and almost no
+returning traffic yet, the first visit is what counts. Worth revisiting once the site has
+regular repeat visitors — it pairs well with the `immutable` caching from #21.
+
+### Still open, unchanged
+
+The `public.shows` column-level grant from #19. Merging that PR documented it; it does not
+close it. There is no `018` migration, so the SQL has not run. One statement, plus the check
+query, in the #19 entry above.
