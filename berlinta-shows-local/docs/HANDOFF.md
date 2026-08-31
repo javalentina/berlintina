@@ -322,3 +322,98 @@ Aus ihrem eigenen Aufgabensystem, nicht aus dem Repo ableitbar:
 
 Ziel bis Dezember 2026, in ihren Worten: **eine echte Buchung über die Seite, mindestens
 10 Künstler im Katalog, SEO/GEO sauber aufgesetzt.** Katalog steht bei 3.
+
+---
+
+# Übergabe an `berlinjohnny`s Claude-Session (2026-08-31)
+
+JaVa hat entschieden: **dieses Projekt liegt ab jetzt in der Verantwortung von Johnnys
+Claude-Session.** Wörtlich: „überlasse alles restliche der ClaudeCode session von Johnny …
+dieses Projekt in die verantwortung von Johnny's Matrix übergeben."
+
+Diese Session (JaVas) hört damit auf, hier eigenständig Arbeit anzustoßen. Der Abschnitt
+hier ist die Übergabe: was freigegeben ist, was offen liegt, und wo die Rechte enden.
+
+## Freigaben — es war nichts mehr offen
+
+Zum Zeitpunkt der Übergabe: **keine offenen PRs, keine offenen Issues.** #18 und #19 waren
+die zuletzt erstellten und sind beide bereits gemergt. Es gab also nichts freizugeben.
+
+Alte Branches liegen noch auf dem Remote (`admin-login-bremse`, `eigene-descriptions`,
+`preis-mwst`, `prerender-sprache`, `show-schema-service`, `sprach-guard-marker`,
+`claude/*`). Ob die noch gebraucht werden, weiß diese Session nicht — bitte selbst
+entscheiden, nicht blind löschen.
+
+## Rechte: was tatsächlich geht, und was nicht
+
+| Zugang | Stand | Anmerkung |
+|---|---|---|
+| GitHub `javalentina/berlintina` | **write** | Reicht für Push, Branches, PRs mergen, Issues. `admin` **nicht möglich** — siehe unten |
+| GitHub `javalentina/too-good-to-know` | **Einladung offen** | Bitte annehmen, dann write |
+| Supabase | laut Notiz Administrator der Org `berlintina` | **Bitte selbst verifizieren** — deine eigene Notiz in #19 sagt „no Supabase access from here". Eins von beidem stimmt nicht |
+| Railway | Einladung stand am 25.08. auf „Pending" | Falls nie angenommen: erneut anfragen |
+| Cloudflare | **nicht eingerichtet** | Drei Einladungsversuche sind an der Oberfläche gescheitert. Ungelöst |
+
+**Zu `admin` auf dem Repo:** JaVa wollte volle Rechte geben. Geht nicht. `javalentina/berlintina`
+ist ein persönliches Repo, kein Organisations-Repo — dort kennt GitHub für Mitarbeiter nur
+Schreibzugriff. Die API nimmt `permission=admin` entgegen und ändert nichts; geprüft, es
+bleibt bei `write`. Was dadurch fehlt: Repo-Einstellungen, Secrets, Branch-Protection,
+Mitarbeiterverwaltung. Für die tägliche Arbeit ändert das nichts. Wer echtes `admin`
+braucht, müsste das Repo in eine GitHub-Organisation überführen — das ist JaVas
+Entscheidung, nicht meine Empfehlung.
+
+**Nebenbei, eine Korrektur zu #19:** dort steht „The repo is public." Ist es nicht,
+`private: true`. Für die dortige Argumentation ist das ungefährlich — offen dokumentieren
+war dadurch eher zu vorsichtig als zu riskant. Aber falls diese Annahme irgendwo sonst
+einfließt, sie stimmt nicht.
+
+## Das eine offene Sicherheitsthema — jetzt deins
+
+Dein Fund aus #19 ist **bestätigt, nicht nur theoretisch.** Ich habe live gegen PostgREST
+getestet, mit dem echten anon-Key aus der lokalen `.env`:
+
+    GET /rest/v1/shows?select=artist_email&limit=1
+    → [{"artist_email":"info@jim-john.de"}]
+
+Deine Einschätzung „nicht erreichbar, weil im Bundle nur der Platzhalter steht" stimmt im
+Ergebnis, aber nicht in der Begründung: Ein **funktionierender** anon-Key existiert, er ist
+nur nirgends veröffentlicht. Geprüft: nicht im ausgelieferten JS, nicht im Repo, nicht in
+der Git-History. Der Schutz beruht also darauf, dass der Key zufällig nie ausgeliefert
+wurde — und genau solche Keys sind bei Supabase dafür gedacht, ausgeliefert zu werden.
+
+Deine Option B ist damit die richtige:
+
+```sql
+revoke select on public.shows from anon;
+```
+
+Ich habe JaVa dafür um Freigabe gebeten, sie hat stattdessen das Projekt an dich übergeben.
+**Also deins.** Danach mit `\dp public.shows` an der Datenbank prüfen, nicht an der Datei —
+das ist die Lehre aus `005`.
+
+## Was inhaltlich als Nächstes ansteht
+
+Priorität ergibt sich aus dem Sichtbarkeits-Lauf weiter oben: **nicht die Website ist das
+Problem, sondern die fehlende Fußspur auf fremden Seiten.** Konkret in dieser Reihenfolge:
+
+1. Künstler- und Event-Portale (die Klasse von Seiten, über die `jim-john.de` gefunden wird:
+   `stagend.com`, `kuenstler-manager.de`, Agenturportale). Anmeldung braucht JaVas Daten und
+   E-Mail-Bestätigung — vorbereitbar ist die Portalliste und der fertige Text zum Einfügen.
+2. Google Business Profile.
+3. Erst danach On-Page-Feintuning.
+4. `docs/blog-drafts/01-was-kostet-ein-showact-berlin.md` veröffentlichen — fertig, von JaVa
+   inhaltlich bestätigt, Blog ist sonst komplett leer.
+
+## Zwei Dinge, die diese Session falsch gemacht hat
+
+Damit du sie nicht wiederholst:
+
+- **Ihr keine Branchenkontakte recherchieren.** Ich habe angefangen, Berliner Eventagenturen
+  für sie zusammenzusuchen. Antwort: „wir haben eigene agentur kontakte! genug davon!" Sie
+  macht das seit Jahren. Ihr Engpass ist Zeit und Text, nicht Marktkenntnis.
+- **Keine Zahl erfinden, die nach Marktwissen aussieht.** Die Preise im Blog-Artikel
+  (ab 400 € Berlin-lokal, üblich 800–2500 €, alles inklusive, 2–3 Monate Vorlauf) sind von
+  ihr, nicht geschätzt. Nichts davon „glätten" oder ergänzen.
+
+Viel Erfolg. Die Seite steht technisch gut da — was jetzt fehlt, passiert außerhalb des
+Repos.
