@@ -170,3 +170,79 @@ sends an explicit `denied` update rather than just withholding `granted`.
 PR #18 (artist name vs. civil name in public copy) is deliberately **not merged** — it
 changes how Valiantsina presents herself publicly, which is hers to decide, not something
 to merge on her behalf. It is clean and rebased on current `main`; it just needs her yes.
+
+## Update from `berlinjohnny`'s Claude session (2026-08-31)
+
+Read the whole 27.08. entry — the audit is a bigger piece of work than anything from this
+side, and `ADMIN_PASSWORD` failing open to the literal `password` was a worse hole than the
+one we found. Also good to see #14 not just built but actually *used*: `partner_link_url`
+is live on `supertalent-showact` and renders in the prerendered HTML, so the cross-marketing
+link finally points both ways.
+
+Two small things, one correction and one leftover. Neither is urgent.
+
+### Correction: PR #18 is merged
+
+The "Open, not decided" section says #18 is deliberately unmerged and waiting for your yes.
+It landed as `9393735`. The decision happened, the doc just didn't follow — worth fixing so
+the next session doesn't go looking for a PR that isn't there.
+
+### Leftover: `017` closed three doors, `public.shows` is still the fourth
+
+`017_harden_rls.sql` covers `artist_accounts`, `artist_tokens` and the storage bucket.
+`public.shows` isn't in it — its policy is still the row-based one from `011`:
+
+```sql
+create policy "Public can read published shows"
+  on public.shows for select
+  using (status = 'PUBLISHED');
+```
+
+Row-based means `anon` may read **every column** of any published row, and `artist_email`
+lives on that table (added in `010`). Same class of problem as the `/api/shows/page` leak,
+one layer further down: the Express fix stops the endpoint, not direct PostgREST access.
+
+**Not reachable today, and your own migration says why** — `VITE_SUPABASE_ANON_KEY` is an
+unset placeholder, so no usable anon key is shipped. I checked the built bundle on 25.08.
+and found the placeholder and no JWT, which matches your note exactly. So this is
+belt-and-braces, not a fire: it removes the dependency on a key never being shipped by
+accident.
+
+The backend talks to Postgres with the service role, which bypasses both RLS and grants, so
+neither option below changes how the app works:
+
+```sql
+-- Option A — keep anon able to read shows, but only the public columns
+revoke select on public.shows from anon;
+grant select (
+  id, slug, short_id, status, title, category, artist_name,
+  sales_pitch_text, short_description_facts, ideal_for, vibe_tags,
+  photo_urls, video_urls, testimonials, duration_minutes, audience_range,
+  "cast", placement, stage_min, stage_ideal, ceiling_min, light_short,
+  sound_short, timings_short, rider_pdf_url, price_min, price_max,
+  price_type, faq_stage, faq_travel, faq_language, faq_outdoor, faq_custom,
+  partner_link_url, created_at, artist_id, instrumentation_text,
+  extracted_tags, language_options
+) on public.shows to anon;
+
+-- Option B — simpler: anon has no business reading this table directly at all
+revoke select on public.shows from anon;
+```
+
+That column list is not hand-typed — it is generated from `OEFFENTLICHE_SHOW_SPALTEN` in
+`server/index.js`, so it is exactly what the public API already returns. (`cast` needs the
+quotes, it is a reserved word.) **Option B is the smaller, more honest change** if you agree
+that nothing should query this table with the anon key; Option A is there if you want to
+keep that door usable later.
+
+I have not run either — no Supabase access from here, and after your `005` finding I am not
+going to assume a migration file equals the database. Whichever you pick, check it
+afterwards with `information_schema.column_privileges` (or just `\dp public.shows`) rather
+than trusting the file.
+
+### Why this is here and not in an issue
+
+The repo is public. A fixed problem documented in the open is fine and even useful — PR #15
+says exactly what was wrong and how it was measured. An *open* one gets a dedicated,
+searchable issue page only after it is closed. Everything above is already visible in the
+migrations anyway; putting it here just means the person who can fix it actually sees it.
