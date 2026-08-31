@@ -684,7 +684,7 @@ async function openaiArtistChat(formState, userMessage, locale, mode) {
     .join('\n');
 
   const systemPrompt = locale === 'de'
-    ? `Du bist ein Top-Show-Producer für Berlintina — eine Premium-Event-Booking-Plattform in Berlin, gegründet von Valiantsina Förster.
+    ? `Du bist ein Top-Show-Producer für Berlintina — eine Premium-Event-Booking-Plattform in Berlin, gegründet und persönlich geführt von Berlintina.
 
 Du bist KEIN Formular und KEIN Chatbot. Du bist ein kreativer Partner — ein erfahrener Show-Producer, der die besten Bühnen Europas kennt. Du siehst die Show, bevor der Künstler sie sieht, und führst ihn mit Wärme, Selbstvertrauen und Vision dorthin.
 
@@ -718,7 +718,7 @@ ANTWORTFORMAT (reines JSON, kein Markdown):
   "submitterEmail": "email@adresse.de",
   "titleOptions": ["Mutige Option", "Elegante Option", "Namensbasierte Option"]
 }`
-    : `You are a top show producer for Berlintina — a premium event booking platform in Berlin, founded by Valiantsina Förster.
+    : `You are a top show producer for Berlintina — a premium event booking platform in Berlin, founded and personally run by Berlintina.
 
 You are NOT a form or a chatbot. You are a creative partner — a seasoned show producer who has worked the best stages in Europe. You see the show before the artist does and guide them there with warmth, confidence, and vision.
 
@@ -1143,8 +1143,8 @@ app.post('/api/conversation/start', aiLimiter, async (req, res) => {
         };
       } else {
         greeting = loc === 'de'
-          ? 'Hallo, ich bin Valiantsinas KI-Producer. Schreib mir einfach, was du machst — egal ob eine fertige Show, dein erster Auftritt, oder nur eine Idee, die noch keine feste Form hat.\n\nHast du eine Website? Dann schick sie mir, ich lese sie automatisch aus. Sonst reicht auch: Wie heißt du, und was hast du im Kopf?'
-          : "Hello, I'm Valiantsina's AI producer. Just write what you do — a finished show, your first performance, or just an idea that doesn't have a fixed shape yet.\n\nDo you have a website? Send it and I'll read it automatically. Otherwise: what's your name, and what do you have in mind?";
+          ? 'Hallo, ich bin Berlintinas KI-Producer. Schreib mir einfach, was du machst — egal ob eine fertige Show, dein erster Auftritt, oder nur eine Idee, die noch keine feste Form hat.\n\nHast du eine Website? Dann schick sie mir, ich lese sie automatisch aus. Sonst reicht auch: Wie heißt du, und was hast du im Kopf?'
+          : "Hello, I'm Berlintina's AI producer. Just write what you do — a finished show, your first performance, or just an idea that doesn't have a fixed shape yet.\n\nDo you have a website? Send it and I'll read it automatically. Otherwise: what's your name, and what do you have in mind?";
         response = ensureContract({
           assistantMessage: greeting,
           action: 'ASK_FOLLOWUP',
