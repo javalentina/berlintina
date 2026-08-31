@@ -4,7 +4,7 @@ import dns from 'dns/promises';
 import net from 'net';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
-import { dirname, join } from 'path';
+import { dirname, join, sep } from 'path';
 import express from 'express';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -2509,6 +2509,24 @@ app.delete('/api/admin/blog/:id', requireAdmin, async (req, res) => {
 // ── Serve built frontend + SPA fallback ──────────────────────────────────────
 const distPath = join(__dirname, '..', 'dist');
 
+/**
+ * HTML ausliefern, ohne dass es gecacht weiterlebt.
+ *
+ * `res.sendFile` setzt von sich aus `public, max-age=0` — das erzwingt zwar eine
+ * Rückfrage, sagt aber nicht dasselbe wie das `no-cache`, das `express.static` unten für
+ * dieselbe Sorte Datei vergibt. Zwei Wege zur selben Datei sollten nicht zwei verschiedene
+ * Antworten geben, gerade mit Cloudflare davor. Deshalb hier explizit dasselbe setzen.
+ *
+ * Lange cachen darf man diese Dateien nicht: ihr Name ändert sich beim Deploy nicht, ihr
+ * Inhalt schon, und sie verweisen auf gehashte Assets, die es nach dem nächsten Build
+ * nicht mehr gibt.
+ */
+function sendeHtml(res, datei, status) {
+  res.setHeader('Cache-Control', 'no-cache');
+  if (status) res.status(status);
+  return res.sendFile(datei);
+}
+
 // Prerenderte Seiten zuerst: für die Routen aus der sitemap.xml liegt nach dem Build ein
 // fertiger HTML-Schnappschuss unter dist/<route>/index.html (scripts/prerender.mjs).
 // Ohne diesen Block würde der SPA-Fallback weiter unten die leere Hülle ausliefern —
@@ -2531,11 +2549,46 @@ app.get('*', (req, res, next) => {
   if (!/^[A-Za-z0-9\-_]+(?:\/[A-Za-z0-9\-_]+)*$/.test(route)) return next();
 
   const datei = join(distPath, route, 'index.html');
-  if (existsSync(datei)) return res.sendFile(datei);
+  if (existsSync(datei)) return sendeHtml(res, datei);
   next(); // kein Schnappschuss (z.B. Build ohne Prerender) → normaler SPA-Weg
 });
 
-app.use(express.static(distPath, { redirect: false }));
+/**
+ * Auslieferung der gebauten Dateien.
+ *
+ * `maxAge` steht bewusst auf 0 und die Entscheidung fällt pro Datei in `setHeaders`, denn
+ * in `dist/` liegen zwei verschiedene Sorten:
+ *
+ * - `dist/assets/*` tragen einen Inhalts-Hash im Namen (`index-DPMf_5Ub.js`). Ändert sich
+ *   der Inhalt, ändert sich der Dateiname, und das HTML verweist auf den neuen. Diese
+ *   Dateien können deshalb ewig gecacht werden — `immutable` sagt dem Browser zusätzlich,
+ *   dass er nicht einmal nachfragen muss. Vorher lieferte der Server hier gar kein
+ *   `Cache-Control`, Cloudflare setzte seinen Standard von vier Stunden, und
+ *   wiederkehrende Besucher revalidierten das 200-KB-Bundle mehrmals täglich, ohne dass es
+ *   sich je geändert hätte.
+ *
+ * - Alles andere ist NICHT gehasht: `index.html`, die prerenderten `<route>/index.html`,
+ *   `robots.txt`, `sitemap.xml`, `llms.txt`, `404.html`, `_redirects`. Ihr Name bleibt
+ *   gleich, wenn sich der Inhalt ändert. Würde man sie lange cachen, bekämen Besucher nach
+ *   einem Deploy weiter das alte HTML — und damit Verweise auf Asset-Dateien, die es nicht
+ *   mehr gibt. Sie bekommen deshalb `no-cache`: gecacht werden darf, aber nur nach
+ *   Rückfrage. Das kostet einen 304 und ist für Dateien dieser Größe billig.
+ *
+ * ⚠️ Diese Aufteilung hängt daran, dass NUR `/assets/` gehashte Namen enthält. Wer eine
+ * weitere Datei mit Hash woanders ablegt oder Vite umkonfiguriert (`build.assetsDir`),
+ * muss die Bedingung unten mitziehen.
+ */
+app.use(express.static(distPath, {
+  redirect: false,
+  maxAge: 0,
+  setHeaders: (res, pfad) => {
+    const istGehashtesAsset = pfad.includes(`${sep}assets${sep}`);
+    res.setHeader(
+      'Cache-Control',
+      istGehashtesAsset ? 'public, max-age=31536000, immutable' : 'no-cache'
+    );
+  },
+}));
 
 /**
  * Echte 404 statt Startseite.
@@ -2576,10 +2629,10 @@ app.get('*', (req, res) => {
   const ersterTeil = pfad.split('/')[0];
   const bekannt = SEITEN.has(pfad) || PRAEFIXE.includes(ersterTeil);
 
-  if (bekannt) return res.sendFile(join(distPath, 'index.html'));
+  if (bekannt) return sendeHtml(res, join(distPath, 'index.html'));
 
   const fehlerseite = join(distPath, '404.html');
-  if (existsSync(fehlerseite)) return res.status(404).sendFile(fehlerseite);
+  if (existsSync(fehlerseite)) return sendeHtml(res, fehlerseite, 404);
   res.status(404).type('text/plain').send('404 — Seite nicht gefunden');
 });
 // ─────────────────────────────────────────────────────────────────────────────
