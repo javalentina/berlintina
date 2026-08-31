@@ -167,9 +167,9 @@ sends an explicit `denied` update rather than just withholding `granted`.
 
 ### Open, not decided
 
-PR #18 (artist name vs. civil name in public copy) is deliberately **not merged** — it
-changes how Valiantsina presents herself publicly, which is hers to decide, not something
-to merge on her behalf. It is clean and rebased on current `main`; it just needs her yes.
+PR #18 (artist name vs. civil name in public copy) was deliberately left unmerged here —
+how she presents herself publicly is hers to decide. **She decided yes; it is merged as
+`9393735`.** Left in place as a record of the reasoning, not as an open item.
 
 ## Update from `berlinjohnny`'s Claude session (2026-08-31)
 
@@ -246,3 +246,79 @@ The repo is public. A fixed problem documented in the open is fine and even usef
 says exactly what was wrong and how it was measured. An *open* one gets a dedicated,
 searchable issue page only after it is closed. Everything above is already visible in the
 migrations anyway; putting it here just means the person who can fix it actually sees it.
+---
+
+## Stand 2026-08-31 — wo eine neue Session anfangen sollte
+
+Die Abschnitte oben sind Chronik. Dieser hier ist der aktuelle Stand.
+
+### Erledigt seit dem letzten Eintrag
+
+- **PR #18 ist gemergt.** Öffentlich heißt sie jetzt überall „Berlintina", nicht mehr beim
+  Vornamen. Impressum und Datenschutz behalten den bürgerlichen Namen — das ist rechtlich
+  Pflicht, nicht vergessen und „aufräumen".
+- **Sicherheits-Audit** ist durch und live (Details oben unter 2026-08-27). Die eine Sache,
+  die später beißen kann: **die CSP in `server/index.js` muss jede neue externe Quelle
+  kennen** — neues Script, neuer Bild-Host, neues Embed wird sonst stillschweigend
+  blockiert.
+- **Cookie-Consent** ist korrekt: Datenschutztext beschreibt GA4 ehrlich, „Cookie-
+  Einstellungen" im Footer öffnet den Banner erneut.
+- **Google Search Console** läuft (Domain-Property, Sitemap eingereicht).
+
+### Der wichtigste Befund: berlintina.de fehlt im Netz, nicht auf der Seite
+
+Der erste automatisierte Sichtbarkeits-Lauf (2026-08-31, Details in
+`docs/ai-search-tracker.md`) ergab **0 von 14 Suchanfragen zitiert** — und der Kontrolltest
+auf den reinen Markennamen fand die Seite ebenfalls nicht.
+
+Der Vergleich mit `jim-john.de` erklärt, warum: die Seite wird bei 2 von 14 Anfragen
+zitiert, und die Quellen dahinter sind **fremde Seiten** — `stagend.com`,
+`kuenstler-manager.de`, `agentur-new-style.de`, Facebook, YouTube. Genau diese Fußspur hat
+berlintina.de nirgends.
+
+**Konsequenz für die Priorisierung:** Technisch ist die Seite in Ordnung — robots.txt
+offen, Sitemap vollständig, Titel korrekt, Prerendering funktioniert. Weitere On-Page-SEO-
+Arbeit bringt aktuell fast nichts. Was fehlt, sind **Einträge in Künstler- und
+Event-Portalen** und ein **Google Business Profile**. Erst danach lohnt sich Feintuning am
+Text.
+
+Die Anmeldungen selbst brauchen ihre Daten und E-Mail-Bestätigung, sind also nicht
+automatisierbar. Vorbereitbar ist die Liste der Portale und der fertige Text zum Einfügen.
+
+### Blog: erster Artikel liegt fertig, unveröffentlicht
+
+`docs/blog-drafts/01-was-kostet-ein-showact-berlin.md` — „Was kostet ein Showact in
+Berlin?", auf ihre echten Zahlen gestützt:
+
+> ab 400 € (kurze Nummer, Künstler aus Berlin, keine Anreise) · üblich 800–2500 € ·
+> **alles inklusive**, der genannte Preis ist der Endpreis · 2–3 Monate Vorlauf ideal,
+> kurzfristig mit angemessenem Zuschlag · Saisonaufschläge individuell nach Auftragslage
+
+Diese Zahlen sind von ihr bestätigt. **Nichts davon erfinden oder „glätten".** Das Blog ist
+sonst komplett leer (`/api/blog` → 0 Artikel), der Artikel ist also der erste überhaupt.
+Veröffentlichung geht über das Admin-CMS; sie wollte ihn vorher auf der Seite sehen.
+
+### Werkzeug für Sichtbarkeit hat gewechselt
+
+Der frühere „Sichtbarkeits-Radar"-Artifact ist abgelöst durch **„too good to know"**:
+https://too-good-to-know-neon.vercel.app (passwortgeschützt, Passwort bei JaVa).
+Next.js + Neon, trackt beliebig viele Websites. Quellcode ab heute auf GitHub:
+`javalentina/too-good-to-know` (privat, `berlinjohnny` hat Schreibrechte). Vorher lag er
+nur lokal auf ihrem Laptop.
+
+Claude-Websuche und Google prüfen sich dort automatisch; ChatGPT, Perplexity und die
+Google-KI-Übersicht bleiben manuell, weil es dafür keine öffentliche API gibt.
+
+### Woran sie gerade selbst arbeitet
+
+Aus ihrem eigenen Aufgabensystem, nicht aus dem Repo ableitbar:
+
+- Instagram-Bio und erste Reels aus vorhandenem Material
+- Erste 10 persönliche Nachrichten an Event-Agenturen — **die Kontakte hat sie selbst.**
+  Ihr keine Agenturlisten recherchieren; sie macht das seit Jahren, das war ein Fehlgriff
+  von dieser Session hier.
+- Maria (Sport-Pausen-Format) einladen; die Pianistin ist am 29.08. eingeladen worden
+- LinkedIn: alle zwei Tage ein Beitrag über die Bedeutung von Kunst und Künstlern
+
+Ziel bis Dezember 2026, in ihren Worten: **eine echte Buchung über die Seite, mindestens
+10 Künstler im Katalog, SEO/GEO sauber aufgesetzt.** Katalog steht bei 3.
