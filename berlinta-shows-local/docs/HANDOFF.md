@@ -90,3 +90,83 @@ Two decisions in there that are yours to overrule:
 The server only accepts `http(s)` URLs; anything else (including a pasted `javascript:`
 target) is discarded rather than written into an `href`. Typing a bare domain like
 `jim-john.de` works — it gets `https://` prepended instead of being silently dropped.
+
+## Update from Valiantsina's Claude session (2026-08-27)
+
+Four things landed since the last entry. All live and verified on the running site, not
+just built.
+
+### Issue #14 is closed — the link is set
+
+`shows.partner_link_url` on `supertalent-showact` is now `https://jim-john.de`, set
+directly in Supabase, followed by a Railway redeploy (the prerender note in #16 was
+exactly right — the DB change alone did nothing until the redeploy). Verified in the
+rendered HTML, not just the API. Thanks for building it as a CMS field.
+
+### Security audit — the findings that mattered
+
+Full detail in the commit "Security hardening: headers, SSRF guard, RLS, dependency
+patches". The three worth knowing about here:
+
+1. **`ADMIN_PASSWORD` had a fail-open default.** `process.env.ADMIN_PASSWORD || 'password'`
+   — if the Railway variable had ever gone missing, the admin panel would have opened to
+   the literal password `password` rather than locking. Now it fails closed (503). Token
+   comparison is also timing-safe now.
+2. **`/api/scrape-url` had no SSRF guard.** It fetches whatever URL an artist pastes during
+   onboarding. A crafted URL could reach internal services or cloud metadata
+   (`169.254.169.254`). There is now a `fetchPublicUrlSafe()` that resolves the host and
+   checks it — *and every redirect hop* — against private/loopback/link-local ranges before
+   fetching. If you add any other outbound fetch of user-supplied URLs, route it through
+   that function rather than bare `fetch`.
+3. **No security headers at all.** Added `helmet` with a CSP scoped to what the site
+   actually loads (Google Fonts, GA4, Supabase storage images, the one YouTube embed).
+   **If you add a new external script, image host, or embed, the CSP in `server/index.js`
+   needs the origin added or it will be silently blocked** — that is the one way this
+   change can bite you later.
+
+Also: rate limiting on `/api/artist/resolve` and `/api/artist/shows` (the only public
+endpoints that had none), process-level `unhandledRejection`/`uncaughtException` handlers,
+and dependencies 20 vulnerabilities → 0 (`react-router-dom` 7.12 → 7.18.2 was the
+important one: XSS via redirect Location header, open redirect, DoS).
+
+Cloudflare **Bot Fight Mode** was off; it is on now. Checked afterwards that GPTBot,
+ClaudeBot, PerplexityBot and Googlebot still get 200s — the AI-crawler unblock from
+2026-08-23 is intact.
+
+### The migrations folder is not the database
+
+Applying `017_harden_rls.sql` surfaced something worth writing down: **`artist_accounts`
+and `artist_tokens` never had RLS enabled at all** (migration 009 creates them and simply
+never says `enable row level security`). `artist_accounts` holds artist email addresses.
+Enabled now, no permissive policies — the service-role backend is unaffected.
+
+More importantly: `005_agency_artist_conversations.sql` — which creates two tables with a
+wide-open `for all using (true) with check (true)` policy — **was never applied to
+production**. The tables do not exist there. So the file sitting in `supabase/migrations/`
+proved nothing about the live database. Verify against `pg_class` / `pg_policies` in the
+SQL editor before assuming a migration ran.
+
+### Cookie consent said the opposite of what the site does
+
+The Datenschutz page claimed *"Es werden keine Tracking- oder Werbe-Cookies eingesetzt"*
+while GA4 runs on the page. Rewritten to describe GA4 honestly (legal basis, IP
+anonymisation, US transfer). There was also no way to change your mind after the first
+banner click — GDPR wants withdrawal to be as easy as consent — so there is now a
+**"Cookie-Einstellungen"** button in the footer that reopens the banner, and declining
+sends an explicit `denied` update rather than just withholding `granted`.
+
+### Search & AI visibility measurement now exists
+
+- **Google Search Console** is set up for `berlintina.de` as a *domain* property (verified
+  by DNS TXT through Cloudflare, so it covers www/non-www and http/https). Sitemap
+  submitted, 10 pages discovered. This is the ground truth for ordinary Google ranking.
+- **AI-chat visibility** has no free automated tool, so it is a manual monthly check:
+  `docs/ai-search-tracker.md`, plus an interactive tracker that records history per
+  query/engine. First run (2026-08-26) came back empty across all five queries in all
+  three engines — no AI answer cited anyone yet. That is the baseline, not a failure.
+
+### Open, not decided
+
+PR #18 (artist name vs. civil name in public copy) is deliberately **not merged** — it
+changes how Valiantsina presents herself publicly, which is hers to decide, not something
+to merge on her behalf. It is clean and rebased on current `main`; it just needs her yes.
