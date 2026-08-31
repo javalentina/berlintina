@@ -2,22 +2,25 @@
 
 **Titel:** Was kostet ein Showact in Berlin? Ehrliche Zahlen statt „auf Anfrage"
 **Slug:** `was-kostet-ein-showact-berlin`
-**Meta-Description:** Ein Showact in Berlin kostet bei Berlintina zwischen 800 und 2500 Euro, alles inklusive. Was den Preis bestimmt und wie früh Sie buchen sollten.
+**Meta-Description:** Was ein Showact in Berlin kostet: ab 400 Euro mit Künstlern aus Berlin, meist 800 bis 2500 Euro. Alles inklusive. Was den Preis bestimmt und wie früh Sie buchen sollten.
 
-Alle Zahlen im Text stammen von dir: die Spanne 800–2500 €, „alles inklusive", 2–3 Monate
-Vorlauf, kurzfristig mit Zuschlag. Nichts geschätzt, nichts erfunden.
+Alle Zahlen und Aussagen im Text stammen von dir. Die eine Behauptung, die du nicht
+bestätigt hast („zweiter Act am selben Abend günstiger"), habe ich entfernt.
 
 ---
 
 ## Was kostet ein Showact in Berlin?
 
-Ein Showact in Berlin kostet bei uns zwischen 800 und 2500 Euro — alles inklusive. Wo Sie
-in dieser Spanne landen, hängt von vier Dingen ab: wie lange der Act dauert, wie viele
-Künstler auf der Bühne stehen, wie aufwendig Technik und Aufbau sind und wann Ihr Termin
-liegt.
+Ein Showact in Berlin kostet bei uns **ab 400 Euro**, wenn die Künstler aus Berlin kommen
+und es eine kurze Nummer ohne großen Aufbau ist. Der übliche Bereich liegt zwischen **800
+und 2500 Euro**. Alle Preise sind inklusive — der Preis, den Sie hören, ist der Preis, den
+Sie zahlen.
 
-„Alles inklusive" heißt: Der Preis, den Sie hören, ist der Preis, den Sie zahlen. Keine
-Vermittlungsgebühr obendrauf, keine Anfahrtspauschale, die später auftaucht.
+| Preis | Wofür |
+|---|---|
+| ab 400 € | Kurze Nummer, Künstler aus Berlin, keine Anreise, wenig Technik |
+| ab ca. 800 € | Der übliche Einstieg. Deckt zuverlässig alle Mindestkosten — Anreise, Aufbau, Technik |
+| bis 2500 € | Größere Besetzung, aufwendige Technik, längeres Programm |
 
 ## Zehn Minuten können so viel kosten wie ein ganzer Abend
 
@@ -42,15 +45,14 @@ Deshalb stehen beide bei 800 Euro.
 | Faktor | Wirkung auf den Preis |
 |---|---|
 | Anzahl der Künstler | Jede weitere Person bedeutet eine weitere Gage — der größte einzelne Hebel |
+| Anreise | Künstler aus Berlin sind günstiger als Künstler, die anreisen und teils übernachten |
 | Technische Anforderungen | Eigene Licht- oder Tontechnik, Rigging, nötige Deckenhöhe |
-| Dauer und Anzahl der Auftritte | Ein zweiter Auftritt am selben Abend kostet deutlich weniger als der erste |
-| Anreise von außerhalb Berlins | Fahrt, bei späten Auftritten teilweise Übernachtung |
-| Termin | Dezember und Samstage sind die teuerste Zeit im Jahr |
-| Vorlaufzeit | Sehr kurzfristige Termine kosten einen Zuschlag |
+| Dauer und Programm | Eine kurze Nummer oder ein durchgehendes Programm über den Abend |
+| Saison und Auftragslage | In der Hauptsaison kommen Aufschläge dazu — individuell, je nach Verfügbarkeit |
 | Sonderwünsche | Anpassung an Ihr Thema, Ihr Firmenlogo, eigene Musik |
 
-Am unteren Ende der Spanne steht ein kurzer Act mit wenig Technik. Am oberen Ende eine
-größere Besetzung oder eine Nummer, die Aufbau und Technik braucht.
+Am unteren Ende steht eine kurze Nummer mit Berliner Künstlern und wenig Technik. Am oberen
+Ende eine größere Besetzung oder eine Nummer, die Aufbau und Technik braucht.
 
 ## Warum manche Acts „Preis auf Anfrage" sind
 
@@ -67,34 +69,34 @@ korrigieren müssten.
 Zwei bis drei Monate Vorlauf sind ideal. Dann haben Sie die freie Auswahl, und wir können
 in Ruhe den Act finden, der zu Ihrem Raum und Ihrem Anlass passt.
 
-Kurzfristig geht aber auch. Wenn Ihr Termin näher liegt, fragen Sie trotzdem — wir haben
-schon oft kurzfristig etwas Gutes vermittelt. Dafür kommt ein angemessener Zuschlag dazu,
-weil wir dann Künstler anfragen, die ihren Abend schon anders verplant hatten.
+Kurzfristig geht aber auch. Wenn Ihr Termin näher liegt, fragen Sie trotzdem — dafür kommt
+ein angemessener Zuschlag dazu, weil wir dann Künstler anfragen, die ihren Abend schon
+anders verplant hatten.
 
-Für Dezember und Samstage im Sommer gilt: so früh wie möglich. Das sind die Termine, an
-denen die guten Acts zuerst weg sind.
+In der Hauptsaison gilt beides gleichzeitig: früh anfragen lohnt sich am meisten, und
+Aufschläge richten sich nach Auftragslage und Verfügbarkeit.
 
 ## Häufige Fragen
 
 **Was kostet ein Showact für eine Firmenfeier in Berlin?**
-Zwischen 800 und 2500 Euro, alles inklusive. Die meisten Firmenfeiern liegen im mittleren
-Bereich dieser Spanne.
+Ab 400 Euro mit Künstlern aus Berlin, üblicherweise zwischen 800 und 2500 Euro. Alles
+inklusive.
 
 **Kommen zum genannten Preis noch Kosten dazu?**
-Nein. Der genannte Preis ist der Endpreis — inklusive Anfahrt, Abstimmung und Vermittlung.
+Nein. Der genannte Preis ist der Endpreis — inklusive Anreise, Abstimmung und Vermittlung.
+
+**Was, wenn mein Budget unter 800 Euro liegt?**
+Sagen Sie es uns. Mit Künstlern aus Berlin und einer kurzen Nummer sind ab 400 Euro
+möglich. Wenn sich in Ihrem Rahmen nichts Gutes machen lässt, sagen wir Ihnen das ehrlich,
+statt Ihnen etwas Unpassendes vorzuschlagen.
 
 **Kann ich mehrere Acts an einem Abend kombinieren?**
 Ja, und oft ist das die bessere Wahl: Zwei kurze Auftritte über den Abend verteilt wirken
-meist stärker als ein langer Block. Der zweite Act ist dabei günstiger als der erste.
+meist stärker als ein langer Block.
 
 **Ist ein günstigerer Act ein schlechterer Act?**
 Nein. Ein kurzer Act mit wenig Technik ist einfach günstiger als eine große Nummer mit
 Aufbau. Beides kann den Abend tragen — es kommt darauf an, was zu Ihrem Raum passt.
-
-**Was, wenn mein Budget unter 800 Euro liegt?**
-Sagen Sie es uns trotzdem. Manchmal lässt sich über eine kürzere Nummer oder einen anderen
-Termin etwas möglich machen. Wenn nicht, sagen wir Ihnen das ehrlich, statt Ihnen etwas
-Unpassendes vorzuschlagen.
 
 ## Kurz gesagt
 
@@ -111,14 +113,13 @@ Bewusst so gebaut, dass ChatGPT, Perplexity und die Google-KI-Übersicht daraus 
 können:
 
 - Die konkrete Zahl steht im ersten Satz, nicht nach drei Absätzen
+- Die Preistabelle ganz oben ist das Format, das KI-Systeme am liebsten übernehmen
 - Überschriften sind echte Suchfragen („Was kostet ein Showact in Berlin?")
-- Tabelle und FAQ-Block sind Formate, die KI-Systeme gut auslesen
-- „800 bis 2500 Euro, alles inklusive" ist eine zitierfähige Aussage. Die meisten
-  Konkurrenzseiten zeigen nur ein Kontaktformular — deshalb hast du hier einen echten
-  Vorteil
+- „Ab 400 Euro" beantwortet die Budget-Frage, bei der die meisten Interessenten sonst
+  abspringen, ohne zu fragen
 
 **Zielsuchbegriffe:** „was kostet ein showact berlin", „showact preise berlin",
-„künstler für firmenfeier berlin kosten"
+„künstler für firmenfeier berlin kosten", „günstiger showact berlin"
 
 Nach Veröffentlichung: `/blog/was-kostet-ein-showact-berlin` in der Google Search Console
 zur Indexierung einreichen und „was kostet ein showact berlin" als neue Frage in den
