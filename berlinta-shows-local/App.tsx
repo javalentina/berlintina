@@ -335,7 +335,7 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 Ich bin Diplom-Systemingenieurin mit Schwerpunkt Künstliche Intelligenz (2009) und
                 arbeite in Berlin als IT- und KI-Expertin und Web-Developerin. Und ich stehe selbst
                 auf der Bühne — als Akrobatin mit{' '}
-                <a href="https://jim-john.de/?utm_source=berlintina.de&utm_medium=crosslink&utm_campaign=about-vita" target="_blank" rel="noopener" className="text-accent underline underline-offset-4 hover:opacity-70 transition">Jim &amp; John</a>.
+                <a href="https://jim-john.de/?utm_source=berlintina.de&utm_medium=crosslink&utm_campaign=about-link" target="_blank" rel="noopener" className="text-accent underline underline-offset-4 hover:opacity-70 transition">Jim &amp; John</a>.
                 Ich kenne diese Branche also von beiden Seiten: von der Bühne und vom Telefon.
               </>
             ) : (
@@ -343,7 +343,7 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 I hold a degree in systems engineering with a focus on artificial intelligence (2009)
                 and work in Berlin as an IT and AI specialist and web developer. And I perform myself —
                 as an acrobat with{' '}
-                <a href="https://jim-john.de/?utm_source=berlintina.de&utm_medium=crosslink&utm_campaign=about-vita" target="_blank" rel="noopener" className="text-accent underline underline-offset-4 hover:opacity-70 transition">Jim &amp; John</a>.
+                <a href="https://jim-john.de/?utm_source=berlintina.de&utm_medium=crosslink&utm_campaign=about-link" target="_blank" rel="noopener" className="text-accent underline underline-offset-4 hover:opacity-70 transition">Jim &amp; John</a>.
                 So I know this industry from both sides: from the stage and from the phone.
               </>
             )}
