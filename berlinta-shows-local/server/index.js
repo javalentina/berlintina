@@ -2070,6 +2070,35 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
     if (fetchErr || !existing) return res.status(404).json({ error: 'Show not found.' });
 
     const updates = { updated_at: new Date().toISOString() };
+
+    /*
+      Slug ändern — bewusst mit mehr Zeremonie als die übrigen Felder.
+
+      Eine öffentliche Adresse ist die Identität einer Show: sie steht in fremden
+      Lesezeichen, in Instagram-Profilen und im Suchindex. Ein Tippfehler hier wirft
+      Verweise weg, die niemand zurückholt. Deshalb drei Schranken statt einer:
+
+      1. Durch `slugify()` — dieselbe Funktion, die auch beim Anlegen greift. Damit
+         kann über diesen Weg kein Slug entstehen, den das System selbst nie erzeugen
+         würde (Umlaute, Schrägstriche, Punkte, Leerzeichen).
+      2. Ein leeres Ergebnis wird abgelehnt, nicht still übergangen: sonst hätte eine
+         Eingabe aus lauter Sonderzeichen die Show unerreichbar gemacht.
+      3. `makeUniqueSlug()` gegen den Bestand — zwei Shows unter derselben Adresse
+         wären für `ShowDetailRoute` ein Zufallsentscheid.
+
+      ⚠️ Die alte Adresse hört damit auf zu existieren. Wer einen Slug ändert, gehört
+      in `SLUG_UMZUEGE` weiter unten — sonst ist jeder bestehende Verweis darauf tot.
+    */
+    if (body.slug !== undefined) {
+      const gewuenscht = slugify(body.slug);
+      if (!gewuenscht) {
+        return res.status(400).json({ error: 'Slug ist nach der Normalisierung leer — bitte Buchstaben oder Ziffern verwenden.' });
+      }
+      if (gewuenscht !== existing.slug) {
+        updates.slug = await makeUniqueSlug(gewuenscht);
+      }
+    }
+
     if (body.title != null && String(body.title).trim() !== '') updates.title = String(body.title).trim();
     if (body.short_description_facts != null) updates.short_description_facts = String(body.short_description_facts);
     if (body.sales_pitch_text != null) updates.sales_pitch_text = String(body.sales_pitch_text);
@@ -2533,6 +2562,46 @@ function sendeHtml(res, datei, status) {
 // dann wäre der ganze Prerender-Schritt wirkungslos, und zwar unbemerkt, weil beides 200
 // antwortet.
 //
+/**
+ * Umgezogene Show-Adressen.
+ *
+ * Zwei Slugs stammen aus einer früheren Fassung der Slug-Erzeugung und sind kaputt:
+ *
+ *   b-hnenfeger-showact-stagehand-brothers-ho753w   das "ü" ist zu "-" zerfallen,
+ *                                                   hinten hängt die short_id
+ *   unterhaltsam-bi9pbk                             hat mit dem Titel "Live Band
+ *                                                   Music 2000x" nichts zu tun
+ *
+ * ⚠️ Das ist KEIN Fehler in `slugify()` — die Funktion oben behandelt Umlaute korrekt
+ * (ä→ae, ü→ue). Es sind Altbestände in der Datenbank. Wer den Slug-Code "repariert",
+ * repariert nichts und ändert dafür das Verhalten für alle künftigen Shows.
+ *
+ * Eine öffentliche Adresse ist die Identität einer Show: sie steht in fremden Lesezeichen,
+ * in Instagram-Profilen und im Index von Suchmaschinen. Ein Umzug ohne Weiterleitung wirft
+ * diese Verweise weg.
+ *
+ * 🔑 Warum die Existenzprüfung: Datenbank und Auslieferung ziehen nicht gleichzeitig um.
+ * Ohne sie gäbe es ein Fenster, in dem die alte Adresse schon weiterleitet, die neue Seite
+ * aber noch nicht gebaut ist — der Besucher landete auf der leeren Hülle, der Crawler auf
+ * einer 200 ohne Inhalt. Mit ihr ist die Reihenfolge egal: solange der neue Schnappschuss
+ * fehlt, fällt die Anfrage durch und der alte wird weiter ausgeliefert. Der Umzug schaltet
+ * sich selbst scharf, sobald der Build die neue Seite erzeugt hat.
+ *
+ * Wenn irgendwann niemand mehr die alten Adressen aufruft, darf dieser Block weg. Bis
+ * dahin kostet er einen Map-Zugriff pro Anfrage auf /show/*.
+ */
+const SLUG_UMZUEGE = new Map([
+  ['b-hnenfeger-showact-stagehand-brothers-ho753w', 'buehnenfeger-stagehand-brothers'],
+  ['unterhaltsam-bi9pbk', 'live-band-music-2000x'],
+]);
+
+app.get('/show/:slug', (req, res, next) => {
+  const ziel = SLUG_UMZUEGE.get(req.params.slug);
+  if (!ziel) return next();
+  if (!existsSync(join(distPath, 'show', ziel, 'index.html'))) return next();
+  return res.redirect(301, `/show/${ziel}`);
+});
+
 // Warum nicht einfach express.static das erledigen lassen: static antwortet auf ein
 // Verzeichnis mit einer 301 auf die Fassung MIT Schrägstrich. Verlinkt und in der Sitemap
 // steht aber die Fassung OHNE — jeder Direktaufruf und jeder Crawler liefe erst über eine
