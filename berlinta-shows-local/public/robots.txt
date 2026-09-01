@@ -1,4 +1,25 @@
 User-agent: *
 Allow: /
 
+# KI-Assistenten ausdrücklich erlaubt. Ohne Sperre wären sie zwar ohnehin nicht
+# ausgeschlossen — eine benannte Gruppe ist aber ein Signal, kein Nicht-Verbot.
+#
+# ⚠️ Semantik: Ein Bot, der eine eigene Gruppe findet, ignoriert `User-agent: *`
+# vollständig. Ein späteres `Disallow` oben bindet diese fünf NICHT — es müsste
+# hier wiederholt werden.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://berlintina.de/sitemap.xml

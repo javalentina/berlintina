@@ -1170,19 +1170,48 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               {locale === 'de' ? 'Antworten auf die wichtigsten Fragen.' : 'Answers to the most common questions.'}
             </p>
           <div className="space-y-0">
+            {/*
+              Die Antwort steht IMMER im DOM, auch zugeklappt — sie wird per Grid-Zeile
+              auf Höhe 0 gefahren, nicht aus dem Baum genommen.
+
+              Warum das kein Kosmetik-Detail ist: vorher hing der Antworttext an
+              `{faqOpen === i && …}`. Im Prerender-Schnappschuss ist nie etwas
+              aufgeklappt — also enthielt das ausgelieferte HTML sechs Fragen und
+              keine einzige Antwort. Die Antworten existierten nur im FAQPage-JSON-LD.
+              Schema ohne sichtbare Entsprechung ist die Konstellation, die Google
+              ausdrücklich abwertet, und für eine KI-Suche stand hier schlicht nichts
+              zu zitieren. Live gemessen am 01.09.2026: „Vermittlungsgebühr von 15" —
+              ein Treffer im ganzen Dokument, und der lag im JSON-LD.
+
+              `display:none` wäre der falsche Weg zurück: es nimmt den Text zwar nicht
+              aus dem HTML, gilt aber als versteckter Inhalt. Höhe 0 mit `overflow:hidden`
+              ist die Fassung, die im Quelltext steht und trotzdem einklappt.
+
+              Die Frage ist ein <h3> im <button>, nicht ein <span>: eine Frageform in
+              einer Überschrift ist das, woran ein Antwort-Auszug festmacht.
+            */}
             {faqs.map((item, i) => (
               <div key={i} className="border-b border-foreground/10">
-                <button
-                  type="button"
-                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                  className="w-full text-left py-5 flex items-center justify-between gap-4 text-foreground font-display font-bold hover:text-accent transition text-base"
+                <h3 className="m-0">
+                  <button
+                    type="button"
+                    onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                    aria-expanded={faqOpen === i}
+                    aria-controls={`faq-antwort-${i}`}
+                    className="w-full text-left py-5 flex items-center justify-between gap-4 text-foreground font-display font-bold hover:text-accent transition text-base"
+                  >
+                    <span>{item.q}</span>
+                    <span className={`text-2xl font-light flex-shrink-0 transition-transform duration-200 ${faqOpen === i ? 'rotate-45' : ''}`}>+</span>
+                  </button>
+                </h3>
+                <div
+                  id={`faq-antwort-${i}`}
+                  className={`grid transition-[grid-template-rows] duration-200 ${faqOpen === i ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
                 >
-                  <span>{item.q}</span>
-                  <span className={`text-2xl font-light flex-shrink-0 transition-transform duration-200 ${faqOpen === i ? 'rotate-45' : ''}`}>+</span>
-                </button>
-                {faqOpen === i && (
-                  <div className="pb-5 body-text text-base max-w-none">{item.a}</div>
-                )}
+                  <div className="overflow-hidden">
+                    <div className="pb-5 body-text text-base max-w-none">{item.a}</div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
