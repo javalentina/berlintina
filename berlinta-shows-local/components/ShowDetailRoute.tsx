@@ -273,18 +273,26 @@ export const ShowDetail: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
    * Der Betrag ist unverändert. Ob er überhaupt öffentlich sein soll, ist eine eigene
    * Entscheidung und hängt nicht an diesem Schema.
    *
-   * `valueAddedTaxIncluded: false`: die Beträge sind NETTO (Entscheid John, 23.08.2026).
-   * Ohne dieses Feld ist die Angabe mehrdeutig — eine Preisauskunft ohne Steuerstand sagt
-   * nicht, was der Kunde zahlt. Die sichtbare Entsprechung steht in ShowDetailPage.tsx
-   * („netto" am Betrag, Bruttowert als eigene Zeile).
+   * ⚠️ `valueAddedTaxIncluded` ist seit dem 01.09.2026 NICHT mehr gesetzt. Es stand auf
+   * `false`, weil die Beträge als netto ausgezeichnet waren (Entscheid vom 23.08.). Seit
+   * die sichtbare Seite keine Steuerangabe mehr macht — Begründung im Preisblock von
+   * ShowDetailPage.tsx — wäre dieses Feld die einzige verbliebene Steueraussage der
+   * Seite, und zwar an der Stelle, die niemand liest.
+   *
+   * Genau das ist die Falle, die dieses Projekt schon einmal getroffen hat: die
+   * FAQ-Antworten standen nur im JSON-LD und nicht im sichtbaren Text. Hier wäre es die
+   * Umkehrung — eine Behauptung, die nur noch die Maschine sieht. Schema und sichtbare
+   * Seite müssen dasselbe sagen, auch wenn das „gar nichts" ist.
+   *
+   * Ein weggelassenes Feld ist keine Aussage. Ein `false` wäre eine.
    */
   const preisAngabe =
     show.priceType === 'POA'
       ? null
       : show.priceMin != null
-        ? { '@type': 'PriceSpecification', minPrice: show.priceMin, priceCurrency: 'EUR', valueAddedTaxIncluded: false }
+        ? { '@type': 'PriceSpecification', minPrice: show.priceMin, priceCurrency: 'EUR' }
         : show.priceMax != null
-          ? { '@type': 'PriceSpecification', maxPrice: show.priceMax, priceCurrency: 'EUR', valueAddedTaxIncluded: false }
+          ? { '@type': 'PriceSpecification', maxPrice: show.priceMax, priceCurrency: 'EUR' }
           : null;
 
   /**

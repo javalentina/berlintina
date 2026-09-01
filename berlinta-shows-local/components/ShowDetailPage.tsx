@@ -114,25 +114,50 @@ function InlineEdit({ value, onChange, as = 'textarea', className = '', placehol
   );
 }
 
+/**
+ * FAQ-Eintrag auf der Showseite.
+ *
+ * ⚠️ Die Antwort steht IMMER im DOM, auch zugeklappt — sie wird per Grid-Zeile auf Höhe 0
+ * gefahren, nicht aus dem Baum genommen. Das ist dieselbe Konstruktion wie im FAQ der
+ * Startseite und aus demselben Grund:
+ *
+ * Vorher hing der Antworttext an `{open && …}`. Im Prerender-Schnappschuss ist nie etwas
+ * aufgeklappt — die Seite wäre also mit Fragen und ohne Antworten ausgeliefert worden,
+ * während das FAQPage-Schema die Antworten trägt. Auf der Startseite war genau das der
+ * Fall und live nachweisbar (PR #24).
+ *
+ * Hier fiel es bisher nicht auf, weil noch keine Show ein `faq_`-Feld gefüllt hat: das
+ * Schema ist leer, also gibt es nichts, was auseinanderlaufen könnte. Der Fehler wäre
+ * still entstanden, sobald jemand die erste Show-FAQ pflegt — und dann an der Stelle, an
+ * der niemand danach sucht. Deshalb jetzt, nicht später.
+ *
+ * Kein `display:none`: das behielte den Text zwar im Quelltext, gilt aber als versteckter
+ * Inhalt. Höhe 0 mit `overflow:hidden` steht im HTML und klappt trotzdem ein.
+ */
 function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border-b border-border overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full px-0 py-5 flex items-center justify-between text-left font-medium text-sm text-foreground hover:text-muted-foreground transition-colors"
-      >
-        <span>{question}</span>
-        {open
-          ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />
-          : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />}
-      </button>
-      {open && (
-        <div className="pb-5 pt-1 text-sm text-muted-foreground whitespace-pre-line">
-          {answer}
+      <h3 className="m-0">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="w-full px-0 py-5 flex items-center justify-between text-left font-medium text-sm text-foreground hover:text-muted-foreground transition-colors"
+        >
+          <span>{question}</span>
+          {open
+            ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />
+            : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-3" />}
+        </button>
+      </h3>
+      <div className={`grid transition-[grid-template-rows] duration-200 ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className="overflow-hidden">
+          <div className="pb-5 pt-1 text-sm text-muted-foreground whitespace-pre-line">
+            {answer}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -186,35 +211,49 @@ export const ShowDetailPage: React.FC<Props> = ({
    * Preisangabe mit Steuerhinweis.
    *
    * Bisher stand hier nur „ab 800€" — ohne jeden Hinweis, ob das mit oder ohne Umsatzsteuer
-   * gemeint ist. Die Beträge sind NETTO (Entscheid John, 23.08.2026). Für gewerbliche
-   * Kunden ist das die übliche Angabe; buchen aber auch Privatpersonen, muss der Endpreis
-   * erkennbar sein (Preisangabenverordnung). Deshalb beides: „netto" direkt am Betrag,
-   * und der Bruttowert als eigene, kleine Zeile im Preisblock.
+   * gemeint ist.
    *
-   * Der Bruttowert wird gerechnet, nicht gepflegt — eine zweite gepflegte Zahl würde
-   * irgendwann von der ersten abweichen. Kaufmännisch gerundet; bei 800 € geht es glatt auf.
+   * ⚠️ KEINE Steuerangabe mehr (Entscheid John, 01.09.2026). Das ersetzt den Entscheid
+   * vom 23.08., der hier „netto" an den Betrag schrieb und daneben den Bruttowert mit
+   * 19 % ausrechnete — live stand also „ab 800 € netto entspricht 952 € inkl. 19 % MwSt".
    *
-   * ⚠️ MWST_SATZ steht bewusst als benannte Konstante an EINER Stelle: künstlerische
-   * Leistungen können je nach Vertragsgestaltung dem ermäßigten Satz unterliegen. Wenn die
-   * Steuerberatung das für diese Vermittlungen sagt, ist es hier eine Zahl.
+   * Warum das weg musste, drei Gründe, jeder für sich ausreichend:
+   *
+   *   1. 19 % ist bei Künstlern nicht selbstverständlich. Darbietungen ausübender
+   *      Künstler können dem ermäßigten Satz unterliegen (§ 12 Abs. 2 Nr. 7a UStG).
+   *   2. Die Seite wirbt mit Direktbuchung — dann rechnet der KÜNSTLER ab, nicht
+   *      Berlintina. Der Satz hängt damit an ihm, und ein Kleinunternehmer nach § 19
+   *      UStG weist gar keine Umsatzsteuer aus. Die Seite traf also eine Aussage über
+   *      fremde Steuerpflicht.
+   *   3. Als Zielgruppe stehen ausdrücklich auch Privatkunden. Gegenüber Verbrauchern
+   *      verlangt die Preisangabenverordnung Endpreise; eine Netto-Angabe ist dort
+   *      angreifbar.
+   *
+   * ⚠️ „netto" musste MIT dem Bruttowert verschwinden, nicht statt seiner: bliebe das
+   * Wort stehen und die Umrechnung fiele weg, stünde dort „ab 800 € netto" ganz ohne
+   * Endpreis — schlechter als vorher, nicht besser.
+   *
+   * Was jetzt gilt: nur der Betrag, plus der Hinweis, dass der Endpreis im persönlichen
+   * Angebot steht. Das ist auch fachlich die ehrlichere Angabe — Anlass, Dauer und
+   * Anfahrt bestimmen ihn ohnehin.
+   *
+   * Wenn die Steuerberatung eine belastbare Auskunft für diese Vermittlungen gibt, kann
+   * hier wieder eine Angabe stehen. Bis dahin behauptet die Seite nichts.
    */
-  const MWST_SATZ = 0.19;
-  const brutto = (netto: number) => Math.round(netto * (1 + MWST_SATZ));
-
   const priceLabel = show.priceType === 'POA'
     ? (locale === 'de' ? 'Auf Anfrage' : 'On request')
     : show.priceMin != null
-      ? `${locale === 'de' ? 'ab' : 'from'} ${show.priceMin}€ ${locale === 'de' ? 'netto' : 'net'}`
+      ? `${locale === 'de' ? 'ab' : 'from'} ${show.priceMin} €`
       : show.priceMax != null
-        ? `≤ ${show.priceMax}€ ${locale === 'de' ? 'netto' : 'net'}`
+        ? `≤ ${show.priceMax} €`
         : null;
 
   const priceTaxNote = show.priceType === 'POA'
     ? null
     : (show.priceMin ?? show.priceMax) != null
       ? (locale === 'de'
-          ? `entspricht ${brutto((show.priceMin ?? show.priceMax)!)}€ inkl. ${MWST_SATZ * 100} % MwSt.`
-          : `= €${brutto((show.priceMin ?? show.priceMax)!)} incl. ${MWST_SATZ * 100}% VAT`)
+          ? 'Endpreis abhängig von Anlass, Dauer und Anfahrt — Sie erhalten vor der Buchung ein verbindliches Angebot.'
+          : 'Final price depends on occasion, duration and travel — you receive a binding quote before booking.')
       : null;
 
   React.useEffect(() => {
@@ -257,7 +296,7 @@ export const ShowDetailPage: React.FC<Props> = ({
         onRequest: 'Auf Anfrage', interested: 'Interesse?',
         sidebarSub: 'Kostenlose Anfrage · Antwort in 24h',
         requestQuote: 'Anfrage senden →',
-        trustLine: '✓ 0% Provision · Persönlich geprüft · Keine Wartezeiten',
+        trustLine: '✓ Für Sie 0 % Provision · Persönlich geprüft · Keine Wartezeiten',
         faqOutdoor: 'Outdoor möglich?', faqStage: 'Wie groß muss die Bühne sein?',
         faqTiming: 'Wie lange dauert Aufbau / Soundcheck / Abbau?',
         faqLanguage: 'Ist die Show sprachabhängig?', faqCustom: 'Kann man die Show anpassen?',
@@ -271,7 +310,7 @@ export const ShowDetailPage: React.FC<Props> = ({
         contactAufnehmen: 'Kontakt aufnehmen',
         greetTitle: 'Schön, dass du da bist!',
         greetSub: 'Schick uns kurz deine Infos – wir melden uns zeitnah.',
-        steps: ['Anfrage senden (2 Min)', 'Antwort innerhalb von 24 Stunden', 'Direkt mit dem Künstler buchen — 0% Provision'],
+        steps: ['Anfrage senden (2 Min)', 'Antwort innerhalb von 24 Stunden', 'Direkt mit dem Künstler buchen — für Sie ohne Provision'],
         aboutArtist: 'Über die Künstler',
         artistBio: show.salesPitchText,
         highlights: 'Highlights',
@@ -287,7 +326,7 @@ export const ShowDetailPage: React.FC<Props> = ({
         onRequest: 'On request', interested: 'Interested?',
         sidebarSub: 'Free inquiry · Reply within 24h',
         requestQuote: 'Request a Quote →',
-        trustLine: '✓ 0% commission · Personally reviewed · No waiting',
+        trustLine: '✓ No commission for you · Personally reviewed · No waiting',
         faqOutdoor: 'Outdoor possible?', faqStage: 'How big must the stage be?',
         faqTiming: 'How long for load-in / soundcheck / strike?',
         faqLanguage: 'Is the show language-dependent?', faqCustom: 'Can the show be adapted?',
@@ -301,7 +340,7 @@ export const ShowDetailPage: React.FC<Props> = ({
         contactAufnehmen: 'Get in touch',
         greetTitle: "Great you're here!",
         greetSub: "Send us a quick note – we'll get back to you soon.",
-        steps: ['Send request (2 min)', 'Reply within 24 hours', 'Book directly with the artist — 0% commission'],
+        steps: ['Send request (2 min)', 'Reply within 24 hours', 'Book directly with the artist — no commission for you'],
         aboutArtist: 'About the artist',
         artistBio: show.salesPitchText,
         highlights: 'Highlights',

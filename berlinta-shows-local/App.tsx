@@ -803,14 +803,14 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const faqs = locale === 'de' ? [
     { q: 'Wie funktioniert die Buchung?', a: 'Sie beschreiben Ihr Event — Anlass, Datum, Budget, Stil. Ich suche persönlich den passenden Act aus meinem kuratierten Netzwerk heraus und sende Ihnen innerhalb von 24 Stunden konkrete Vorschläge. Bei Interesse stelle ich den Kontakt her und begleite Sie bis zur finalen Buchung.' },
-    { q: 'Was kostet Berlintina?', a: 'Die Anfrage ist völlig kostenlos. Wenn es zur Buchung kommt, fällt eine Vermittlungsgebühr von 15–20% auf das vereinbarte Künstlerhonorar an. Bei komplexen Anfragen (mehrere Künstler, Produktionsbegleitung) kann eine zusätzliche Handling-Fee entstehen — das wird immer vorab transparent kommuniziert. Keine Überraschungen.' },
+    { q: 'Was kostet Berlintina?', a: 'Die Anfrage ist immer kostenlos. Danach gibt es zwei Wege. Buchen Sie direkt beim Künstler, zahlen Sie an Berlintina nichts — keine Agenturgebühr, kein Aufschlag auf die Gage; Berlintina wird in diesem Fall vom Künstler vergütet, mit 15–20 % seines Honorars. Übernehmen wir die komplette Abwicklung (Beratung, Casting, Vertrag, Koordination), wird der Anteil dafür in Ihrem Angebot ausgewiesen, bevor Sie zusagen. Der genaue Satz hängt vom Aufwand ab und steht in Ihrem persönlichen Angebot. Kleine Einsätze im Berliner Raum beginnen bei 400 €.' },
     { q: 'Kann ich die Künstler direkt kontaktieren?', a: 'Ja — sobald ich die Verbindung hergestellt habe. Berlintina ist keine Sperrschicht zwischen Ihnen und dem Künstler. Ich sorge für den richtigen Match, danach kommunizieren Sie direkt.' },
     { q: 'Wie schnell bekomme ich eine Antwort?', a: 'Innerhalb von 24 Stunden — meistens schneller. Bei dringenden Anfragen bitte direkt per WhatsApp oder Telefon kontaktieren.' },
     { q: 'Wie werden Shows auf Berlintina aufgenommen?', a: 'Jeder Künstler auf Berlintina wurde von mir persönlich ausgewählt. Entweder habe ich ihre Show live erlebt, oder sie wurden mir von vertrauenswürdigen Personen empfohlen. Kein automatisches Listing — nur geprüfte Qualität.' },
     { q: 'Was, wenn ich keinen passenden Act finde?', a: 'Dann suche ich weiter. Mein Netzwerk geht über die Website hinaus. Sagen Sie mir, was Sie suchen — ich finde eine Lösung.' },
   ] : [
     { q: 'How does booking work?', a: 'Describe your event — occasion, date, budget, style. I personally search my curated network and send you concrete suggestions within 24 hours. If you\'re interested, I make the introduction and guide you to the final booking.' },
-    { q: 'What does Berlintina cost?', a: "The enquiry is completely free. When a booking is made, a booking fee of 15–20% of the agreed artist fee applies. For complex requests (multiple artists, production support) an additional handling fee may apply — always communicated transparently upfront. No surprises." },
+    { q: 'What does Berlintina cost?', a: "The enquiry is always free. After that there are two routes. If you book the artist directly, you pay Berlintina nothing — no agency fee, no markup on the fee; in that case Berlintina is paid by the artist, 15–20% of their fee. If we handle everything (consulting, casting, contract, coordination), that share is stated in your quote before you commit. The exact rate depends on the scope and is stated in your personal quote. Short sets in the Berlin area start at €400." },
     { q: 'Can I contact artists directly?', a: "Yes — once I've made the connection. Berlintina is not a barrier between you and the artist. I find the right match, then you communicate directly." },
     { q: 'How quickly will I get a reply?', a: 'Within 24 hours — usually faster. For urgent requests, please contact me directly via WhatsApp or phone.' },
     { q: 'How are artists selected for Berlintina?', a: "Every artist on Berlintina has been personally selected by me. I've either seen their show live, or they've been recommended by trusted contacts. No automatic listings — only vetted quality." },
@@ -1204,18 +1204,41 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             <p className="body-text mb-12">
               {locale === 'de' ? 'Keine versteckten Gebühren. Transparenz von Anfang an.' : 'No hidden fees. Transparent from the start.'}
             </p>
+            {/*
+              Zwei Wege, und an jeder Zahl steht, WER sie trägt.
+
+              Vorher stand auf der mittleren Karte gross „15–20 %" — ohne dazuzusagen,
+              wer zahlt. Ein Veranstalter liest das als seine Rechnung, und das
+              widersprach sowohl der Karte links („Keine Agenturgebühr") als auch den
+              Showseiten („0 % Provision"). Fünf Preisaussagen auf einer Seite, die sich
+              nicht zu einem Bild fügten; die abschreckendste stand am prominentesten.
+
+              Jetzt: bei Direktbuchung zahlt der Veranstalter nichts, und es steht
+              ausdrücklich da, dass Berlintina stattdessen vom Künstler vergütet wird —
+              das ist die Aussage, die eine Antwortmaschine zitieren kann, weil sie eine
+              echte Frage beantwortet („zahle ich bei einer Agentur drauf?").
+
+              Die Prozentzahl des Full-Service ist bewusst NICHT mehr die Schlagzeile
+              (Entscheid John, 01.09.: „online bleibt es diskret, wird individuell in der
+              Angebotserstellung mitgeteilt"). Die Spanne selbst steht weiter im FAQ, wo
+              sie als Information gelesen wird und nicht als Preisschild.
+            */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               {[
                 {
                   label: locale === 'de' ? 'SELBST BUCHEN' : 'BOOK YOURSELF',
                   price: locale === 'de' ? 'Keine Agenturgebühr' : 'No agency fee',
-                  desc: locale === 'de' ? 'Direkt-Kontakt zum Künstler. Anfrage über Berlintina ist kostenlos.' : 'Direct contact with the artist. Enquiry via Berlintina is free.',
+                  desc: locale === 'de'
+                    ? 'Direkt-Kontakt zum Künstler, Anfrage kostenlos. Berlintina wird vom Künstler vergütet — für Sie kommt nichts obendrauf.'
+                    : 'Direct contact with the artist, enquiry free. Berlintina is paid by the artist — nothing is added for you.',
                   accent: false,
                 },
                 {
                   label: locale === 'de' ? 'WIR ÜBERNEHMEN ALLES' : 'FULL SERVICE',
-                  price: '15–20 %',
-                  desc: locale === 'de' ? 'Persönliche Beratung, Casting, Vertragsabwicklung & Koordination.' : 'Personal consulting, casting, contract handling & coordination.',
+                  price: locale === 'de' ? 'Im Angebot ausgewiesen' : 'Stated in your quote',
+                  desc: locale === 'de'
+                    ? 'Persönliche Beratung, Casting, Vertragsabwicklung & Koordination. Der Anteil steht vor der Buchung fest.'
+                    : 'Personal consulting, casting, contract handling & coordination. The share is fixed before you book.',
                   accent: true,
                 },
                 {
@@ -1232,10 +1255,42 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
                 </div>
               ))}
             </div>
+            {/*
+              Einstiegspreis für den Berliner Raum.
+
+              Der GEO-Bericht vom 31.08. nennt als grösste Lücke: „genau eine Zahl auf der
+              ganzen Startseite". Eine konkrete Einstiegssumme beantwortet die Frage, die
+              Veranstalter tatsächlich eingeben („was kostet ein Show-Act in Berlin"), und
+              ist damit zitierbar — eine Spanne ohne Untergrenze ist es nicht.
+
+              ⚠️ Nicht zu verwechseln mit der Vermittlungsgebühr, die bewusst diskret
+              bleibt: das hier ist der Einstieg für den Kunden, jene ist die Marge. Zwei
+              verschiedene Zahlen mit zwei verschiedenen Öffentlichkeiten.
+
+              Ohne Steuerangabe, wie überall seit dem 01.09. — siehe die Begründung im
+              Preisblock von ShowDetailPage.tsx.
+            */}
+            <p className="body-text mb-6">
+              {locale === 'de' ? (
+                <>
+                  <span className="text-foreground font-display font-bold">Kleine Einsätze im Berliner Raum ab 400 €.</span>{' '}
+                  Für kurze Auftritte in und um Berlin — Firmenfeier, Geburtstag, Ladeneröffnung.
+                  Größere Produktionen und Anfahrten außerhalb Berlins liegen darüber; den
+                  Endpreis nennt Ihnen das persönliche Angebot.
+                </>
+              ) : (
+                <>
+                  <span className="text-foreground font-display font-bold">Short sets in and around Berlin from €400.</span>{' '}
+                  For brief appearances in the Berlin area — company parties, birthdays, shop
+                  openings. Larger productions and travel outside Berlin cost more; your
+                  personal quote states the final price.
+                </>
+              )}
+            </p>
             <p className="label-style">
               {locale === 'de'
-                ? 'ANFRAGE KOSTENLOS · DIREKT-KONTAKT ERLAUBT · GEBÜHR NUR BEI FULL-SERVICE · ANGEBOT INNERHALB VON 24 H'
-                : 'ENQUIRY FREE · DIRECT CONTACT ALLOWED · FEE ONLY FOR FULL-SERVICE · QUOTE WITHIN 24 H'}
+                ? 'AB 400 € IM BERLINER RAUM · ANFRAGE KOSTENLOS · DIREKT-KONTAKT ERLAUBT · ANGEBOT INNERHALB VON 24 H'
+                : 'FROM €400 IN THE BERLIN AREA · ENQUIRY FREE · DIRECT CONTACT ALLOWED · QUOTE WITHIN 24 H'}
             </p>
           </div>
         </div>
@@ -1445,11 +1500,11 @@ const JoinLanding: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             {(locale === 'de' ? [
               'Du erzählst deine Idee — in eigenen Worten, ein Text reicht',
               'Ich lese persönlich mit und mache dir einen konkreten Vorschlag',
-              'Provision nur bei erfolgreicher Buchung: 15% — du zahlst nur, wenn du verdienst',
+              'Provision nur bei erfolgreicher Buchung: 15–20% — du zahlst nur, wenn du verdienst',
             ] : [
               'You tell me your idea — in your own words, one message is enough',
               'I personally read it and send back a concrete proposal',
-              'Commission only on successful bookings: 15% — you only pay when you earn',
+              'Commission only on successful bookings: 15–20% — you only pay when you earn',
             ]).map((item, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-warm-muted">
                 <span className="mt-0.5 w-4 h-4 rounded-full bg-terracotta text-white flex items-center justify-center text-[9px] font-black flex-shrink-0">{i + 1}</span>
