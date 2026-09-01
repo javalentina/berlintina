@@ -46,6 +46,43 @@ function linkBeschriftung(url: string): string {
   }
 }
 
+/**
+ * Kennung an den kuratierten Partner-Link hängen.
+ *
+ * Warum überhaupt: dieser Link ist der Umsatzpfad der Showseite nach draussen — bei
+ * „Supertalent ShowAct" zeigt er auf jim-john.de, wo die B2B-Kampagne läuft. Ohne
+ * Kennung landet der Klick dort als Direktzugriff, und die Frage „bringt berlintina.de
+ * Anfragen?" bleibt für immer unbeantwortbar. Eine Null ohne Messung ist kein Befund.
+ *
+ * Schema aus dem Crosslink-Register der Matrix, bindend:
+ *   utm_source   = Hostname der QUELLE (nicht ein Kürzel — andere Flächen empfangen
+ *                  bereits so, ein abweichender Wert bricht dort still die Segmente)
+ *   utm_medium   = crosslink
+ *   utm_campaign = die PLATZIERUNG, nicht die Storyline. „show-partner" beantwortet
+ *                  „welcher Link zieht", eine Storyline-Kampagne beantwortet das nie.
+ *
+ * Angehängt wird nur beim Rendern, nie in die Datenbank geschrieben: im CMS steht
+ * weiter die saubere Adresse, die die Redaktion eingegeben hat.
+ *
+ * Zwei Fälle bleiben unangetastet: eine URL, die bereits `utm_source` trägt (dann hat
+ * jemand bewusst etwas anderes gesetzt), und alles, was keine http(s)-Adresse ist —
+ * ein `javascript:`-Wert aus einem CMS-Feld bekommt hier keine Politur, sondern fällt
+ * durch und wird gar nicht erst verlinkt.
+ */
+function mitKennung(url: string, platzierung: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (u.searchParams.has('utm_source')) return u.toString();
+    u.searchParams.set('utm_source', 'berlintina.de');
+    u.searchParams.set('utm_medium', 'crosslink');
+    u.searchParams.set('utm_campaign', platzierung);
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
 // ── Inline edit helper (admin only) ─────────────────────────────────────────
 function InlineEdit({ value, onChange, as = 'textarea', className = '', placeholder = '—', rows = 4 }: {
   value: string; onChange: (v: string) => void;
@@ -461,11 +498,15 @@ export const ShowDetailPage: React.FC<Props> = ({
                 {/* Kuratierter Link nach außen (Issue #14). Erscheint nur, wenn die Redaktion
                     im CMS einen Wert gesetzt hat — ohne Wert steht hier nichts, die Seite sieht
                     dann exakt aus wie vorher. */}
-                {show.partnerLinkUrl && (
+                {/* `rel` ohne `noreferrer`: das Ziel ist eine Fläche derselben Familie, und
+                    der Referrer ist dort die zweite Spur neben der utm-Kennung, falls ein
+                    Werbeblocker die Parameter schluckt. `noopener` bleibt — das ist die
+                    Sicherheitshälfte und hat mit der Messung nichts zu tun. */}
+                {show.partnerLinkUrl && mitKennung(show.partnerLinkUrl, 'show-partner') && (
                   <a
-                    href={show.partnerLinkUrl}
+                    href={mitKennung(show.partnerLinkUrl, 'show-partner')!}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener"
                     className="inline-block mt-4 text-sm font-medium text-foreground underline underline-offset-4 decoration-border hover:decoration-foreground transition-colors"
                   >
                     {linkBeschriftung(show.partnerLinkUrl)} →

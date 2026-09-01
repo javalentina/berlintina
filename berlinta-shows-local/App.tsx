@@ -264,28 +264,89 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       <PageSEO
         title={locale === 'de' ? 'Über Berlintina — Boutique-Künstleragentur Berlin' : 'About Berlintina — Boutique Artist Agency Berlin'}
         description={locale === 'de'
-          ? 'Berlintina ist eine persönlich kuratierte Künstleragentur in Berlin für Showacts, Live-Musik, Akrobatik und mehr.'
-          : 'Berlintina is a personally curated artist agency in Berlin for show acts, live music, acrobatics and more.'}
+          ? 'Berlintina ist eine persönlich kuratierte Künstleragentur in Berlin für Showacts, Live-Musik, Akrobatik und mehr — gegründet von JaVa von Förster, Systemingenieurin und Bühnenartistin.'
+          : 'Berlintina is a personally curated artist agency in Berlin for show acts, live music, acrobatics and more — founded by JaVa von Förster, systems engineer and stage artist.'}
+        /*
+          Marke und Person sind zwei Dinge, nicht eines.
+
+          Die Umstellung auf den Künstlernamen (PR #18, 29.08.) gilt weiter: die Agentur
+          heisst „Berlintina", und `name` im EntertainmentBusiness bleibt genau das.
+          Was hier dazukommt, ist die Person DARUNTER — mit `alternateName` für den Namen,
+          unter dem sie auftritt. Beide Aussagen sind damit gleichzeitig wahr, und der
+          Markenname verliert keine Signalstärke.
+
+          `@id` ist der Grund, warum das überhaupt sauber geht: ohne ihn stehen auf der
+          Seite zwei JSON-LD-Blöcke, die eine Antwortmaschine als zwei verschiedene
+          Entitäten lesen darf. Mit `@id` sind Agentur und Gründerin dieselben Objekte
+          über alle Seiten hinweg, und `founder`/`worksFor` verweisen aufeinander statt
+          denselben Namen zweimal zu behaupten.
+
+          ⚠️ `sameAs` trägt bewusst KEINE utm-Parameter. Es ist eine Identitätsaussage
+          („das hier bin auch ich"), keine Klickfläche — ein getrackter Link darin
+          verwässert die Zuordnung, statt sie zu stärken. Die Kennung gehört an sichtbare
+          Verweise im Fliesstext, siehe der Link auf jim-john.de weiter unten.
+        */
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'Person',
-          name: 'Berlintina',
-          jobTitle: 'Founder & Curator',
-          worksFor: { '@type': 'Organization', name: 'Berlintina' },
+          '@id': 'https://berlintina.de/#gruenderin',
+          name: 'JaVa von Förster',
+          alternateName: 'Berlintina',
+          jobTitle: locale === 'de' ? 'Gründerin & Kuratorin' : 'Founder & Curator',
+          description: locale === 'de'
+            ? 'Diplom-Systemingenieurin mit Schwerpunkt Künstliche Intelligenz, IT- und KI-Expertin, Web-Developerin und Bühnenartistin in Berlin.'
+            : 'Systems engineer (Dipl.-Ing.) specialising in artificial intelligence, IT and AI expert, web developer and stage artist in Berlin.',
+          image: 'https://berlintina.de/images/valiantsina.png',
+          worksFor: { '@id': 'https://berlintina.de/#agentur' },
           url: 'https://berlintina.de/about',
-          sameAs: ['https://www.instagram.com/berlin.tina'],
+          sameAs: [
+            'https://www.instagram.com/berlin.tina',
+            'https://jim-john.de',
+            'https://berlintina.berlinjohn.de',
+          ],
         }}
       />
       <div className="flex flex-col items-center text-center mb-24">
         <div className="w-40 h-40 rounded-3xl overflow-hidden shadow-2xl mb-12">
-          <img src="/images/valiantsina.png" alt="Berlintina — Gründerin und Kuratorin" className="w-full h-full object-cover object-top" />
+          <img src="/images/valiantsina.png" alt="JaVa von Förster — Gründerin und Kuratorin von Berlintina" className="w-full h-full object-cover object-top" />
         </div>
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal mb-6 sm:mb-8 tracking-tight">
           {locale === 'de' ? 'Hallo, ich bin Berlintina.' : "Hi, I'm Berlintina."}
         </h1>
         <div className="max-w-3xl text-left space-y-6 text-muted-foreground text-lg leading-relaxed">
           <p className="text-foreground font-display font-bold text-xl">
-            {locale === 'de' ? 'Berlintina — das bin ich.' : 'Berlintina — that is me.'}
+            {locale === 'de' ? 'Berlintina — das bin ich. Mein Name ist JaVa von Förster.' : 'Berlintina — that is me. My name is JaVa von Förster.'}
+          </p>
+          {/*
+            Vita. Jede Angabe hier ist belegt — Diplom-Systemingenieurin mit
+            KI-Schwerpunkt (2009), IT-/KI-Expertin und Web-Developerin in Berlin,
+            Bühnenartistin mit Jim & John. Es wird keine Station und kein Jahr
+            ergänzt, das nicht belegt ist; fehlende Angaben bleiben weg, statt
+            plausibel gefüllt zu werden.
+
+            Der Verweis auf jim-john.de trägt eine Kennung, weil er ein sichtbarer
+            Verweis ist und messbar sein soll. Schema laut Register:
+            utm_source = Hostname der QUELLE, utm_campaign = Platzierung (nicht die
+            Storyline — sonst beantwortet die Auswertung nie, welcher Link zieht).
+          */}
+          <p>
+            {locale === 'de' ? (
+              <>
+                Ich bin Diplom-Systemingenieurin mit Schwerpunkt Künstliche Intelligenz (2009) und
+                arbeite in Berlin als IT- und KI-Expertin und Web-Developerin. Und ich stehe selbst
+                auf der Bühne — als Akrobatin mit{' '}
+                <a href="https://jim-john.de/?utm_source=berlintina.de&utm_medium=crosslink&utm_campaign=about-vita" target="_blank" rel="noopener" className="text-accent underline underline-offset-4 hover:opacity-70 transition">Jim &amp; John</a>.
+                Ich kenne diese Branche also von beiden Seiten: von der Bühne und vom Telefon.
+              </>
+            ) : (
+              <>
+                I hold a degree in systems engineering with a focus on artificial intelligence (2009)
+                and work in Berlin as an IT and AI specialist and web developer. And I perform myself —
+                as an acrobat with{' '}
+                <a href="https://jim-john.de/?utm_source=berlintina.de&utm_medium=crosslink&utm_campaign=about-vita" target="_blank" rel="noopener" className="text-accent underline underline-offset-4 hover:opacity-70 transition">Jim &amp; John</a>.
+                So I know this industry from both sides: from the stage and from the phone.
+              </>
+            )}
           </p>
           <p>
             {locale === 'de'
@@ -304,7 +365,9 @@ const About: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           </p>
           <div className="border-l-2 border-accent pl-6 mt-6">
             <p className="text-foreground font-display font-bold italic">
-              {locale === 'de' ? 'Berlintina ist kein Algorithmus. Berlintina bin ich.' : "Berlintina isn't an algorithm. Berlintina is me."}
+              {locale === 'de'
+                ? 'Ich habe Künstliche Intelligenz studiert — und vermittle trotzdem von Hand. Berlintina ist kein Algorithmus. Berlintina bin ich.'
+                : "I studied artificial intelligence — and still match every act by hand. Berlintina isn't an algorithm. Berlintina is me."}
             </p>
           </div>
           <div className="pt-8 border-t border-foreground/10 mt-8">
@@ -806,8 +869,24 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       structuredData={{
         '@context': 'https://schema.org',
         '@graph': [
+          /*
+            `@id` macht die Agentur über alle Seiten hinweg zu EINEM Objekt. Ohne ihn
+            steht auf jeder Seite ein namensgleicher Block, den eine Antwortmaschine als
+            eigene Entität lesen darf — und `worksFor` auf /about könnte auf nichts
+            zeigen. Mit `@id` verweisen Agentur und Gründerin aufeinander, statt denselben
+            Namen mehrfach zu behaupten.
+
+            `sameAs` trug bisher nur Instagram. Die Schwesterfläche
+            berlintina.berlinjohn.de nennt diese Seite bereits, umgekehrt zeigte hier
+            nichts zurück — die Kante war einseitig. Eine Agentur, deren Zugehörigkeit
+            nur aus fremdem Markup hervorgeht, überlässt fremden Vermittlungsportalen die
+            Deutungshoheit über die eigene Identität.
+
+            ⚠️ Keine utm-Parameter in `sameAs` (Identitätsaussage, keine Klickfläche).
+          */
           {
             '@type': 'EntertainmentBusiness',
+            '@id': 'https://berlintina.de/#agentur',
             name: 'Berlintina',
             description: locale === 'de'
               ? 'Persönlich kuratierte Showact-Agentur Berlin'
@@ -817,7 +896,18 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             email: 'info@berlintina.de',
             address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
             areaServed: { '@type': 'City', name: 'Berlin' },
-            sameAs: ['https://www.instagram.com/berlin.tina'],
+            founder: {
+              '@type': 'Person',
+              '@id': 'https://berlintina.de/#gruenderin',
+              name: 'JaVa von Förster',
+              alternateName: 'Berlintina',
+              url: 'https://berlintina.de/about',
+            },
+            sameAs: [
+              'https://www.instagram.com/berlin.tina',
+              'https://jim-john.de',
+              'https://berlintina.berlinjohn.de',
+            ],
             priceRange: '€€–€€€',
           },
           {
