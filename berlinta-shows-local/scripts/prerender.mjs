@@ -31,6 +31,13 @@ const DIST = join(WURZEL, "dist");
 const PORT = 45711;
 
 /**
+ * Bauzeitpunkt als ISO-Datum (YYYY-MM-DD) für die <lastmod>-Angaben der festen Seiten.
+ * Einmal oben festgehalten, damit alle Einträge eines Laufs dasselbe Datum tragen und
+ * nicht auseinanderlaufen, wenn ein Build über Mitternacht läuft.
+ */
+const BAUDATUM = new Date().toISOString().slice(0, 10);
+
+/**
  * EINE Quelle für die Routenliste: die eigene sitemap.xml.
  *
  * Vorher stand dieselbe Wahrheit an drei Stellen (Sitemap, Prerender, Server) und lief
@@ -640,11 +647,13 @@ console.log(`Prerender: ${geschrieben}/${ROUTES.length} Routen geschrieben (${ST
  * ein späterer Schreibvorgang dorthin käme nie in der Auslieferung an. Die gepflegte
  * public/sitemap.xml bleibt die Quelle der festen Seiten und wird nicht angefasst.
  */
-if (SHOW_ROUTEN.length > 0 && !fehler.length) {
+// Läuft auch ohne Shows: die <lastmod>-Ergänzung der festen Seiten hängt nicht daran,
+// ob die Datenbank gerade Showseiten liefert.
+if (!fehler.length) {
   const sitemapDatei = join(DIST, "sitemap.xml");
   try {
     const vorher = await readFile(sitemapDatei, "utf8");
-    const heute = vorher.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1] ?? "";
+    const heute = BAUDATUM;
     const eintraege = SHOWS.map((s) => {
       const stand = s.stand ?? heute;
       return (
@@ -653,8 +662,32 @@ if (SHOW_ROUTEN.length > 0 && !fehler.length) {
         `    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
       );
     }).join("\n");
-    const nachher = vorher.replace(/<\/urlset>/, `${eintraege}\n</urlset>`);
-    if (nachher === vorher) throw new Error("</urlset> nicht gefunden — Sitemap unverändert");
+    /*
+      Feste Seiten bekommen ebenfalls ein <lastmod> — sie hatten bisher gar keines.
+      Sichtbare Folge: das einzige Datum in der ausgelieferten Sitemap stammte aus
+      `created_at` der ältesten Show. Eine Prüfung am 31.08.2026 las daraus einen
+      Stand vom 16.03.2026 und hielt die Seite für ein halbes Jahr unberührt.
+
+      Als Datum dient der Bauzeitpunkt, nicht ein gepflegter Wert von Hand: Railway
+      baut aus `main`, und die prerenderten Seiten entstehen bei genau diesem Lauf
+      neu. Das Datum beschreibt also wirklich den Stand der ausgelieferten Datei.
+      Ein Redeploy ohne Inhaltsänderung setzt es mit hoch — die Ungenauigkeit ist
+      der Preis dafür, dass niemand ein Datum von Hand nachziehen muss und es
+      wieder ein halbes Jahr stehen bleibt.
+
+      Nur Einträge OHNE eigenes <lastmod> werden ergänzt: wer in public/sitemap.xml
+      bewusst ein Datum setzt, behält es.
+    */
+    const mitDatum = vorher.replace(
+      /<url>((?:(?!<\/url>)[\s\S])*?)<\/url>/g,
+      (treffer, inhalt) =>
+        inhalt.includes("<lastmod>")
+          ? treffer
+          : treffer.replace("</loc>", `</loc><lastmod>${BAUDATUM}</lastmod>`)
+    );
+
+    const nachher = mitDatum.replace(/<\/urlset>/, `${eintraege}\n</urlset>`);
+    if (nachher === mitDatum) throw new Error("</urlset> nicht gefunden — Sitemap unverändert");
     await writeFile(sitemapDatei, nachher, "utf8");
 
     // Positiver Nachweis: die Zahl der <loc> muss um genau die Showseiten gewachsen sein.
