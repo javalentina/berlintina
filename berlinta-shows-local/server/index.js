@@ -25,8 +25,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      // Schriften kommen seit 03.09.2026 vom eigenen Server (public/fonts) —
+      // fonts.googleapis.com / fonts.gstatic.com stehen deshalb nicht mehr in der CSP.
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      fontSrc: ["'self'"],
       imgSrc: ["'self'", 'data:', 'blob:', SUPABASE_STORAGE_ORIGIN, 'https://www.google-analytics.com', 'https://img.youtube.com'],
       connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com', 'https://*.analytics.google.com'],
       frameSrc: ['https://www.youtube.com'],
