@@ -511,8 +511,16 @@ const Datenschutz: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
             : 'We also use Google Analytics 4 (Google Ireland Limited) to understand how visitors use the site. IP addresses are transmitted anonymized. Google Analytics only becomes active once you consent via the cookie banner — the legal basis is your consent (Art. 6(1)(a) GDPR). Data may also be transferred to Google servers in the US. You can withdraw or change your consent at any time via "Cookie Settings" in the footer.'}
         </p>
       </section>
+      <section>
+        <h2 className="font-semibold text-base mb-2">{locale === 'de' ? '8. Schriftarten' : '8. Fonts'}</h2>
+        <p className="text-warm-muted">
+          {locale === 'de'
+            ? 'Die verwendeten Schriften (Schibsted Grotesk, Hanken Grotesk, Space Mono) werden von unserem eigenen Server ausgeliefert. Beim Aufruf der Seite wird deshalb keine Verbindung zu Google Fonts (fonts.googleapis.com, fonts.gstatic.com) hergestellt und Ihre IP-Adresse dorthin nicht übertragen.'
+            : 'The fonts used (Schibsted Grotesk, Hanken Grotesk, Space Mono) are served from our own server. Loading a page therefore establishes no connection to Google Fonts (fonts.googleapis.com, fonts.gstatic.com), and your IP address is not transmitted there.'}
+        </p>
+      </section>
       <p className="text-warm-faint text-xs pt-4 border-t border-warm-border">
-        {locale === 'de' ? 'Stand: August 2026' : 'Last updated: August 2026'}
+        {locale === 'de' ? 'Stand: September 2026' : 'Last updated: September 2026'}
       </p>
     </div>
   </div>
