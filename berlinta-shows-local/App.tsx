@@ -409,7 +409,7 @@ const Impressum: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
       <section>
         <h2 className="font-semibold text-base mb-2">Kontakt</h2>
         <p>
-          Telefon: <a href="tel:+4916081068880" className="text-terracotta hover:underline">+49 160 8106880</a><br />
+          Telefon: <a href="tel:+491608106880" className="text-terracotta hover:underline">+49 160 8106880</a><br />
           E-Mail: <a href="mailto:info@berlintina.de" className="text-terracotta hover:underline">info@berlintina.de</a>
         </p>
       </section>
@@ -455,7 +455,7 @@ const Datenschutz: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
         <p>
           Valiantsina Förster · Berlintina Shows · Berlin<br />
           E-Mail: <a href="mailto:info@berlintina.de" className="text-terracotta hover:underline">info@berlintina.de</a><br />
-          Tel.: <a href="tel:+4916081068880" className="text-terracotta hover:underline">+49 160 8106880</a>
+          Tel.: <a href="tel:+491608106880" className="text-terracotta hover:underline">+49 160 8106880</a>
         </p>
       </section>
       <section>
@@ -900,7 +900,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
               ? 'Persönlich kuratierte Showact-Agentur Berlin'
               : 'Personally curated show act agency Berlin',
             url: 'https://berlintina.de',
-            telephone: '+4916081068880',
+            telephone: '+491608106880',
             email: 'info@berlintina.de',
             address: { '@type': 'PostalAddress', addressLocality: 'Berlin', addressCountry: 'DE' },
             areaServed: { '@type': 'City', name: 'Berlin' },
