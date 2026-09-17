@@ -15,9 +15,9 @@ import rateLimit from 'express-rate-limit';
 import nodemailer from 'nodemailer';
 import OpenAI from 'openai';
 import { GoogleGenAI, Type } from '@google/genai';
-import { createClient } from '@supabase/supabase-js';
+import { createDb } from '../lib/db.js';
+import { createStorage } from '../lib/storage.js';
 
-const SUPABASE_STORAGE_ORIGIN = 'https://frhntbdimtkoifhrehhx.supabase.co';
 
 const app = express();
 app.use(helmet({
@@ -29,7 +29,7 @@ app.use(helmet({
       // fonts.googleapis.com / fonts.gstatic.com stehen deshalb nicht mehr in der CSP.
       styleSrc: ["'self'", "'unsafe-inline'"],
       fontSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'blob:', SUPABASE_STORAGE_ORIGIN, 'https://www.google-analytics.com', 'https://img.youtube.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google-analytics.com', 'https://img.youtube.com'],
       connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com', 'https://*.analytics.google.com'],
       frameSrc: ['https://www.youtube.com'],
       objectSrc: ["'none'"],
@@ -75,11 +75,12 @@ app.use((req, res, next) => {
   next();
 });
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
+// Uploaded files live on the disk Railway mounts at UPLOAD_DIR. Without a mount
+// (local development) they land in ./uploads, which .gitignore keeps out of the repo.
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+
+const db = process.env.DATABASE_URL ? createDb(process.env.DATABASE_URL) : null;
+const storage = createStorage(UPLOAD_DIR);
 
 const submissionsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -192,9 +193,9 @@ const mockAnswer = () =>
   'Das ist eine gute Frage! Basierend auf den Informationen der Show scheint dies möglich zu sein. Für Details kontaktieren Sie bitte den Künstler.';
 
 async function fetchKBArticles(locale, searchQuery) {
-  if (!supabase) return [];
+  if (!db) return [];
   const loc = locale === 'en' ? 'en' : 'de';
-  let q = supabase.from('kb_articles').select('title, content, category').eq('locale', loc);
+  let q = db.from('kb_articles').select('title, content, category').eq('locale', loc);
   if (searchQuery && typeof searchQuery === 'string' && searchQuery.trim()) {
     const term = `%${searchQuery.trim()}%`;
     q = q.or(`title.ilike.${term},content.ilike.${term}`);
@@ -1114,11 +1115,11 @@ app.post('/api/conversation/start', aiLimiter, async (req, res) => {
       if (returningArtist) {
         // Fetch how many shows this artist already has
         let existingShowCount = 0;
-        if (supabase && artistToken && typeof artistToken === 'string') {
+        if (db && artistToken && typeof artistToken === 'string') {
           const tokenHash = hashToken(artistToken.trim());
           const account = await findArtistByTokenHash(tokenHash);
           if (account?.id) {
-            const { count } = await supabase.from('shows').select('id', { count: 'exact', head: true }).eq('artist_account_id', account.id).eq('status', 'PUBLISHED');
+            const { count } = await db.from('shows').select('id', { count: 'exact', head: true }).eq('artist_account_id', account.id).eq('status', 'PUBLISHED');
             existingShowCount = count || 0;
           }
         }
@@ -1213,8 +1214,8 @@ app.post('/api/conversation/message', aiLimiter, async (req, res) => {
         : (loc === 'de' ? 'Perfekt, hier sind passende Shows.' : 'Perfect, here are matching shows.');
 
       let recommendations = [];
-      if (hasEnoughToSearch && supabase) {
-        let q = supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('status', 'PUBLISHED');
+      if (hasEnoughToSearch && db) {
+        let q = db.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('status', 'PUBLISHED');
         if (brief.desiredCategories?.length) {
           q = q.in('category', brief.desiredCategories);
         }
@@ -1507,8 +1508,8 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
     if (!requesterEmail || typeof requesterEmail !== 'string' || !requesterEmail.includes('@')) {
       return res.status(400).json({ error: 'Valid email is required.' });
     }
-    if (supabase) {
-      const { error } = await supabase.from('contact_requests').insert({
+    if (db) {
+      const { error } = await db.from('contact_requests').insert({
         show_id: showId || null,
         show_title: showTitle || null,
         requester_name: requesterName.trim(),
@@ -1555,7 +1556,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     ai: useOpenAI ? 'openai' : useGemini ? 'gemini' : 'mock',
-    submissions: !!supabase,
+    submissions: !!db,
     admin: !!ADMIN_PASSWORD,
   });
 });
@@ -1631,10 +1632,10 @@ const OEFFENTLICHE_SHOW_SPALTEN = [
 // --- Public Shows API (proxies Supabase to avoid client CORS) ---
 app.get('/api/shows', async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.json({ shows: [] });
     }
-    const { data, error } = await supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('status', 'PUBLISHED').order('created_at', { ascending: false });
+    const { data, error } = await db.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('status', 'PUBLISHED').order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ shows: data || [] });
   } catch (err) {
@@ -1645,7 +1646,7 @@ app.get('/api/shows', async (req, res) => {
 
 app.get('/api/shows/page', async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.json({ shows: [], totalCount: 0 });
     }
     const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
@@ -1662,7 +1663,7 @@ app.get('/api/shows/page', async (req, res) => {
      * Wer hier künftig eine Spalte braucht, trägt sie in OEFFENTLICHE_SHOW_SPALTEN nach.
      * `select('*')` zurückzuholen macht jede neue Spalte auf `shows` still öffentlich.
      */
-    let q = supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN, { count: 'exact' }).eq('status', 'PUBLISHED');
+    let q = db.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN, { count: 'exact' }).eq('status', 'PUBLISHED');
     if (category && category !== 'ALL') q = q.eq('category', category);
     if (search && typeof search === 'string' && search.trim()) {
       const term = search.trim().replace(/,/g, ' ');
@@ -1685,11 +1686,11 @@ app.get('/api/shows/page', async (req, res) => {
 
 app.get('/api/shows/by/:shortId', async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(404).json({ error: 'Not found.' });
     }
     const { shortId } = req.params;
-    const { data, error } = await supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('short_id', shortId).eq('status', 'PUBLISHED').single();
+    const { data, error } = await db.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('short_id', shortId).eq('status', 'PUBLISHED').single();
     if (error || !data) return res.status(404).json({ error: 'Not found.' });
     res.json({ show: data });
   } catch (err) {
@@ -1700,9 +1701,9 @@ app.get('/api/shows/by/:shortId', async (req, res) => {
 
 app.get('/api/shows/slug/:slug', async (req, res) => {
   try {
-    if (!supabase) return res.status(404).json({ error: 'Not found.' });
+    if (!db) return res.status(404).json({ error: 'Not found.' });
     const { slug } = req.params;
-    const { data, error } = await supabase.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('slug', slug).eq('status', 'PUBLISHED').single();
+    const { data, error } = await db.from('shows').select(OEFFENTLICHE_SHOW_SPALTEN).eq('slug', slug).eq('status', 'PUBLISHED').single();
     if (error || !data) return res.status(404).json({ error: 'Not found.' });
     res.json({ show: data });
   } catch (err) {
@@ -1744,11 +1745,11 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
 
 app.get('/api/admin/submissions', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured.' });
     }
     const { status } = req.query;
-    let q = supabase.from('show_submissions').select('*').order('submitted_at', { ascending: false });
+    let q = db.from('show_submissions').select('*').order('submitted_at', { ascending: false });
     if (status && typeof status === 'string') {
       q = q.eq('status', status);
     }
@@ -1763,11 +1764,11 @@ app.get('/api/admin/submissions', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured.' });
     }
     const { id } = req.params;
-    const { data: row, error } = await supabase.from('show_submissions').select('*').eq('id', id).single();
+    const { data: row, error } = await db.from('show_submissions').select('*').eq('id', id).single();
     if (error || !row) {
       return res.status(404).json({ error: 'Submission not found.' });
     }
@@ -1781,12 +1782,12 @@ app.get('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
 // Admin can change all fields on a submission in any status (PENDING_REVIEW, APPROVED, CHANGES_REQUESTED, REJECTED).
 app.patch('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured.' });
     }
     const { id } = req.params;
     const body = req.body || {};
-    const { data: existing, error: fetchErr } = await supabase.from('show_submissions').select('*').eq('id', id).single();
+    const { data: existing, error: fetchErr } = await db.from('show_submissions').select('*').eq('id', id).single();
     if (fetchErr || !existing) {
       return res.status(404).json({ error: 'Submission not found.' });
     }
@@ -1819,9 +1820,9 @@ app.patch('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
       const buf = Buffer.from(base64Data, 'base64');
       const ext = body.photoBase64.startsWith('data:image/png') ? 'png' : 'jpg';
       const filename = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
+      const { data: uploadData, error: uploadErr } = await storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
       if (!uploadErr) {
-        const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(uploadData.path);
+        const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(uploadData.path);
         newPhotoUrls.push(publicUrl);
       }
     }
@@ -1832,9 +1833,9 @@ app.patch('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
         const buf = Buffer.from(base64Data, 'base64');
         const ext = photoBase64.startsWith('data:image/png') ? 'png' : 'jpg';
         const filename = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { data: uploadData, error: uploadErr } = await supabase.storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
+        const { data: uploadData, error: uploadErr } = await storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
         if (!uploadErr) {
-          const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(uploadData.path);
+          const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(uploadData.path);
           newPhotoUrls.push(publicUrl);
         }
       }
@@ -1844,7 +1845,7 @@ app.patch('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
       updates.photo_urls = [...newPhotoUrls, ...current];
     }
 
-    const { data: updated, error: updateErr } = await supabase.from('show_submissions').update(updates).eq('id', id).select('*').single();
+    const { data: updated, error: updateErr } = await db.from('show_submissions').update(updates).eq('id', id).select('*').single();
     if (updateErr) throw updateErr;
     res.json({ ok: true, submission: updated });
   } catch (err) {
@@ -1862,8 +1863,8 @@ function slugify(s) {
 }
 
 async function makeUniqueSlug(base) {
-  if (!supabase || !base) return base;
-  const { data } = await supabase.from('shows').select('slug').like('slug', `${base}%`);
+  if (!db || !base) return base;
+  const { data } = await db.from('shows').select('slug').like('slug', `${base}%`);
   const existing = (data || []).map(r => r.slug);
   if (!existing.includes(base)) return base;
   let i = 2;
@@ -1881,12 +1882,12 @@ function mapGenreToCategory(genre) {
 
 app.post('/api/admin/submissions/:id/approve', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured.' });
     }
     const { id } = req.params;
     const body = req.body || {};
-    const { data: sub, error: subErr } = await supabase.from('show_submissions').select('*').eq('id', id).single();
+    const { data: sub, error: subErr } = await db.from('show_submissions').select('*').eq('id', id).single();
     if (subErr || !sub) {
       return res.status(404).json({ error: 'Submission not found.' });
     }
@@ -1909,9 +1910,9 @@ app.post('/api/admin/submissions/:id/approve', requireAdmin, async (req, res) =>
       const buf = Buffer.from(base64Data, 'base64');
       const ext = body.photoBase64.startsWith('data:image/png') ? 'png' : 'jpg';
       const filename = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
+      const { data: uploadData, error: uploadErr } = await storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
       if (!uploadErr) {
-        const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(uploadData.path);
+        const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(uploadData.path);
         photoUrls = [publicUrl, ...photoUrls];
       }
     }
@@ -1922,9 +1923,9 @@ app.post('/api/admin/submissions/:id/approve', requireAdmin, async (req, res) =>
         const buf = Buffer.from(base64Data, 'base64');
         const ext = photoBase64.startsWith('data:image/png') ? 'png' : 'jpg';
         const filename = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { data: uploadData, error: uploadErr } = await supabase.storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
+        const { data: uploadData, error: uploadErr } = await storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
         if (!uploadErr) {
-          const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(uploadData.path);
+          const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(uploadData.path);
           photoUrls = [publicUrl, ...photoUrls];
         }
       }
@@ -1961,9 +1962,9 @@ app.post('/api/admin/submissions/:id/approve', requireAdmin, async (req, res) =>
       artist_email: artistEmail,
       ...(sub.artist_account_id && { artist_account_id: sub.artist_account_id }),
     };
-    let { data: show, error: insErr } = await supabase.from('shows').insert({ ...showRow, original_submission_id: sub.id }).select('id').single();
+    let { data: show, error: insErr } = await db.from('shows').insert({ ...showRow, original_submission_id: sub.id }).select('id').single();
     if (insErr && insErr.code === '42703') {
-      const r = await supabase.from('shows').insert(showRow).select('id').single();
+      const r = await db.from('shows').insert(showRow).select('id').single();
       show = r.data; insErr = r.error;
     }
     if (insErr) throw insErr;
@@ -1971,10 +1972,10 @@ app.post('/api/admin/submissions/:id/approve', requireAdmin, async (req, res) =>
     if (show?.id && artistEmail) {
       emailSent = await sendArtistEmail(artistEmail, 'approved', { title });
       if (emailSent) {
-        await supabase.from('shows').update({ artist_notified_at: new Date().toISOString() }).eq('id', show.id);
+        await db.from('shows').update({ artist_notified_at: new Date().toISOString() }).eq('id', show.id);
       }
     }
-    await supabase.from('show_submissions').update({ status: 'APPROVED', reviewed_at: new Date().toISOString() }).eq('id', id);
+    await db.from('show_submissions').update({ status: 'APPROVED', reviewed_at: new Date().toISOString() }).eq('id', id);
     res.json({ ok: true, showId: show?.id, emailSent });
   } catch (err) {
     console.error('admin approve:', err);
@@ -1984,12 +1985,12 @@ app.post('/api/admin/submissions/:id/approve', requireAdmin, async (req, res) =>
 
 app.post('/api/admin/submissions/:id/reject', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured.' });
     }
     const { id } = req.params;
     const { review_notes } = req.body || {};
-    const { data, error } = await supabase.from('show_submissions').update({
+    const { data, error } = await db.from('show_submissions').update({
       status: 'REJECTED',
       reviewed_at: new Date().toISOString(),
       review_notes: review_notes || null,
@@ -2005,9 +2006,9 @@ app.post('/api/admin/submissions/:id/reject', requireAdmin, async (req, res) => 
 
 app.delete('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
+    if (!db) return res.status(503).json({ error: 'Not configured.' });
     const { id } = req.params;
-    const { error } = await supabase.from('show_submissions').delete().eq('id', id);
+    const { error } = await db.from('show_submissions').delete().eq('id', id);
     if (error) throw error;
     res.json({ ok: true });
   } catch (err) {
@@ -2018,12 +2019,12 @@ app.delete('/api/admin/submissions/:id', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/submissions/:id/changes', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured.' });
     }
     const { id } = req.params;
     const { review_notes } = req.body || {};
-    const { data, error } = await supabase.from('show_submissions').update({
+    const { data, error } = await db.from('show_submissions').update({
       status: 'CHANGES_REQUESTED',
       reviewed_at: new Date().toISOString(),
       review_notes: review_notes || null,
@@ -2040,8 +2041,8 @@ app.post('/api/admin/submissions/:id/changes', requireAdmin, async (req, res) =>
 // --- Admin: list and edit published shows (text + pictures); notify artist by email; if email fails, show is hidden ---
 app.get('/api/admin/shows', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Supabase not configured.' });
-    const { data, error } = await supabase.from('shows').select('id, short_id, slug, title, artist_name, status, artist_email, artist_notified_at, created_at').eq('status', 'PUBLISHED').order('created_at', { ascending: false });
+    if (!db) return res.status(503).json({ error: 'Supabase not configured.' });
+    const { data, error } = await db.from('shows').select('id, short_id, slug, title, artist_name, status, artist_email, artist_notified_at, created_at').eq('status', 'PUBLISHED').order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ shows: data || [] });
   } catch (err) {
@@ -2052,9 +2053,9 @@ app.get('/api/admin/shows', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/shows/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Supabase not configured.' });
+    if (!db) return res.status(503).json({ error: 'Supabase not configured.' });
     const { id } = req.params;
-    const { data, error } = await supabase.from('shows').select('*').eq('id', id).single();
+    const { data, error } = await db.from('shows').select('*').eq('id', id).single();
     if (error || !data) return res.status(404).json({ error: 'Show not found.' });
     res.json(data);
   } catch (err) {
@@ -2065,10 +2066,10 @@ app.get('/api/admin/shows/:id', requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Supabase not configured.' });
+    if (!db) return res.status(503).json({ error: 'Supabase not configured.' });
     const { id } = req.params;
     const body = req.body || {};
-    const { data: existing, error: fetchErr } = await supabase.from('shows').select('*').eq('id', id).single();
+    const { data: existing, error: fetchErr } = await db.from('shows').select('*').eq('id', id).single();
     if (fetchErr || !existing) return res.status(404).json({ error: 'Show not found.' });
 
     const updates = { updated_at: new Date().toISOString() };
@@ -2150,9 +2151,9 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
       const buf = Buffer.from(base64Data, 'base64');
       const ext = body.photoBase64.startsWith('data:image/png') ? 'png' : 'jpg';
       const filename = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
+      const { data: uploadData, error: uploadErr } = await storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
       if (!uploadErr) {
-        const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(uploadData.path);
+        const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(uploadData.path);
         newPhotoUrls.push(publicUrl);
       }
     }
@@ -2163,9 +2164,9 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
         const buf = Buffer.from(base64Data, 'base64');
         const ext = photoBase64.startsWith('data:image/png') ? 'png' : 'jpg';
         const filename = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { data: uploadData, error: uploadErr } = await supabase.storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
+        const { data: uploadData, error: uploadErr } = await storage.from('submissions-media').upload(filename, buf, { contentType: `image/${ext}`, upsert: false });
         if (!uploadErr) {
-          const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(uploadData.path);
+          const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(uploadData.path);
           newPhotoUrls.push(publicUrl);
         }
       }
@@ -2175,7 +2176,7 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
       updates.photo_urls = [...newPhotoUrls, ...current];
     }
 
-    const { data: updated, error: updateErr } = await supabase.from('shows').update(updates).eq('id', id).select('*').single();
+    const { data: updated, error: updateErr } = await db.from('shows').update(updates).eq('id', id).select('*').single();
     if (updateErr) throw updateErr;
 
     const notifyArtist = body.notify_artist === true;
@@ -2183,7 +2184,7 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
     if (notifyArtist && existing.artist_email) {
       emailSent = await sendArtistEmail(existing.artist_email, 'updated', { title: updates.title || existing.title });
       if (emailSent) {
-        await supabase.from('shows').update({ artist_notified_at: new Date().toISOString() }).eq('id', id);
+        await db.from('shows').update({ artist_notified_at: new Date().toISOString() }).eq('id', id);
       }
     }
 
@@ -2196,9 +2197,9 @@ app.patch('/api/admin/shows/:id', requireAdmin, async (req, res) => {
 
 app.delete('/api/admin/shows/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Supabase not configured.' });
+    if (!db) return res.status(503).json({ error: 'Supabase not configured.' });
     const { id } = req.params;
-    const { error } = await supabase.from('shows').delete().eq('id', id);
+    const { error } = await db.from('shows').delete().eq('id', id);
     if (error) throw error;
     res.json({ ok: true });
   } catch (err) {
@@ -2236,27 +2237,27 @@ async function resolveOrCreateArtistAccount(email, socialLinks) {
 
   let existing = null;
   if (instagramNorm) {
-    const { data } = await supabase.from('artist_accounts').select('id, email, website_url').eq('instagram_handle', instagramNorm).limit(1).maybeSingle();
+    const { data } = await db.from('artist_accounts').select('id, email, website_url').eq('instagram_handle', instagramNorm).limit(1).maybeSingle();
     existing = data;
   }
   if (!existing && emailNormLower) {
-    const { data } = await supabase.from('artist_accounts').select('id, email, website_url').eq('email', emailNormLower).limit(1).maybeSingle();
+    const { data } = await db.from('artist_accounts').select('id, email, website_url').eq('email', emailNormLower).limit(1).maybeSingle();
     existing = data;
   }
   if (!existing && websiteNorm) {
-    const { data } = await supabase.from('artist_accounts').select('id, email, website_url').eq('website_url', websiteNorm).limit(1).maybeSingle();
+    const { data } = await db.from('artist_accounts').select('id, email, website_url').eq('website_url', websiteNorm).limit(1).maybeSingle();
     existing = data;
   }
 
   if (existing?.id) {
-    await supabase.from('artist_accounts').update({
+    await db.from('artist_accounts').update({
       email: emailNormLower || existing.email,
       website_url: websiteNorm || existing.website_url,
       updated_at: new Date().toISOString(),
     }).eq('id', existing.id);
     return existing.id;
   }
-  const { data: inserted, error } = await supabase.from('artist_accounts').insert({
+  const { data: inserted, error } = await db.from('artist_accounts').insert({
     display_name: null,
     instagram_handle: instagramNorm,
     website_url: websiteNorm,
@@ -2267,23 +2268,23 @@ async function resolveOrCreateArtistAccount(email, socialLinks) {
 }
 
 async function findArtistByTokenHash(tokenHash) {
-  const { data: row } = await supabase.from('artist_tokens').select('artist_account_id').eq('token_hash', tokenHash).is('revoked_at', null).single();
+  const { data: row } = await db.from('artist_tokens').select('artist_account_id').eq('token_hash', tokenHash).is('revoked_at', null).single();
   if (!row) return null;
-  await supabase.from('artist_tokens').update({ last_seen_at: new Date().toISOString() }).eq('token_hash', tokenHash);
-  const { data: acc } = await supabase.from('artist_accounts').select('id, display_name, instagram_handle, website_url, email').eq('id', row.artist_account_id).single();
+  await db.from('artist_tokens').update({ last_seen_at: new Date().toISOString() }).eq('token_hash', tokenHash);
+  const { data: acc } = await db.from('artist_accounts').select('id, display_name, instagram_handle, website_url, email').eq('id', row.artist_account_id).single();
   return acc;
 }
 
 async function createArtistToken(artistAccountId) {
   const token = randomArtistToken();
   const tokenHash = hashToken(token);
-  await supabase.from('artist_tokens').insert({ artist_account_id: artistAccountId, token_hash: tokenHash });
+  await db.from('artist_tokens').insert({ artist_account_id: artistAccountId, token_hash: tokenHash });
   return token;
 }
 
 app.post('/api/artist/resolve', artistAuthLimiter, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.json({ isReturning: false });
     }
     const { artistToken } = req.body || {};
@@ -2312,7 +2313,7 @@ app.post('/api/artist/resolve', artistAuthLimiter, async (req, res) => {
 // --- Submissions (EPIC 2 + Returning Artist) ---
 app.post('/api/submissions', submissionsLimiter, async (req, res) => {
   try {
-    if (!supabase) {
+    if (!db) {
       return res.status(503).json({ error: 'Submissions not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.' });
     }
     const { honeypot, submitterEmail, showTitle, artistName, artistGenre, photoBase64, photoBase64Array, photoUrls: urls, videoUrls, mediaLinks: mediaLinksStr, durationMinutes, languageOptions, priceText, shortDescriptionFacts, salesPitchText, socialLinks, artistBio, faqOutdoor, faqStage, faqLanguage, faqCustom, faqTravel, websiteUrl, artistToken } = req.body || {};
@@ -2341,14 +2342,14 @@ app.post('/api/submissions', submissionsLimiter, async (req, res) => {
       const buf = Buffer.from(base64Data, 'base64');
       const ext = photoB64.startsWith('data:image/png') ? 'png' : 'jpg';
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data, error } = await supabase.storage.from('submissions-media').upload(filename, buf, {
+      const { data, error } = await storage.from('submissions-media').upload(filename, buf, {
         contentType: `image/${ext}`,
         upsert: false,
       });
       if (error) {
         console.error('Storage upload error:', error);
       } else {
-        const { data: { publicUrl } } = supabase.storage.from('submissions-media').getPublicUrl(data.path);
+        const { data: { publicUrl } } = storage.from('submissions-media').getPublicUrl(data.path);
         photoUrls = [publicUrl, ...photoUrls];
       }
     }
@@ -2365,7 +2366,7 @@ app.post('/api/submissions', submissionsLimiter, async (req, res) => {
       if (artistAccountId) returnedArtistToken = await createArtistToken(artistAccountId);
     }
 
-    const { data: row, error } = await supabase.from('show_submissions').insert({
+    const { data: row, error } = await db.from('show_submissions').insert({
       artist_account_id: artistAccountId,
       artist_genre: artistGenre || null,
       show_title: showTitle.trim(),
@@ -2410,13 +2411,13 @@ app.post('/api/submissions', submissionsLimiter, async (req, res) => {
 // --- Artist portal: list own published shows ---
 app.get('/api/artist/shows', artistAuthLimiter, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
+    if (!db) return res.status(503).json({ error: 'Not configured.' });
     const artistToken = req.headers['x-artist-token'];
     if (!artistToken) return res.status(401).json({ error: 'Missing artist token.' });
     const tokenHash = hashToken(String(artistToken).trim());
     const account = await findArtistByTokenHash(tokenHash);
     if (!account) return res.status(401).json({ error: 'Invalid or expired token.' });
-    const { data: shows, error } = await supabase
+    const { data: shows, error } = await db
       .from('shows')
       .select('id, slug, short_id, title, category, photo_urls, vibe_tags, duration_minutes, price_type, price_min, price_max, status, created_at')
       .eq('artist_account_id', account.id)
@@ -2432,8 +2433,8 @@ app.get('/api/artist/shows', artistAuthLimiter, async (req, res) => {
 // --- Blog: public endpoints ---
 app.get('/api/blog', async (req, res) => {
   try {
-    if (!supabase) return res.json({ posts: [] });
-    const { data, error } = await supabase
+    if (!db) return res.json({ posts: [] });
+    const { data, error } = await db
       .from('blog_posts')
       .select('id, slug, title_de, title_en, excerpt_de, excerpt_en, cover_image_url, published_at, created_at')
       .not('published_at', 'is', null)
@@ -2449,8 +2450,8 @@ app.get('/api/blog', async (req, res) => {
 
 app.get('/api/blog/:slug', async (req, res) => {
   try {
-    if (!supabase) return res.status(404).json({ error: 'Not found.' });
-    const { data, error } = await supabase
+    if (!db) return res.status(404).json({ error: 'Not found.' });
+    const { data, error } = await db
       .from('blog_posts')
       .select('*')
       .eq('slug', req.params.slug)
@@ -2467,8 +2468,8 @@ app.get('/api/blog/:slug', async (req, res) => {
 // --- Blog: admin endpoints ---
 app.get('/api/admin/blog', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
-    const { data, error } = await supabase
+    if (!db) return res.status(503).json({ error: 'Not configured.' });
+    const { data, error } = await db
       .from('blog_posts')
       .select('id, slug, title_de, title_en, published_at, created_at')
       .order('created_at', { ascending: false });
@@ -2481,10 +2482,10 @@ app.get('/api/admin/blog', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/blog', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
+    if (!db) return res.status(503).json({ error: 'Not configured.' });
     const b = req.body || {};
     const slug = (b.slug || b.title_de || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `post-${Date.now()}`;
-    const { data, error } = await supabase.from('blog_posts').insert({
+    const { data, error } = await db.from('blog_posts').insert({
       slug,
       title_de: b.title_de || '',
       title_en: b.title_en || '',
@@ -2505,7 +2506,7 @@ app.post('/api/admin/blog', requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/blog/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
+    if (!db) return res.status(503).json({ error: 'Not configured.' });
     const b = req.body || {};
     const updates = {};
     if (b.slug != null) updates.slug = b.slug;
@@ -2517,7 +2518,7 @@ app.patch('/api/admin/blog/:id', requireAdmin, async (req, res) => {
     if (b.content_en != null) updates.content_en = b.content_en;
     if (b.cover_image_url !== undefined) updates.cover_image_url = b.cover_image_url || null;
     if ('published_at' in b) updates.published_at = b.published_at || null;
-    const { data, error } = await supabase.from('blog_posts').update(updates).eq('id', req.params.id).select('id, slug').single();
+    const { data, error } = await db.from('blog_posts').update(updates).eq('id', req.params.id).select('id, slug').single();
     if (error) throw error;
     res.json({ post: data });
   } catch (err) {
@@ -2528,8 +2529,8 @@ app.patch('/api/admin/blog/:id', requireAdmin, async (req, res) => {
 
 app.delete('/api/admin/blog/:id', requireAdmin, async (req, res) => {
   try {
-    if (!supabase) return res.status(503).json({ error: 'Not configured.' });
-    const { error } = await supabase.from('blog_posts').delete().eq('id', req.params.id);
+    if (!db) return res.status(503).json({ error: 'Not configured.' });
+    const { error } = await db.from('blog_posts').delete().eq('id', req.params.id);
     if (error) throw error;
     res.json({ ok: true });
   } catch (err) {
@@ -2649,6 +2650,14 @@ app.get('*', (req, res, next) => {
  * weitere Datei mit Hash woanders ablegt oder Vite umkonfiguriert (`build.assetsDir`),
  * muss die Bedingung unten mitziehen.
  */
+// Artist uploads from UPLOAD_DIR. Immutable: every filename carries a timestamp,
+// so a given URL always names the same bytes.
+app.use(storage.publicPrefix, express.static(storage.rootDir, {
+  redirect: false,
+  maxAge: '1y',
+  immutable: true,
+}));
+
 app.use(express.static(distPath, {
   redirect: false,
   maxAge: 0,
@@ -2709,13 +2718,10 @@ app.get('*', (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function ensureStorageBucket() {
-  if (!supabase) return;
   try {
-    await supabase.storage.createBucket('submissions-media', { public: true });
-    console.log('Created storage bucket: submissions-media');
+    await storage.createBucket('submissions-media');
   } catch (e) {
-    if (e?.message?.includes('already exists')) return;
-    console.warn('Storage bucket setup:', e?.message || e);
+    console.warn('Storage setup:', e?.message || e);
   }
 }
 
@@ -2734,6 +2740,6 @@ ensureStorageBucket().then(() => {
   app.listen(PORT, () => {
     console.log(`Berlintina backend running at http://localhost:${PORT}`);
     console.log(`AI: ${useOpenAI ? 'OpenAI' : useGemini ? 'Gemini' : 'mock (no keys)'}`);
-    console.log(`Submissions: ${supabase ? 'enabled' : 'disabled (no Supabase)'}`);
+    console.log(`Submissions: ${db ? 'enabled' : 'disabled (no Supabase)'}`);
   });
 });
