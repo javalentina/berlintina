@@ -1,3 +1,4 @@
+import { track, AUSHANG_NAME_GEKLICKT } from './lib/track';
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';

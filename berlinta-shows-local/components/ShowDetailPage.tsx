@@ -1,3 +1,4 @@
+import { track, WHATSAPP_GEKLICKT, ANFRAGE_GEOEFFNET, KUENSTLERSEITE_GEOEFFNET } from '../lib/track';
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Show } from '../types';
@@ -284,7 +285,20 @@ export const ShowDetailPage: React.FC<Props> = ({
     };
   }, [show.title, show.shortDescriptionFacts]);
 
-  const openContact = useCallback(() => onContactModeChange('form'), [onContactModeChange]);
+  const openContact = useCallback(() => {
+    track(ANFRAGE_GEOEFFNET, { show: show.title });
+    onContactModeChange('form');
+  }, [onContactModeChange, show.title]);
+
+  // WhatsApp leaves the site, so this is the last moment we can count it.
+  const trackWhatsApp = React.useCallback(() => {
+    track(WHATSAPP_GEKLICKT, { show: show.title });
+  }, [show.title]);
+
+  // Which artist page an ad click actually landed on.
+  React.useEffect(() => {
+    track(KUENSTLERSEITE_GEOEFFNET, { show: show.title, artist: show.artistName });
+  }, [show.title, show.artistName]);
 
   const t = locale === 'de'
     ? {
@@ -662,6 +676,7 @@ export const ShowDetailPage: React.FC<Props> = ({
             {waLink(show.title, locale) && (
               <a
                 href={waLink(show.title, locale)}
+                onClick={trackWhatsApp}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3 border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 mb-5 no-underline"
@@ -817,6 +832,7 @@ export const ShowDetailPage: React.FC<Props> = ({
             {waLink(show.title, locale) && (
               <a
                 href={waLink(show.title, locale)}
+                onClick={trackWhatsApp}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 flex items-center justify-center border border-border text-green-600 hover:bg-muted transition no-underline"
