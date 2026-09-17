@@ -31,6 +31,8 @@ export interface Show {
   slug: string;
   artistId: string;
   artistName: string;
+  /** Position on the poster; 1 is the headliner, null sinks to the bottom. */
+  billingRank?: number | null;
   title: string;
   category: Category;
   instrumentationText?: string;

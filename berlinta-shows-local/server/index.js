@@ -1620,6 +1620,7 @@ const OEFFENTLICHE_SHOW_SPALTEN = [
   'price_min', 'price_max', 'price_type',
   'faq_stage', 'faq_travel', 'faq_language', 'faq_outdoor', 'faq_custom',
   'partner_link_url',
+  'billing_rank',
   'created_at',
   // Diese vier liest services/showsService.ts aus der Antwort und bildet sie auf sein
   // Modell ab (artistId, instrumentationText, extractedTags, languageOptions). Nimmt man

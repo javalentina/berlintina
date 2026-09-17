@@ -84,10 +84,26 @@ const Layout: React.FC<{ children: React.ReactNode, locale: 'de' | 'en', setLoca
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
+  // On the home page the bar lies on the poster and must not read as a stripe of
+  // its own: it goes transparent with white type, and takes a ground again only
+  // once the poster has scrolled away and darker sections are behind it.
+  const [ueberDemAushang, setUeberDemAushang] = useState(false);
+  useEffect(() => {
+    if (location.pathname !== '/') { setUeberDemAushang(false); return; }
+    const pruefen = () => setUeberDemAushang(window.scrollY < window.innerHeight - 90);
+    pruefen();
+    window.addEventListener('scroll', pruefen, { passive: true });
+    window.addEventListener('resize', pruefen);
+    return () => {
+      window.removeEventListener('scroll', pruefen);
+      window.removeEventListener('resize', pruefen);
+    };
+  }, [location.pathname]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* ── Navbar ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-foreground/10">
+      <header className={`fixed top-0 left-0 right-0 z-50 border-b transition-colors duration-300 ${ueberDemAushang ? 'bt-nav-auf-aushang' : 'bg-background/80 backdrop-blur-md border-foreground/10'}`}>
         <div className="container flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="font-display text-xl font-bold text-foreground no-underline">
             berlintina<span className="text-accent">.</span>
@@ -719,6 +735,9 @@ const FeaturedArtistSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) =>
   );
 };
 
+// The occasions, running along the bottom edge of the poster like on a column.
+const ANLAESSE = 'Galas · Firmenfeiern · Hochzeiten · Private Anlässe · Retreats · Teamtage · Empfänge · Vernissagen ·';
+
 // --- Landing View ---
 const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   const { shows, loading: showsLoading, error: showsError } = useShows();
@@ -740,6 +759,10 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
   });
   const rawX = useTransform(heroScroll, [0, 1], [0, -800]);
   const sliderXVal = useSpring(rawX, { stiffness: 100, damping: 30 });
+
+  // Whose name is currently lit on the poster.
+  const [billed, setBilled] = useState<number | null>(null);
+
 
   const recommendations = useMemo(() => {
     if (!rawRecommendations.length || !shows.length) return [];
@@ -830,6 +853,20 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     if (activeCat === 'all') return defaultShows;
     return defaultShows.filter((s) => s.category === activeCat);
   }, [defaultShows, activeCat]);
+
+  // One line per artist, not per show: a performer with two programmes must not
+  // compete with themselves. Rank comes from the database; whoever has none sinks
+  // to the bottom in the order they arrived, so a new artist shows up unranked.
+  const billing = useMemo(() => {
+    const byArtist = new Map<string, { name: string; rank: number; shows: Show[] }>();
+    for (const show of filteredShows) {
+      const entry = byArtist.get(show.artistName) ?? { name: show.artistName, rank: Number.MAX_SAFE_INTEGER, shows: [] };
+      entry.shows.push(show);
+      if (show.billingRank != null) entry.rank = Math.min(entry.rank, show.billingRank);
+      byArtist.set(show.artistName, entry);
+    }
+    return [...byArtist.values()].sort((a, b) => a.rank - b.rank);
+  }, [filteredShows]);
 
   // slider scroll is handled by useSpring + useTransform above
 
@@ -929,79 +966,78 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         ],
       }}
     />
-    {/* ── Hero ── */}
-    <section ref={heroRef} className="relative bg-background">
-      <div className="flex flex-col pt-20">
-        {/* Text */}
-        <div className="container grid grid-cols-12 gap-8 items-end pt-8 md:pt-16 pb-8">
-          <motion.div className="col-span-12 md:col-span-7" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}>
-            <motion.span className="label-style mb-4 block" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
-              Boutique Artist Agency — Berlin
-            </motion.span>
-            <h1 className="heading-xl text-foreground leading-[0.9]">
-              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.2 }}>
-                {locale === 'de' ? 'Shows die' : 'Shows that'}
-              </motion.span>
-              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.35 }}>
-                {locale === 'de' ? 'Köpfe drehen' : 'turn heads'}
-              </motion.span>
-              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.5 }}>
-                {locale === 'de' ? 'und Herzen' : 'and conquer'}
-              </motion.span>
-              <motion.span className="block overflow-hidden pb-[0.12em] -mb-[0.12em]" initial={{ y: 80 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: 0.65 }}>
-                {locale === 'de' ? 'gewinnen' : 'hearts'}<span className="text-accent">.</span>
-              </motion.span>
-            </h1>
-          </motion.div>
+    {/* ── Hero: der Aushang ──────────────────────────────────────────────
+        Verkauft werden Namen, nicht Formate: ein Künstler ist eine Zeile,
+        Größe und Platz sind sein Rang. Die Reihenfolge kommt aus
+        shows.billing_rank — eine Produzentinnen-Entscheidung, kein Code.
+        Wer keinen Rang hat, sinkt nach unten und kommt trotzdem vor.
 
-          <motion.div className="col-span-12 md:col-span-5 pb-4" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.6 }}>
-            <p className="body-text mb-6">
-              {locale === 'de'
-                ? 'Berlintina ist eine Boutique Artist Agentur — spezialisiert auf Live Show Acts für Events, Galas und private Anlässe.'
-                : 'Berlintina is a boutique artist agency — specialised in live show acts for events, galas and private occasions.'}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link to="/catalog" className="btn-primary">{locale === 'de' ? 'Shows entdecken' : 'Explore shows'}</Link>
-              <Link to="/join" className="btn-primary" style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted-foreground)' }}>
-                {locale === 'de' ? 'Für Künstler ↗' : 'Join as artist ↗'}
-              </Link>
-            </div>
-          </motion.div>
+        Der Auftritt läuft über CSS, nicht über framer-motion: die Namen
+        kommen aus der Datenbank und damit später als der erste Render, und
+        eine Mount-Animation bliebe dann im Anfangszustand stehen. Ruhezustand
+        ist hier der fertige Zustand — fällt die Animation aus, steht trotzdem
+        alles lesbar da. */}
+    <section ref={heroRef} className={`bt-plakat relative overflow-hidden${billing.length ? ' is-ready' : ''}`}
+      style={{ background: '#1E3FC4', minHeight: '100svh' }}>
+      <div aria-hidden className="bt-breath pointer-events-none absolute" />
+
+      <div className="relative z-[2] flex min-h-[100svh] flex-col justify-center container pt-28 pb-0">
+        <span className="label-style block" style={{ color: '#ffffffcc' }}>
+          {locale === 'de' ? 'Berlintina präsentiert' : 'Berlintina presents'}
+        </span>
+
+        <div aria-hidden className="bt-rule" />
+
+        <div>
+          {billing.map((artist, i) => (
+            <Link
+              key={artist.name}
+              to={`/show/${artist.shows[0].slug}`}
+              onMouseEnter={() => setBilled(i)}
+              onMouseLeave={() => setBilled(null)}
+              onFocus={() => setBilled(i)}
+              onBlur={() => setBilled(null)}
+              className="bt-act block font-display uppercase"
+              style={{
+                fontSize: i === 0 ? 'clamp(31px,6vw,78px)' : i === 1 ? 'clamp(24px,4.3vw,55px)' : 'clamp(19px,3.2vw,41px)',
+                color: billed === i ? '#C9973F' : i === 0 ? '#fff' : i === 1 ? '#ffffffe6' : '#ffffffc4',
+                animationDelay: `${0.34 + i * 0.13}s`,
+              }}>
+              {artist.name}
+            </Link>
+          ))}
         </div>
 
-        {/* Scroll slider */}
-        <div className="overflow-hidden mt-[15vh] pb-0">
-          <motion.div className="flex gap-6 pl-8 md:pl-16 w-full" style={{ x: sliderXVal }}>
-            {(showsLoading ? [] : filteredShows).map((show, i) => (
-              <motion.div
-                key={show.id}
-                className="group shrink-0 w-[70vw] md:w-[28vw] cursor-pointer"
-                initial={{ y: 40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.8 + i * 0.08 }}
-                onClick={() => navigate(`/show/${show.slug}`)}
-              >
-                <div className="relative overflow-hidden border border-foreground/10">
-                  <img
-                    src={show.photoUrls?.[0] || ''}
-                    alt={show.title}
-                    className="w-full aspect-[3/4] object-cover transition-all duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <span className="absolute top-4 left-4 label-style bg-background/80 px-3 py-1 backdrop-blur-sm">
-                    {show.category}
-                  </span>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                    <h3 className="font-display text-xl font-bold text-foreground">{show.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{show.artistName}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+        {/* Der Beweis: das Bild zu dem Namen, über dem die Maus steht. */}
+        <div className="bt-evidence mt-6 flex gap-2" style={{ animationDelay: `${0.34 + billing.length * 0.13}s` }}>
+          {billing.map((artist, i) => (
+            <img key={artist.name} src={artist.shows[0].photoUrls?.[0] || ''} alt=""
+              className="shrink-0 object-cover transition-all duration-300"
+              style={{
+                width: 'clamp(72px,9vw,106px)', height: 'clamp(50px,6vw,72px)',
+                filter: (billed ?? 0) === i ? 'none' : 'grayscale(1) contrast(1.12)',
+                transform: (billed ?? 0) === i ? 'translateY(-4px)' : 'none',
+              }}
+              loading="lazy" />
+          ))}
         </div>
 
+        <div className="mt-7 flex flex-wrap justify-between gap-4 label-style"
+          style={{ borderTop: '1px solid #ffffff2e', paddingTop: 12, color: '#ffffffc4' }}>
+          <span>
+            {locale === 'de'
+              ? <>Eine Auswahl von <b style={{ color: '#fff', fontWeight: 600 }}>Valentina</b> — ich stehe selbst auf der Bühne</>
+              : <>Chosen by <b style={{ color: '#fff', fontWeight: 600 }}>Valentina</b> — I am on stage myself</>}
+          </span>
+          <Link to="/catalog" style={{ color: '#fff' }}>{locale === 'de' ? 'Alle ansehen ↓' : 'See all ↓'}</Link>
+        </div>
+      </div>
+
+      {/* Laufband der Anlässe — die Litfaßsäule spricht weiter. */}
+      <div className="relative z-[2] overflow-hidden" style={{ borderTop: '1px solid #ffffff2e', background: '#132B8C' }}>
+        <div className="bt-marquee label-style inline-block whitespace-nowrap py-2" style={{ color: '#ffffffb8' }}>
+          {Array.from({ length: 2 }).map((_, k) => (<span key={k}>{ANLAESSE}&nbsp;&nbsp;</span>))}
+        </div>
       </div>
     </section>
 
