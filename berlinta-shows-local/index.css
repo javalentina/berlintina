@@ -259,3 +259,56 @@ h1, h2, h3, h4, h5, h6 {
   transform: scale(1.1);
   box-shadow: 0 6px 24px rgba(0,0,0,0.22);
 }
+
+/* ── Aushang ─────────────────────────────────────────────────────────────
+   Ruhezustand ist der fertige Zustand. Die Namen stehen also auch dann da,
+   wenn die Animation nicht läuft — sie kommen aus der Datenbank und damit
+   später als der erste Render. .is-ready setzt der Aushang selbst, sobald
+   die Namen da sind; erst dann läuft der Auftritt, genau einmal. */
+.bt-plakat .bt-breath {
+  inset: -25%;
+  background: radial-gradient(42% 42% at 30% 28%, #6E8BFF66 0%, #6E8BFF00 70%);
+  animation: bt-breathe 16s ease-in-out infinite;
+}
+.bt-plakat .bt-rule { height: 5px; background: #D9342B; margin: 13px 0 16px; width: 46%; }
+.bt-plakat .bt-act {
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  transition: color 200ms ease;
+}
+.bt-plakat.is-ready .bt-rule { animation: bt-draw 1050ms cubic-bezier(.2,.75,.2,1) 120ms both; }
+.bt-plakat.is-ready .bt-act,
+.bt-plakat.is-ready .bt-evidence { animation: bt-rise 700ms cubic-bezier(.2,.7,.2,1) both; }
+.bt-marquee { animation: bt-slide 34s linear infinite; }
+
+@keyframes bt-breathe {
+  0%, 100% { transform: scale(1); opacity: .85; }
+  50%      { transform: translate3d(9%, 6%, 0) scale(1.16); opacity: 1; }
+}
+@keyframes bt-draw { from { width: 0; } to { width: 46%; } }
+@keyframes bt-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes bt-slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-plakat .bt-breath,
+  .bt-plakat .bt-rule,
+  .bt-plakat .bt-act,
+  .bt-plakat .bt-evidence,
+  .bt-marquee { animation: none !important; }
+}
+
+/* Die Leiste auf dem Aushang: kein eigener Streifen, sondern Teil des Blaus.
+   Nur hier wird !important gebraucht — die Farben der Leiste kommen sonst aus
+   Utility-Klassen, die im Normalzustand genau richtig sind. */
+.bt-nav-auf-aushang {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-color: #ffffff2e !important;
+}
+.bt-nav-auf-aushang a,
+.bt-nav-auf-aushang button { color: #fff !important; }
+.bt-nav-auf-aushang .bg-accent {
+  background: #fff !important;
+  color: #1E3FC4 !important;
+}

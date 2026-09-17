@@ -81,6 +81,7 @@ function rowToShow(row: ShowRow): Show {
     slug: row.slug,
     artistId: row.artist_id,
     artistName: row.artist_name,
+    billingRank: row.billing_rank ?? null,
     title: row.title,
     category: row.category as Category,
     instrumentationText: row.instrumentation_text ?? undefined,
