@@ -543,63 +543,6 @@ const Datenschutz: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
   </div>
 );
 
-// --- AboutBanner ---
-const AboutBanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
-  const lineWidth = useTransform(scrollYProgress, [0.1, 0.5], ['0%', '100%']);
-  const mainText = locale === 'de'
-    ? 'Wir sind eine Community aus außergewöhnlichen Künstlern und kreativen Talenten. Wir glauben an die Kraft von Live-Performances und echten Emotionen.'
-    : 'We are a community of extraordinary artists and creative talents. We believe in the power of live performances and real emotions.';
-  const words = mainText.split(' ');
-  return (
-    <>
-    <section id="about" ref={sectionRef} className="pt-24 md:pt-32 pb-0">
-      <div className="container grid grid-cols-12 gap-8">
-        <div className="col-span-12 md:col-span-4">
-          <motion.span className="label-style" initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
-            00 / About
-          </motion.span>
-        </div>
-        <div className="col-span-12 md:col-span-8">
-          <p className="font-display text-2xl md:text-3xl font-bold text-foreground leading-snug max-w-[50ch]">
-            {words.map((word, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.3em]">
-                <motion.span className="inline-block" initial={{ y: '100%', opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1], delay: 0.1 + i * 0.03 }}>
-                  {word}
-                </motion.span>
-              </span>
-            ))}
-          </p>
-          <motion.div className="h-[2px] bg-accent mt-8 origin-left" style={{ width: lineWidth }} />
-          <motion.p className="body-text mt-8" initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1], delay: 0.3 }}>
-            {locale === 'de'
-              ? 'Bei uns findest du fertige Shows und ausgewählte Künstler für dein Event. Auf Wunsch gestalten und realisieren wir auch individuelle Performances – mit allem, was dazugehört: Konzept, Kostüm und Maske.'
-              : 'Here you find ready-made shows and selected artists for your event. On request we also design and realise individual performances – with everything included: concept, costume and make-up.'}
-          </motion.p>
-
-
-        </div>
-      </div>
-    </section>
-    {/* ── Video — same width/height as CTA block ── */}
-    <section id="video" className="py-24 md:py-32 overflow-hidden">
-      <div className="container">
-        <div className="relative w-full aspect-video overflow-hidden">
-          <iframe
-            src="https://www.youtube.com/embed/dplWBsaHklw?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0"
-            title="Berlintina – Live Show Acts Berlin"
-            className="absolute inset-0 w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      </div>
-    </section>
-    </>
-  );
-};
-
 // --- CTABanner ---
 const CTABanner: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => (
   <section id="call-to-action" className="py-24 md:py-32 overflow-hidden">
@@ -672,64 +615,6 @@ const ArtistIdeaSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
           >
             {locale === 'de' ? 'Idee erzählen' : 'Share your idea'} <ArrowRight className="w-4 h-4" />
           </Link>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// --- FeaturedArtistSection ---
-const FeaturedArtistSection: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
-  const { shows } = useShows();
-  const navigate = useNavigate();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const featured = shows.slice(0, 3);
-  const ease = [0.19, 1, 0.22, 1] as const;
-  if (featured.length === 0) return null;
-  const artist = featured[activeIndex];
-  return (
-    <section id="featured" className="py-24 md:py-36 overflow-hidden">
-      <div className="container">
-        <motion.span className="label-style mb-6 block" initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, ease }}>
-          01 / {locale === 'de' ? 'Berlintinas Top-Acts' : "Berlintina's Top Acts"}
-        </motion.span>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-10 items-start">
-          {/* LEFT */}
-          <div className="md:col-span-5 flex flex-col justify-between min-h-[50vh]">
-            <div className="mb-8">
-              <span className="font-mono-ui text-sm text-muted-foreground tracking-widest">
-                {String(activeIndex + 1).padStart(2, '0')} / {String(featured.length).padStart(2, '0')}
-              </span>
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.div key={activeIndex} className="flex-1" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} transition={{ duration: 0.45, ease }}>
-                <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[0.95] mb-3">{artist.title}</h2>
-                <span className="label-style text-accent block mb-5">{artist.category}</span>
-                <p className="body-text max-w-[38ch] mb-8 text-muted-foreground">{artist.shortDescriptionFacts?.slice(0, 150) || ''}</p>
-                <button onClick={() => navigate(`/show/${artist.slug}`)} className="inline-flex items-center gap-2 bg-accent text-accent-foreground px-7 py-3 rounded-full font-semibold text-sm tracking-wide hover:opacity-90 transition-opacity">
-                  {locale === 'de' ? 'Show ansehen' : 'View show'} →
-                </button>
-              </motion.div>
-            </AnimatePresence>
-            <div className="flex gap-3 mt-10">
-              {featured.map((s, i) => (
-                <button key={i} onClick={() => setActiveIndex(i)} className={`relative w-20 h-20 md:w-24 md:h-24 overflow-hidden border-2 transition-all duration-300 ${i === activeIndex ? 'border-accent scale-105 shadow-lg' : 'border-transparent opacity-50 hover:opacity-80'}`} aria-label={`View ${s.title}`}>
-                  <img src={s.photoUrls?.[0] || ''} alt={s.title} className="w-full h-full object-cover" loading="lazy" />
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* RIGHT */}
-          <div className="md:col-span-7 order-first md:order-last">
-            <AnimatePresence mode="wait">
-              <motion.div key={activeIndex} className="relative overflow-hidden" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.5, ease }}>
-                <img src={artist.photoUrls?.[0] || ''} alt={`${artist.title} — ${artist.category}`} className="w-full aspect-[3/4] md:aspect-[4/5] object-cover" loading="lazy" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background/70 to-transparent">
-                  <span className="label-style text-foreground/80">{artist.category}</span>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
         </div>
       </div>
     </section>
@@ -1043,9 +928,6 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </div>
     </section>
 
-    {/* ── About section ── */}
-    <AboutBanner locale={locale} />
-
     {/* ── AI Recommendations — full width ── */}
     {hasResults && (
       <div ref={resultsRef} className="w-full border-t border-foreground/10 scroll-mt-20">
@@ -1085,37 +967,6 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
     {/* ══ Default sections ══ */}
     {!hasResults && (<>
-
-      {/* ── Roster — masonry grid ── */}
-      <section id="roster" className="py-16 md:py-24 bg-background">
-        <div className="container">
-          <div className="masonry-grid">
-            {showsLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="flex items-center gap-1.5">
-                  {[0, 160, 320].map((d) => (
-                    <span key={d} className="typing-dot w-2 h-2 rounded-full bg-foreground/30 inline-block" style={{ animationDelay: `${d}ms` }} />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              filteredShows.map((show, i) => (
-                <ShowCard key={show.id} show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} index={i} />
-              ))
-            )}
-          </div>
-          {!showsLoading && (
-            <div className="mt-12 text-center">
-              <Link
-                to="/catalog"
-                className="btn-primary inline-flex items-center gap-2"
-              >
-                {locale === 'de' ? 'Alle Shows' : 'All shows'} <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* ── Why section ── */}
       <section id="why" className="py-24 md:py-32">
@@ -1178,60 +1029,39 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </section>
 
-      {/* ── Featured Artist ── */}
-      <FeaturedArtistSection locale={locale} />
-
-      {/* ── Testimonials ── */}
-      <section id="testimonials" className="py-24 md:py-32 overflow-hidden">
+      {/* ── So läuft es ── */}
+      <section id="ablauf" className="py-24 md:py-32">
         <div className="container grid grid-cols-12 gap-8">
           <div className="col-span-12 md:col-span-4">
-            <motion.span
-              className="label-style"
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              03 / Testimonials
-            </motion.span>
+            <span className="label-style">
+              03 / {locale === 'de' ? 'So läuft es' : 'How it works'}
+            </span>
           </div>
           <div className="col-span-12 md:col-span-8">
-            <motion.h2
-              className="heading-lg mb-4"
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            >
-              {locale === 'de' ? 'Was Kunden sagen.' : 'What clients say.'}
-            </motion.h2>
-            <p className="body-text mb-16">
-              {locale === 'de' ? 'Persönlich kuratiert. Professionell vermittelt.' : 'Personally curated. Professionally arranged.'}
-            </p>
+            <h2 className="heading-lg mb-10">
+              {locale === 'de' ? 'Sie schreiben. Den Rest mache ich.' : 'You write. I do the rest.'}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border border border-border">
+              {(locale === 'de'
+                ? [
+                    ['01', 'Sie beschreiben Ihr Event', 'Anlass, Datum, Budget, Stil. Ein paar Sätze reichen — Telefon und WhatsApp gehen genauso.'],
+                    ['02', 'Vorschläge in 24 Stunden', 'Ich suche persönlich aus meinem Netzwerk aus und schicke konkrete Acts. Meistens schneller.'],
+                    ['03', 'Danach direkt', 'Ich stelle den Kontakt her und begleite bis zur Buchung. Berlintina ist keine Sperrschicht zwischen Ihnen und dem Künstler.'],
+                  ]
+                : [
+                    ['01', 'You describe your event', 'Occasion, date, budget, style. A few sentences are enough — phone and WhatsApp work just as well.'],
+                    ['02', 'Proposals within 24 hours', 'I pick from my network personally and send you specific acts. Usually sooner.'],
+                    ['03', 'Then straight on', 'I make the introduction and stay with you until the booking. Berlintina is not a wall between you and the artist.'],
+                  ]
+              ).map(([nr, titel, text]) => (
+                <div key={nr} className="bg-background p-6 md:p-8">
+                  <span className="font-display text-3xl text-accent leading-none">{nr}</span>
+                  <h3 className="font-display font-bold text-lg mt-3 mb-2">{titel}</h3>
+                  <p className="body-text text-sm">{text}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="container">
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="border-l-2 border-accent pl-6 max-w-2xl"
-          >
-            <p className="text-lg text-foreground leading-relaxed font-body">
-              {locale === 'de'
-                ? 'Die Plattform ist jung — aber Berlintina vermittelt seit Jahren persönlich Künstler in Berlin. Die ersten Kundenstimmen folgen nach unseren gemeinsamen Events. Bis dahin: schauen Sie hinter die Kulissen auf Instagram.'
-                : "The platform is young — but Berlintina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
-            </p>
-            <a
-              href="https://www.instagram.com/berlin.tina"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity no-underline"
-            >
-              @berlin.tina <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
-          </motion.div>
         </div>
       </section>
 
@@ -1342,8 +1172,92 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </section>
 
-      {/* ── CTA Banner ── */}
-      <CTABanner locale={locale} />
+      {/* ── Roster — masonry grid ── */}
+      <section id="roster" className="py-16 md:py-24 bg-background">
+        <div className="container">
+          <div className="masonry-grid">
+            {showsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="flex items-center gap-1.5">
+                  {[0, 160, 320].map((d) => (
+                    <span key={d} className="typing-dot w-2 h-2 rounded-full bg-foreground/30 inline-block" style={{ animationDelay: `${d}ms` }} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              filteredShows.map((show, i) => (
+                <ShowCard key={show.id} show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} index={i} />
+              ))
+            )}
+          </div>
+          {!showsLoading && (
+            <div className="mt-12 text-center">
+              <Link
+                to="/catalog"
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                {locale === 'de' ? 'Alle Shows' : 'All shows'} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Artists & Ideas ── */}
+      <ArtistIdeaSection locale={locale} />
+{/* ── Testimonials ── */}
+      <section id="testimonials" className="py-24 md:py-32 overflow-hidden">
+        <div className="container grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-4">
+            <motion.span
+              className="label-style"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              03 / Testimonials
+            </motion.span>
+          </div>
+          <div className="col-span-12 md:col-span-8">
+            <motion.h2
+              className="heading-lg mb-4"
+              initial={{ y: 30, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            >
+              {locale === 'de' ? 'Was Kunden sagen.' : 'What clients say.'}
+            </motion.h2>
+            <p className="body-text mb-16">
+              {locale === 'de' ? 'Persönlich kuratiert. Professionell vermittelt.' : 'Personally curated. Professionally arranged.'}
+            </p>
+          </div>
+        </div>
+        <div className="container">
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="border-l-2 border-accent pl-6 max-w-2xl"
+          >
+            <p className="text-lg text-foreground leading-relaxed font-body">
+              {locale === 'de'
+                ? 'Die Plattform ist jung — aber Berlintina vermittelt seit Jahren persönlich Künstler in Berlin. Die ersten Kundenstimmen folgen nach unseren gemeinsamen Events. Bis dahin: schauen Sie hinter die Kulissen auf Instagram.'
+                : "The platform is young — but Berlintina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
+            </p>
+            <a
+              href="https://www.instagram.com/berlin.tina"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity no-underline"
+            >
+              @berlin.tina <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+          </motion.div>
+        </div>
+      </section>
 
       {/* ── FAQ ── */}
       <section id="faq" className="py-24 md:py-32">
@@ -1410,9 +1324,10 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         </div>
       </section>
 
-      {/* ── Artists & Ideas ── */}
-      <ArtistIdeaSection locale={locale} />
+      {/* ── CTA Banner ── */}
+      <CTABanner locale={locale} />
 
+      
     </>)}
 </>
   );
