@@ -304,7 +304,9 @@ h1, h2, h3, h4, h5, h6 {
 .bt-nav-auf-aushang {
   background: transparent !important;
   backdrop-filter: none !important;
-  border-color: #ffffff2e !important;
+  /* No line either: on the poster the bar is not a strip with an edge, it is simply
+     part of the blue. The border returns together with the ground, further down. */
+  border-color: transparent !important;
 }
 .bt-nav-auf-aushang a,
 .bt-nav-auf-aushang button { color: #fff !important; }
