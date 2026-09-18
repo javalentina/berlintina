@@ -898,14 +898,24 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
         {/* Der Beweis: das Bild zu dem Namen, über dem die Maus steht. */}
         <div className="bt-evidence mt-6 flex gap-2" style={{ animationDelay: `${0.34 + billing.length * 0.13}s` }}>
           {billing.map((artist, i) => (
-            <img key={artist.name} src={artist.shows[0].photoUrls?.[0] || ''} alt=""
-              className="shrink-0 object-cover transition-all duration-300"
-              style={{
-                width: 'clamp(72px,9vw,106px)', height: 'clamp(50px,6vw,72px)',
-                filter: (billed ?? 0) === i ? 'none' : 'grayscale(1) contrast(1.12)',
-                transform: (billed ?? 0) === i ? 'translateY(-4px)' : 'none',
-              }}
-              loading="lazy" />
+            <Link
+              key={artist.name}
+              to={`/show/${artist.shows[0].slug}`}
+              onClick={() => track(AUSHANG_NAME_GEKLICKT, { name: artist.name, platz: i + 1, ueber: 'bild' })}
+              onMouseEnter={() => setBilled(i)}
+              onMouseLeave={() => setBilled(null)}
+              className="shrink-0 block"
+              aria-label={artist.name}
+            >
+              <img src={artist.shows[0].photoUrls?.[0] || ''} alt=""
+                className="object-cover transition-all duration-300"
+                style={{
+                  width: 'clamp(104px,13vw,150px)', height: 'clamp(72px,9vw,102px)',
+                  filter: (billed ?? 0) === i ? 'none' : 'grayscale(1) contrast(1.12)',
+                  transform: (billed ?? 0) === i ? 'translateY(-4px)' : 'none',
+                }}
+                loading="lazy" />
+            </Link>
           ))}
         </div>
 
@@ -928,6 +938,10 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </div>
     </section>
 
+    {/* Alles unterhalb des Aushangs steht auf der Buehne: dunkler Grund,
+        heller Einschub bei den Preisen, Abschluss im Blau des Aushangs.
+        Umgesetzt ueber Tokens in index.css, nicht durch neue Sektionen. */}
+    <div className="bt-buehne">
     {/* ── AI Recommendations — full width ── */}
     {hasResults && (
       <div ref={resultsRef} className="w-full border-t border-foreground/10 scroll-mt-20">
@@ -1329,6 +1343,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
 
       
     </>)}
+    </div>
 </>
   );
 };

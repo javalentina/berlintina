@@ -314,3 +314,77 @@ h1, h2, h3, h4, h5, h6 {
   background: #fff !important;
   color: #1E3FC4 !important;
 }
+
+/* ── Die Buehne: die Startseite unterhalb des Aushangs ────────────────────
+   Die Seite ist vollstaendig ueber Tokens gebaut, also wird hier umgestimmt
+   statt jede Sektion neu geschrieben — dieselben Bausteine, andere Beleuchtung.
+   Der dunkle Grund ist Absicht: verkauft wird, was im abgedunkelten Saal
+   passiert. Ausgenommen sind die Preise: der Abschnitt, in dem sie offenlegt,
+   dass bei Direktbuchung nichts an sie geht, soll wie ein Dokument aussehen
+   und nicht wie Teil der Show. Und der Abschluss, der das Blau des Aushangs
+   wieder aufnimmt.
+   html.dark bleibt unberuehrt: wer den Schalter oben umlegt, bekommt weiterhin
+   die eigene dunkle Fassung der Seite. */
+.bt-buehne {
+  --color-background: #14121A;
+  --color-foreground: #F3EFE6;
+  --color-card: #1B1924;
+  --color-card-foreground: #F3EFE6;
+  --color-secondary: #221F2C;
+  --color-secondary-foreground: #F3EFE6;
+  --color-muted: #221F2C;
+  --color-muted-foreground: #9A94A6;
+  --color-accent: #D9342B;
+  --color-accent-foreground: #FFFFFF;
+  --color-border: rgba(255,255,255,0.11);
+  --color-input: rgba(255,255,255,0.11);
+  --color-surface: #14121A;
+  --color-surface-alt: #1B1924;
+  --color-charcoal: #F3EFE6;
+  --color-warm-muted: #9A94A6;
+  --color-warm-faint: #6F6980;
+  --color-warm-border: rgba(255,255,255,0.11);
+  --color-terracotta: #C9973F;
+  background: #14121A;
+  color: #F3EFE6;
+}
+
+/* Preise: heller Einschub, damit die Offenlegung wie ein Dokument liest. */
+.bt-buehne #pricing {
+  --color-background: #F3EFE6;
+  --color-foreground: #14121A;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #14121A;
+  --color-muted: #E6E1D6;
+  --color-muted-foreground: #5A5364;
+  --color-border: rgba(20,19,19,0.12);
+  --color-warm-muted: #5A5364;
+  --color-warm-faint: #8A8394;
+  --color-warm-border: rgba(20,19,19,0.12);
+  --color-charcoal: #14121A;
+  --color-surface: #F3EFE6;
+  --color-surface-alt: #E6E1D6;
+  background: #F3EFE6;
+  color: #14121A;
+}
+
+/* Abschluss im Blau des Aushangs — der Kreis schliesst sich. */
+.bt-buehne #call-to-action {
+  --color-background: #1E3FC4;
+  --color-foreground: #FFFFFF;
+  --color-muted-foreground: rgba(255,255,255,0.78);
+  --color-border: rgba(255,255,255,0.22);
+  --color-accent: #FFFFFF;
+  --color-accent-foreground: #1E3FC4;
+  --color-charcoal: #FFFFFF;
+  --color-warm-muted: rgba(255,255,255,0.78);
+  background: #1E3FC4;
+  color: #FFFFFF;
+}
+
+/* Grosse Ueberschriften auf der Buehne im Ton des Aushangs. */
+.bt-buehne h2 {
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+.bt-buehne .label-style { color: var(--color-warm-faint); }
