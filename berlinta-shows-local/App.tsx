@@ -994,6 +994,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
             <Link
               key={artist.name}
               to={`/show/${artist.shows[0].slug}`}
+              onClick={() => track(AUSHANG_NAME_GEKLICKT, { name: artist.name, platz: i + 1 })}
               onMouseEnter={() => setBilled(i)}
               onMouseLeave={() => setBilled(null)}
               onFocus={() => setBilled(i)}
