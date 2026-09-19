@@ -265,6 +265,7 @@ h1, h2, h3, h4, h5, h6 {
    wenn die Animation nicht läuft — sie kommen aus der Datenbank und damit
    später als der erste Render. .is-ready setzt der Aushang selbst, sobald
    die Namen da sind; erst dann läuft der Auftritt, genau einmal. */
+.bt-plakat { display: flex; flex-direction: column; }
 .bt-plakat .bt-breath {
   inset: -25%;
   background: radial-gradient(42% 42% at 30% 28%, #6E8BFF66 0%, #6E8BFF00 70%);

@@ -867,7 +867,7 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       style={{ background: '#1E3FC4', minHeight: '100svh' }}>
       <div aria-hidden className="bt-breath pointer-events-none absolute" />
 
-      <div className="relative z-[2] flex min-h-[100svh] flex-col justify-center container pt-28 pb-0">
+      <div className="relative z-[2] flex flex-1 flex-col justify-center container pt-28 pb-0">
         <span className="label-style block" style={{ color: '#ffffffcc' }}>
           {locale === 'de' ? 'Berlintina präsentiert' : 'Berlintina presents'}
         </span>
