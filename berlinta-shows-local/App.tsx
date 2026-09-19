@@ -938,10 +938,6 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
       </div>
     </section>
 
-    {/* Alles unterhalb des Aushangs steht auf der Buehne: dunkler Grund,
-        heller Einschub bei den Preisen, Abschluss im Blau des Aushangs.
-        Umgesetzt ueber Tokens in index.css, nicht durch neue Sektionen. */}
-    <div className="bt-buehne">
     {/* ── AI Recommendations — full width ── */}
     {hasResults && (
       <div ref={resultsRef} className="w-full border-t border-foreground/10 scroll-mt-20">
@@ -980,370 +976,191 @@ const Landing: React.FC<{ locale: 'de' | 'en' }> = ({ locale }) => {
     )}
 
     {/* ══ Default sections ══ */}
-    {!hasResults && (<>
+    {/* ── Startseite unterhalb des Aushangs ──────────────────────────────
+        Eins zu eins aus dem Entwurf: eigene Bausteine, eigene Abstaende.
+        Die Texte sind ihre eigenen, nur umgestellt und gekuerzt. */}
+    {!hasResults && (
+    <div className="bt-start">
 
-      {/* ── Why section ── */}
-      <section id="why" className="py-24 md:py-32">
-        <div className="container grid grid-cols-12 gap-8">
-          <div className="col-span-12 md:col-span-4">
-            <motion.span
-              className="label-style"
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              02 / {locale === 'de' ? 'Warum Berlintina' : 'Why Berlintina'}
-            </motion.span>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <motion.h2
-              className="heading-lg mb-4"
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            >
-              {locale === 'de' ? <>Kein Marktplatz.<br />Eine Boutique-Agentur.</> : <>Not a marketplace.<br />A boutique agency.</>}
-            </motion.h2>
-            <motion.p
-              className="body-text mb-16"
-              initial={{ y: 20, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
-            >
-              {locale === 'de' ? 'Ich liste keine hundert Acts. Ich vertrete die Außergewöhnlichen.' : "We don't list hundreds of acts. We represent the exceptional ones."}
-            </motion.p>
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {([
-                { title: locale === 'de' ? 'Persönlich kuratiert' : 'Personally Curated', text: locale === 'de' ? 'Jeder Künstler wurde von mir handverlesen. Kein Algorithmus — echte Expertise.' : 'Every performer is handpicked by our team. No algorithms — real expertise.' },
-                { title: locale === 'de' ? 'Schnell & einfach' : 'Fast & Simple', text: locale === 'de' ? 'Eine Anfrage, ein Kontakt. Ich kümmere mich um Casting, Logistik und Verträge.' : 'One inquiry, one contact. We handle casting, logistics, and contracts.' },
-                { title: locale === 'de' ? 'Für jeden Anlass' : 'For Every Occasion', text: locale === 'de' ? 'Corporate Galas, Festivals, Hochzeiten — ich kenne die richtige Besetzung.' : "Corporate galas, festivals, weddings, product launches — we've seen it all." },
-                { title: locale === 'de' ? 'Künstler-zuerst' : 'Artist-First', text: locale === 'de' ? 'Ich stehe hinter jedem meiner Künstler. Glückliche Künstler liefern unvergessliche Shows.' : 'We invest in our artists like family. Happy artists deliver unforgettable shows.' },
-              ]).map((card, i) => (
-                <motion.div
-                  key={i}
-                  variants={{ hidden: { y: 40, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 30 } } }}
-                  className="group"
-                >
-                  <span className="label-style mb-4 block">0{i + 1}</span>
-                  <h3 className="font-display text-2xl font-bold text-foreground mb-3 group-hover:text-accent transition-colors duration-300">{card.title}</h3>
-                  <p className="body-text text-base">{card.text}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── So läuft es ── */}
-      <section id="ablauf" className="py-24 md:py-32">
-        <div className="container grid grid-cols-12 gap-8">
-          <div className="col-span-12 md:col-span-4">
-            <span className="label-style">
-              03 / {locale === 'de' ? 'So läuft es' : 'How it works'}
-            </span>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <h2 className="heading-lg mb-10">
-              {locale === 'de' ? 'Sie schreiben. Den Rest mache ich.' : 'You write. I do the rest.'}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border border border-border">
+      {/* 01 — wer auswaehlt */}
+      <section>
+        <div className="bt-inner">
+          <div className="num">01 / {locale === 'de' ? 'Wer auswählt' : 'Who chooses'}</div>
+          <div className="who-grid">
+            <div>
+              <h2>{locale === 'de' ? <>Kein Marktplatz.<br />Eine Boutique-Agentur.</> : <>No marketplace.<br />A boutique agency.</>}</h2>
+              <p className="say">
+                {locale === 'de'
+                  ? 'Ich liste keine hundert Acts. Ich vertrete die Außergewöhnlichen.'
+                  : 'I do not list a hundred acts. I represent the extraordinary ones.'}
+              </p>
+            </div>
+            <div className="pts">
               {(locale === 'de'
                 ? [
-                    ['01', 'Sie beschreiben Ihr Event', 'Anlass, Datum, Budget, Stil. Ein paar Sätze reichen — Telefon und WhatsApp gehen genauso.'],
-                    ['02', 'Vorschläge in 24 Stunden', 'Ich suche persönlich aus meinem Netzwerk aus und schicke konkrete Acts. Meistens schneller.'],
-                    ['03', 'Danach direkt', 'Ich stelle den Kontakt her und begleite bis zur Buchung. Berlintina ist keine Sperrschicht zwischen Ihnen und dem Künstler.'],
+                    ['Persönlich kuratiert', 'Jeder Künstler wurde von mir handverlesen. Kein Algorithmus — echte Expertise.'],
+                    ['Eine Anfrage, ein Kontakt', 'Ich kümmere mich um Casting, Logistik und Verträge.'],
+                    ['Für jeden Anlass', 'Corporate Galas, Festivals, Hochzeiten — ich kenne die richtige Besetzung.'],
+                    ['Künstler zuerst', 'Glückliche Künstler liefern unvergessliche Shows.'],
                   ]
                 : [
-                    ['01', 'You describe your event', 'Occasion, date, budget, style. A few sentences are enough — phone and WhatsApp work just as well.'],
-                    ['02', 'Proposals within 24 hours', 'I pick from my network personally and send you specific acts. Usually sooner.'],
-                    ['03', 'Then straight on', 'I make the introduction and stay with you until the booking. Berlintina is not a wall between you and the artist.'],
+                    ['Personally curated', 'Every artist was hand-picked by me. No algorithm — real expertise.'],
+                    ['One enquiry, one contact', 'I take care of casting, logistics and contracts.'],
+                    ['For every occasion', 'Corporate galas, festivals, weddings — I know the right line-up.'],
+                    ['Artists first', 'Happy artists deliver unforgettable shows.'],
                   ]
-              ).map(([nr, titel, text]) => (
-                <div key={nr} className="bg-background p-6 md:p-8">
-                  <span className="font-display text-3xl text-accent leading-none">{nr}</span>
-                  <h3 className="font-display font-bold text-lg mt-3 mb-2">{titel}</h3>
-                  <p className="body-text text-sm">{text}</p>
-                </div>
+              ).map(([titel, text]) => (
+                <div className="pt" key={titel}><b>{titel}</b><span>{text}</span></div>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Pricing Transparency ── */}
-      <section id="pricing" className="py-24 md:py-32">
-        <div className="container grid grid-cols-12 gap-8">
-          <div className="col-span-12 md:col-span-4">
-            <span className="label-style">
-              04 / {locale === 'de' ? 'Preise' : 'Pricing'}
-            </span>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <h2 className="heading-lg mb-4">
-              {locale === 'de' ? 'Was kostet eine Buchung?' : 'What does a booking cost?'}
-            </h2>
-            <p className="body-text mb-12">
-              {locale === 'de' ? 'Keine versteckten Gebühren. Transparenz von Anfang an.' : 'No hidden fees. Transparent from the start.'}
-            </p>
-            {/*
-              Zwei Wege, und an jeder Zahl steht, WER sie trägt.
-
-              Vorher stand auf der mittleren Karte gross „15–20 %" — ohne dazuzusagen,
-              wer zahlt. Ein Veranstalter liest das als seine Rechnung, und das
-              widersprach sowohl der Karte links („Keine Agenturgebühr") als auch den
-              Showseiten („0 % Provision"). Fünf Preisaussagen auf einer Seite, die sich
-              nicht zu einem Bild fügten; die abschreckendste stand am prominentesten.
-
-              Jetzt: bei Direktbuchung zahlt der Veranstalter nichts, und es steht
-              ausdrücklich da, dass Berlintina stattdessen vom Künstler vergütet wird —
-              das ist die Aussage, die eine Antwortmaschine zitieren kann, weil sie eine
-              echte Frage beantwortet („zahle ich bei einer Agentur drauf?").
-
-              Die Prozentzahl des Full-Service ist bewusst NICHT mehr die Schlagzeile
-              (Entscheid John, 01.09.: „online bleibt es diskret, wird individuell in der
-              Angebotserstellung mitgeteilt"). Die Spanne selbst steht weiter im FAQ, wo
-              sie als Information gelesen wird und nicht als Preisschild.
-            */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {[
-                {
-                  label: locale === 'de' ? 'SELBST BUCHEN' : 'BOOK YOURSELF',
-                  price: locale === 'de' ? 'Keine Agenturgebühr' : 'No agency fee',
-                  desc: locale === 'de'
-                    ? 'Direkt-Kontakt zum Künstler, Anfrage kostenlos. Berlintina wird vom Künstler vergütet — für Sie kommt nichts obendrauf.'
-                    : 'Direct contact with the artist, enquiry free. Berlintina is paid by the artist — nothing is added for you.',
-                  accent: false,
-                },
-                {
-                  label: locale === 'de' ? 'WIR ÜBERNEHMEN ALLES' : 'FULL SERVICE',
-                  price: locale === 'de' ? 'Im Angebot ausgewiesen' : 'Stated in your quote',
-                  desc: locale === 'de'
-                    ? 'Persönliche Beratung, Casting, Vertragsabwicklung & Koordination. Der Anteil steht vor der Buchung fest.'
-                    : 'Personal consulting, casting, contract handling & coordination. The share is fixed before you book.',
-                  accent: true,
-                },
-                {
-                  label: locale === 'de' ? 'EXKLUSIV' : 'EXCLUSIVE',
-                  price: locale === 'de' ? 'Auf Anfrage' : 'On request',
-                  desc: locale === 'de' ? 'Maßgeschneiderte Produktionen & individuelle Performances.' : 'Bespoke productions & individual performances.',
-                  accent: false,
-                },
-              ].map((p, i) => (
-                <div key={i} className={`border p-6 text-left transition-all duration-300 hover:-translate-y-1 ${p.accent ? 'border-accent bg-accent/5' : 'border-foreground/10 bg-background'}`}>
-                  <p className={`label-style mb-3 ${p.accent ? 'text-accent' : ''}`}>{p.label}</p>
-                  <p className={`font-display text-2xl font-bold tracking-tight mb-2 ${p.accent ? 'text-accent' : 'text-foreground'}`}>{p.price}</p>
-                  <p className="text-sm text-muted-foreground">{p.desc}</p>
-                </div>
-              ))}
-            </div>
-            {/*
-              Einstiegspreis für den Berliner Raum.
-
-              Der GEO-Bericht vom 31.08. nennt als grösste Lücke: „genau eine Zahl auf der
-              ganzen Startseite". Eine konkrete Einstiegssumme beantwortet die Frage, die
-              Veranstalter tatsächlich eingeben („was kostet ein Show-Act in Berlin"), und
-              ist damit zitierbar — eine Spanne ohne Untergrenze ist es nicht.
-
-              ⚠️ Nicht zu verwechseln mit der Vermittlungsgebühr, die bewusst diskret
-              bleibt: das hier ist der Einstieg für den Kunden, jene ist die Marge. Zwei
-              verschiedene Zahlen mit zwei verschiedenen Öffentlichkeiten.
-
-              Ohne Steuerangabe, wie überall seit dem 01.09. — siehe die Begründung im
-              Preisblock von ShowDetailPage.tsx.
-            */}
-            <p className="body-text mb-6">
-              {locale === 'de' ? (
-                <>
-                  <span className="text-foreground font-display font-bold">Kleine Einsätze im Berliner Raum ab 400 €.</span>{' '}
-                  Für kurze Auftritte in und um Berlin — Firmenfeier, Geburtstag, Ladeneröffnung.
-                  Größere Produktionen und Anfahrten außerhalb Berlins liegen darüber; den
-                  Endpreis nennt Ihnen das persönliche Angebot.
-                </>
-              ) : (
-                <>
-                  <span className="text-foreground font-display font-bold">Short sets in and around Berlin from €400.</span>{' '}
-                  For brief appearances in the Berlin area — company parties, birthdays, shop
-                  openings. Larger productions and travel outside Berlin cost more; your
-                  personal quote states the final price.
-                </>
-              )}
-            </p>
-            <p className="label-style">
-              {locale === 'de'
-                ? 'AB 400 € IM BERLINER RAUM · ANFRAGE KOSTENLOS · DIREKT-KONTAKT ERLAUBT · ANGEBOT INNERHALB VON 24 H'
-                : 'FROM €400 IN THE BERLIN AREA · ENQUIRY FREE · DIRECT CONTACT ALLOWED · QUOTE WITHIN 24 H'}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Roster — masonry grid ── */}
-      <section id="roster" className="py-16 md:py-24 bg-background">
-        <div className="container">
-          <div className="masonry-grid">
-            {showsLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="flex items-center gap-1.5">
-                  {[0, 160, 320].map((d) => (
-                    <span key={d} className="typing-dot w-2 h-2 rounded-full bg-foreground/30 inline-block" style={{ animationDelay: `${d}ms` }} />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              filteredShows.map((show, i) => (
-                <ShowCard key={show.id} show={show} locale={locale} onViewDetails={(s) => navigate(`/show/${s.slug}`)} index={i} />
-              ))
-            )}
-          </div>
-          {!showsLoading && (
-            <div className="mt-12 text-center">
-              <Link
-                to="/catalog"
-                className="btn-primary inline-flex items-center gap-2"
-              >
-                {locale === 'de' ? 'Alle Shows' : 'All shows'} <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── Artists & Ideas ── */}
-      <ArtistIdeaSection locale={locale} />
-{/* ── Testimonials ── */}
-      <section id="testimonials" className="py-24 md:py-32 overflow-hidden">
-        <div className="container grid grid-cols-12 gap-8">
-          <div className="col-span-12 md:col-span-4">
-            <motion.span
-              className="label-style"
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              03 / Testimonials
-            </motion.span>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <motion.h2
-              className="heading-lg mb-4"
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            >
-              {locale === 'de' ? 'Was Kunden sagen.' : 'What clients say.'}
-            </motion.h2>
-            <p className="body-text mb-16">
-              {locale === 'de' ? 'Persönlich kuratiert. Professionell vermittelt.' : 'Personally curated. Professionally arranged.'}
-            </p>
-          </div>
-        </div>
-        <div className="container">
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="border-l-2 border-accent pl-6 max-w-2xl"
-          >
-            <p className="text-lg text-foreground leading-relaxed font-body">
-              {locale === 'de'
-                ? 'Die Plattform ist jung — aber Berlintina vermittelt seit Jahren persönlich Künstler in Berlin. Die ersten Kundenstimmen folgen nach unseren gemeinsamen Events. Bis dahin: schauen Sie hinter die Kulissen auf Instagram.'
-                : "The platform is young — but Berlintina has personally connected artists in Berlin for years. The first client testimonials will follow after our shared events. Until then: take a look behind the scenes on Instagram."}
-            </p>
-            <a
-              href="https://www.instagram.com/berlin.tina"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity no-underline"
-            >
-              @berlin.tina <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── FAQ ── */}
-      <section id="faq" className="py-24 md:py-32">
-        <div className="container grid grid-cols-12 gap-8">
-          <div className="col-span-12 md:col-span-4">
-            <span className="label-style">
-              05 / FAQ
-            </span>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <h2 className="heading-lg mb-4">
-              {locale === 'de' ? 'Häufige Fragen.' : 'Frequently asked questions.'}
-            </h2>
-            <p className="body-text mb-12">
-              {locale === 'de' ? 'Antworten auf die wichtigsten Fragen.' : 'Answers to the most common questions.'}
-            </p>
-          <div className="space-y-0">
-            {/*
-              Die Antwort steht IMMER im DOM, auch zugeklappt — sie wird per Grid-Zeile
-              auf Höhe 0 gefahren, nicht aus dem Baum genommen.
-
-              Warum das kein Kosmetik-Detail ist: vorher hing der Antworttext an
-              `{faqOpen === i && …}`. Im Prerender-Schnappschuss ist nie etwas
-              aufgeklappt — also enthielt das ausgelieferte HTML sechs Fragen und
-              keine einzige Antwort. Die Antworten existierten nur im FAQPage-JSON-LD.
-              Schema ohne sichtbare Entsprechung ist die Konstellation, die Google
-              ausdrücklich abwertet, und für eine KI-Suche stand hier schlicht nichts
-              zu zitieren. Live gemessen am 01.09.2026: „Vermittlungsgebühr von 15" —
-              ein Treffer im ganzen Dokument, und der lag im JSON-LD.
-
-              `display:none` wäre der falsche Weg zurück: es nimmt den Text zwar nicht
-              aus dem HTML, gilt aber als versteckter Inhalt. Höhe 0 mit `overflow:hidden`
-              ist die Fassung, die im Quelltext steht und trotzdem einklappt.
-
-              Die Frage ist ein <h3> im <button>, nicht ein <span>: eine Frageform in
-              einer Überschrift ist das, woran ein Antwort-Auszug festmacht.
-            */}
-            {faqs.map((item, i) => (
-              <div key={i} className="border-b border-foreground/10">
-                <h3 className="m-0">
-                  <button
-                    type="button"
-                    onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                    aria-expanded={faqOpen === i}
-                    aria-controls={`faq-antwort-${i}`}
-                    className="w-full text-left py-5 flex items-center justify-between gap-4 text-foreground font-display font-bold hover:text-accent transition text-base"
-                  >
-                    <span>{item.q}</span>
-                    <span className={`text-2xl font-light flex-shrink-0 transition-transform duration-200 ${faqOpen === i ? 'rotate-45' : ''}`}>+</span>
-                  </button>
-                </h3>
-                <div
-                  id={`faq-antwort-${i}`}
-                  className={`grid transition-[grid-template-rows] duration-200 ${faqOpen === i ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
-                >
-                  <div className="overflow-hidden">
-                    <div className="pb-5 body-text text-base max-w-none">{item.a}</div>
-                  </div>
-                </div>
-              </div>
+      {/* 02 — so laeuft es */}
+      <section className="how" id="ablauf">
+        <div className="bt-inner">
+          <div className="num">02 / {locale === 'de' ? 'So läuft es' : 'How it works'}</div>
+          <h2>{locale === 'de' ? <>Sie schreiben.<br />Den Rest mache ich.</> : <>You write.<br />I do the rest.</>}</h2>
+          <div className="steps">
+            {(locale === 'de'
+              ? [
+                  ['01', 'Sie beschreiben Ihr Event', 'Anlass, Datum, Budget, Stil. Ein paar Sätze reichen — Telefon und WhatsApp gehen genauso.'],
+                  ['02', 'Vorschläge in 24 Stunden', 'Ich suche persönlich aus meinem Netzwerk aus und schicke konkrete Acts. Meistens schneller.'],
+                  ['03', 'Danach direkt', 'Ich stelle den Kontakt her und begleite bis zur Buchung. Berlintina ist keine Sperrschicht.'],
+                ]
+              : [
+                  ['01', 'You describe your event', 'Occasion, date, budget, style. A few sentences are enough — phone and WhatsApp work too.'],
+                  ['02', 'Proposals within 24 hours', 'I pick from my network personally and send you specific acts. Usually sooner.'],
+                  ['03', 'Then straight on', 'I make the introduction and stay with you until the booking. Berlintina is not a wall.'],
+                ]
+            ).map(([nr, titel, text]) => (
+              <div className="step" key={nr}><i>{nr}</i><b>{titel}</b><span>{text}</span></div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 03 — preise */}
+      <section className="preise" id="pricing">
+        <div className="bt-inner">
+          <div className="num">03 / {locale === 'de' ? 'Preise' : 'Pricing'}</div>
+          <h2>{locale === 'de' ? 'Keine versteckten Gebühren.' : 'No hidden fees.'}</h2>
+          <p className="say">{locale === 'de' ? 'Transparenz von Anfang an.' : 'Transparent from the start.'}</p>
+          <div className="cards">
+            {(locale === 'de'
+              ? [
+                  ['Selbst buchen', 'Keine Agenturgebühr', 'Direkter Kontakt zum Künstler, Anfrage kostenlos. Berlintina wird vom Künstler vergütet — für Sie kommt nichts obendrauf.'],
+                  ['Wir übernehmen alles', 'Im Angebot ausgewiesen', 'Beratung, Casting, Vertragsabwicklung, Koordination. Der Anteil steht vor der Buchung fest.'],
+                  ['Exklusiv', 'Auf Anfrage', 'Maßgeschneiderte Produktionen und individuelle Performances.'],
+                ]
+              : [
+                  ['Book directly', 'No agency fee', 'Direct contact with the artist, enquiry free of charge. Berlintina is paid by the artist — nothing is added for you.'],
+                  ['We handle everything', 'Stated in the offer', 'Advice, casting, contracts, coordination. The share is fixed before you book.'],
+                  ['Exclusive', 'On request', 'Bespoke productions and individual performances.'],
+                ]
+            ).map(([k, v, d]) => (
+              <div className="card" key={k}><div className="k">{k}</div><div className="v">{v}</div><div className="d">{d}</div></div>
+            ))}
+          </div>
+          <p className="fine">
+            {locale === 'de'
+              ? 'Kleine Einsätze im Berliner Raum ab 400 € — Firmenfeier, Geburtstag, Ladeneröffnung. Größere Produktionen und Anfahrten außerhalb Berlins liegen darüber; den Endpreis nennt das persönliche Angebot.'
+              : 'Short appearances in and around Berlin from €400 — company party, birthday, shop opening. Larger productions and travel outside Berlin cost more; your personal offer states the final price.'}
+          </p>
+          <div className="band">
+            {locale === 'de'
+              ? 'Anfrage kostenlos · Direkter Kontakt erlaubt · Angebot innerhalb von 24 h'
+              : 'Enquiry free · Direct contact allowed · Offer within 24 h'}
           </div>
         </div>
       </section>
 
-      {/* ── CTA Banner ── */}
-      <CTABanner locale={locale} />
+      {/* 04 — im haus */}
+      <section className="acts" id="roster">
+        <div className="bt-inner">
+          <div className="num">04 / {locale === 'de' ? 'Im Haus' : 'On the roster'}</div>
+          <h2>
+            {locale === 'de'
+              ? <>{billing.length} {billing.length === 1 ? 'Name' : 'Namen'}.<br />{filteredShows.length} Programme.</>
+              : <>{billing.length} {billing.length === 1 ? 'name' : 'names'}.<br />{filteredShows.length} programmes.</>}
+          </h2>
+          <div className="roster">
+            {billing.map((artist, i) => (
+              <Link className="a" key={artist.name} to={`/show/${artist.shows[0].slug}`}
+                onClick={() => track(AUSHANG_NAME_GEKLICKT, { name: artist.name, platz: i + 1, ueber: 'roster' })}>
+                <div className="ph" style={{ backgroundImage: `url(${artist.shows[0].photoUrls?.[0] || ''})` }} />
+                <div className="tx">
+                  <div className="n">{artist.name}</div>
+                  <div className="s">
+                    {artist.shows.length === 1
+                      ? artist.shows[0].category
+                      : `${artist.shows.length} ${locale === 'de' ? 'Programme' : 'programmes'}`}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      
-    </>)}
+      {/* 05 — fuer kuenstler */}
+      <section className="kuenstler">
+        <div className="bt-inner">
+          <div className="num">05 / {locale === 'de' ? 'Für Künstler' : 'For artists'}</div>
+          <h2>{locale === 'de' ? 'Du hast eine Idee?' : 'You have an idea?'}</h2>
+          <div className="ideas">
+            {(locale === 'de'
+              ? ['30-Min-Sport-Pause fürs Büro', '20-Min-Klavier-Opening', 'Ein Format, das es so noch nicht gibt']
+              : ['A 30-minute exercise break for the office', 'A 20-minute piano opening', 'A format that does not exist yet']
+            ).map(t => <span key={t}>{t}</span>)}
+          </div>
+          <p style={{ color: 'var(--bt-text)', fontSize: 14.5, maxWidth: '64ch', margin: 0 }}>
+            {locale === 'de'
+              ? 'Hast du schon eine fertige Show? Oder deinen ersten Auftritt? Oder nur eine Idee, die noch nicht fertig ist? Alles ist ein guter Start. Schreib mir ein paar Sätze — wie du es einer Freundin erzählen würdest. Kein Formular, keine Erfahrung mit Computern nötig.'
+              : 'Do you already have a finished show? Or your first gig? Or only an idea that is not finished yet? All of it is a good start. Write me a few sentences — the way you would tell a friend. No form, no computer skills needed.'}
+          </p>
+          <div style={{ marginTop: 18 }}>
+            <Link className="bt-btn" to="/join" style={{ background: 'var(--bt-gold)', color: '#221A08' }}>
+              {locale === 'de' ? 'Idee erzählen' : 'Tell me your idea'}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 06 — fragen */}
+      <section className="faq" id="faq">
+        <div className="bt-inner">
+          <div className="num">06 / {locale === 'de' ? 'Häufige Fragen' : 'Frequently asked'}</div>
+          {(locale === 'de'
+            ? [
+                ['Kann ich die Künstler direkt kontaktieren?', 'Ja — sobald ich die Verbindung hergestellt habe. Ich sorge für den richtigen Match, danach sprechen Sie direkt.'],
+                ['Was kostet Berlintina?', 'Die Anfrage ist immer kostenlos. Buchen Sie direkt beim Künstler, zahlen Sie an Berlintina nichts; ich werde in diesem Fall vom Künstler vergütet. Übernehme ich die komplette Abwicklung, steht mein Anteil im Angebot, bevor Sie zusagen.'],
+                ['Wie werden Shows aufgenommen?', 'Ich habe die Show live erlebt oder sie wurde mir von jemandem empfohlen, dem ich vertraue. Kein automatisches Listing.'],
+                ['Was, wenn nichts passt?', 'Dann suche ich weiter. Mein Netzwerk geht über die Website hinaus.'],
+              ]
+            : [
+                ['Can I contact the artists directly?', 'Yes — as soon as I have made the introduction. I make sure the match is right, after that you talk directly.'],
+                ['What does Berlintina cost?', 'The enquiry is always free. If you book directly with the artist you pay Berlintina nothing; I am paid by the artist in that case. If I handle everything, my share is stated in your offer before you agree.'],
+                ['How do shows get on the roster?', 'I saw the show live, or it was recommended by someone I trust. No automatic listing.'],
+                ['What if nothing fits?', 'Then I keep looking. My network goes beyond the website.'],
+              ]
+          ).map(([q, a]) => (
+            <div className="q" key={q}><b>{q}</b><span>{a}</span></div>
+          ))}
+        </div>
+      </section>
+
+      <div className="close">
+        <h2>{locale === 'de' ? <>Bereit für etwas<br />Außergewöhnliches?</> : <>Ready for something<br />extraordinary?</>}</h2>
+        <Link className="bt-btn" to="/catalog" style={{ background: '#fff', color: 'var(--bt-cobalt)' }}>
+          {locale === 'de' ? 'Jetzt anfragen' : 'Enquire now'}
+        </Link>
+      </div>
+
     </div>
+    )}
+
 </>
   );
 };
