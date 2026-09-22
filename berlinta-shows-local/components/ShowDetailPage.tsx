@@ -374,11 +374,26 @@ export const ShowDetailPage: React.FC<Props> = ({
   const activePhoto = photos[activePhotoIdx] || photos[0];
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-28 bt-artist">
+
+      {/* ── Buehne: dasselbe Plakat, nur fuer eine Person ──────────────────
+          Das Bild traegt die erste Flaeche, der Name steht darauf im Grad des
+          Aushangs. Im Bearbeiten-Modus bleibt die Buehne weg, dort wird an den
+          Feldern gearbeitet und nicht geschaut. */}
+      {!editProps && activePhoto && (
+        <div className="stage">
+          <div className="shot" style={{ backgroundImage: `url(${activePhoto})` }} />
+          <div className="veil" />
+          <div className="inner">
+            <div className="arole">{[show.artistName, show.category].filter(Boolean).join(' · ')}</div>
+            <div className="aname">{show.artistName || show.title}</div>
+          </div>
+        </div>
+      )}
 
       {/* ── Back link (hidden in admin/edit mode) ── */}
       {!editProps && (
-        <div className="container pt-20 sm:pt-24 pb-6">
+        <div className="container pt-6 pb-6">
           <Link
             to="/catalog"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors no-underline"
@@ -396,7 +411,9 @@ export const ShowDetailPage: React.FC<Props> = ({
           {/* ── LEFT: Image col (7 cols) ── */}
           <div className="lg:col-span-7">
             {/* Main image or placeholder */}
-            {activePhoto ? (
+            {/* Das grosse Bild steht oben auf der Buehne. Hier erscheint es nur
+                noch beim Bearbeiten, wo man es austauschen koennen muss. */}
+            {editProps && activePhoto ? (
               <div className="relative overflow-hidden border border-border mb-4 group/photo">
                 <img
                   src={activePhoto}
