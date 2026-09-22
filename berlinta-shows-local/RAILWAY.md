@@ -1,85 +1,77 @@
 # Deploy Backend to Railway
 
----
+Der Server (Express + Postgres) läuft komplett auf Railway — inklusive Datenbank
+und Datei-Uploads. Es gibt kein separates Supabase-Projekt mehr (siehe
+`db/schema.sql` für die Historie dieser Umstellung).
 
-## Option A: Deploy ohne GitHub (mit Railway CLI)
+## Aufbau auf Railway
 
-**Wenn du kein GitHub-Repo hast**, kannst du direkt von deinem Rechner deployen:
+Ein Projektverbund mit zwei Services:
 
-### 1. Railway CLI installieren
+1. **Postgres** — Railway-eigenes Datenbank-Plugin, liefert `DATABASE_URL` automatisch
+   als Referenz-Variable.
+2. **berlintina-api** (dieser Server) — braucht ein **Volume**, gemountet z.B. unter
+   `/data`, für Artist-/Show-Fotos. Ohne Volume gehen hochgeladene Bilder bei jedem
+   Redeploy verloren.
+
+Beide Services reden über Railways privates Netz miteinander — dafür muss nichts
+zusätzlich konfiguriert werden, `DATABASE_URL` reicht.
+
+## Neu aufsetzen
+
+### 1. Postgres-Service anlegen
+
+Im Railway-Dashboard: **New** → **Database** → **PostgreSQL**.
+
+### 2. Schema laden
+
+```bash
+psql "$DATABASE_URL" -f db/schema.sql
+```
+
+`db/schema.sql` ist die einzige Quelle für das Datenbank-Schema — es gibt keine
+Migrationen mehr, die nacheinander laufen müssten.
+
+### 3. API-Service anlegen (mit GitHub)
+
+1. **New Project** → **Deploy from GitHub repo** → dieses Repo wählen
+2. **Settings** → **Root Directory** = `server`
+3. **Settings** → **Volumes** → Volume anlegen, Mount-Pfad z.B. `/data`
+4. Variables setzen (siehe unten)
+5. **Settings** → **Networking** → **Generate Domain**
+
+### Ohne GitHub (Railway CLI)
 
 ```bash
 npm install -g @railway/cli
-```
-
-Oder mit Homebrew (Mac): `brew install railway`
-
-### 2. Anmelden & Projekt erstellen
-
-```bash
 railway login
-```
-
-Im Browser anmelden. Dann:
-
-```bash
 cd server
 railway init
-```
-
-- **Create new project** wählen
-- Projektnamen eingeben (z.B. „berlintina-api“)
-
-### 3. Deployen
-
-```bash
 railway up
 ```
 
-Railway lädt den `server/`-Ordner hoch und baut ihn. Beim ersten Mal kann es etwas dauern.
-
-### 4. Domain & Variables
-
-1. Im [Railway Dashboard](https://railway.app/dashboard) dein Projekt öffnen
-2. **Settings** → **Networking** → **Generate Domain**
-3. **Variables** → alle nötigen Keys eintragen (siehe unten)
-
-### 5. Bei Änderungen neu deployen
-
-```bash
-cd server
-railway up
-```
-
----
-
-## Option B: Deploy mit GitHub
-
-1. Projekt auf GitHub pushen (neues Repo erstellen, `git push`)
-2. Railway: **New Project** → **Deploy from GitHub repo**
-3. Repo auswählen
-4. **Settings** → **Root Directory** = `server`
-5. Variables setzen, Domain generieren
-
----
+Bei Änderungen erneut `railway up` aus `server/`.
 
 ## Umgebungsvariablen (Variables)
 
-Im Service unter **Variables** diese Werte hinzufügen:
-
 | Variable | Pflicht? | Beispiel |
 |----------|----------|----------|
+| `DATABASE_URL` | Ja | von Railway automatisch als Referenz-Variable des Postgres-Service |
+| `UPLOAD_DIR` | Ja | `/data` — muss auf den gemounteten Volume-Pfad zeigen |
 | `PORT` | Nein (Railway setzt ihn) | 3001 |
 | `OPENAI_API_KEY` | Eine der beiden AI-Keys | sk-xxx |
 | `GEMINI_API_KEY` | Eine der beiden AI-Keys | (wenn du Gemini nutzt) |
-| `SUPABASE_URL` | Ja (für Submissions) | https://xxx.supabase.co |
-| `SUPABASE_SERVICE_ROLE_KEY` | Ja | eyJ... |
 | `ADMIN_PASSWORD` | Ja | dein-sicheres-admin-passwort |
 
 **Optional:**
 - `MOCK_MODE=true` – nutzt Mock-AI ohne API-Keys
+- `ARTIST_TOKEN_PEPPER` – Pfeffer fürs Hashing der Rückkehr-Tokens, in Produktion setzen
 - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` – für Artist-E-Mails
-- `EMAIL_FROM` – Absenderadresse für E-Mails
+- `EMAIL_FROM`, `NOTIFY_EMAIL` – Absender- bzw. Benachrichtigungsadresse
+
+⚠️ **`UPLOAD_DIR` ohne passendes Volume heißt: jeder Redeploy löscht alle
+Artist-/Show-Fotos.** Der Pfad muss exakt der Mount-Pfad aus **Settings → Volumes**
+sein, nicht nur ein beliebiges Verzeichnis im Container.
 
 ---
 
@@ -90,21 +82,24 @@ Im Service unter **Variables** diese Werte hinzufügen:
    ```
    https://berlinta-shows-local-production-xxxx.up.railway.app
    ```
-3. Diese URL als `VITE_API_URL` im Frontend-Build verwenden.
-
----
+3. Berlintina.de zeigt per Cloudflare/DNS direkt auf diesen Service — Frontend und
+   API laufen unter derselben Domain, `VITE_API_URL` bleibt deshalb leer
+   (relative Requests reichen).
 
 ## Frontend verbinden
 
-Erstelle im Projekt-Root (neben `package.json`) `.env.production`:
+`.env.production` im Projekt-Root:
+
+```
+VITE_API_URL=
+VITE_WHATSAPP=491608106880
+```
+
+Nur setzen, wenn Frontend und API unter **verschiedenen** Domains laufen:
 
 ```
 VITE_API_URL=https://dein-railway-service.up.railway.app
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=dein-anon-key
 ```
-
-Ohne `https://` am Ende.
 
 Dann:
 
@@ -112,7 +107,8 @@ Dann:
 npm run build
 ```
 
-Danach den Inhalt von `dist/` auf All-Inkl hochladen.
+Danach den Inhalt von `dist/` auf All-Inkl hochladen (statisches Frontend läuft
+separat vom API-Server).
 
 ---
 
@@ -120,17 +116,17 @@ Danach den Inhalt von `dist/` auf All-Inkl hochladen.
 
 Im Railway-Dashboard → **Deployments** → neuester Deploy → **View Logs**.
 
-- „Listening on port“ → Server läuft.
-- Fehlermeldungen → z.B. fehlende Env-Variablen (Supabase, OpenAI/Gemini) prüfen.
+- „Listening on port" → Server läuft.
+- Fehlermeldungen → meist fehlende Env-Variablen (`DATABASE_URL`, `UPLOAD_DIR`,
+  OpenAI/Gemini) oder ein fehlendes Volume.
 
 ---
 
-## Kurz-Checkliste (ohne GitHub)
+## Kurz-Checkliste (Neuaufsetzen)
 
-- [ ] Railway CLI installiert (`npm i -g @railway/cli`)
-- [ ] `railway login` ausgeführt
-- [ ] `cd server` → `railway init` → Projekt erstellt
-- [ ] `railway up` ausgeführt
-- [ ] Im Dashboard: Domain generiert, Variables gesetzt
-- [ ] `.env.production` mit `VITE_API_URL` erstellt
-- [ ] Frontend neu gebaut und auf All-Inkl hochgeladen
+- [ ] Postgres-Plugin angelegt, `db/schema.sql` eingespielt
+- [ ] API-Service aus GitHub deployed, Root Directory = `server`
+- [ ] Volume angelegt und gemountet, `UPLOAD_DIR` zeigt exakt dorthin
+- [ ] `ADMIN_PASSWORD`, `DATABASE_URL`, KI-Key gesetzt
+- [ ] Domain generiert
+- [ ] `.env.production` im Frontend geprüft, Frontend gebaut und hochgeladen
