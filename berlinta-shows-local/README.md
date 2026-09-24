@@ -20,7 +20,7 @@ A web platform connecting event planners with curated shows and artists in Berli
 |-------|--------|
 | Frontend | React 19, Vite 6, TypeScript, Tailwind CSS |
 | Backend | Express.js (Node) |
-| Database | Supabase (PostgreSQL) |
+| Database | Postgres, hosted on Railway |
 | AI | OpenAI GPT-4o-mini or Google Gemini 1.5 Flash |
 
 ## Project Structure
@@ -28,13 +28,13 @@ A web platform connecting event planners with curated shows and artists in Berli
 ```
 ├── App.tsx                 # Main app & routes
 ├── components/             # UI components (ShowCard, LanguageToggle)
-├── contexts/               # ShowsContext (loads from Supabase or mock)
-├── lib/                    # matching.ts (show scoring logic)
+├── contexts/               # ShowsContext (loads from the Express API, or mock data)
+├── lib/                    # matching.ts (show scoring), db.js (Postgres query builder), storage.js (file uploads)
 ├── services/               # aiService, apiClient, showsService
-├── server/                 # Express backend (AI endpoints)
-│   ├── index.js            # POST /api/ai/extract-brief, /api/ai/answer-question
+├── server/                 # Express backend (AI endpoints, shows/submissions/admin API)
+│   ├── index.js            # POST /api/ai/extract-brief, /api/ai/answer-question, ...
 │   └── .env.example
-├── supabase/migrations/    # SQL schema for shows table
+├── db/schema.sql            # Full Postgres schema — the one source of truth, no migrations to run in order
 ├── types.ts                # Show, CustomerBrief, Category, etc.
 └── vite.config.ts
 ```
@@ -62,35 +62,40 @@ A web platform connecting event planners with curated shows and artists in Berli
 
 API keys live only in `server/.env` and are never sent to the browser.
 
-### Supabase (shows database)
+### Database (Postgres on Railway)
 
-Shows are loaded from Supabase when configured; otherwise the app uses mock data.
+Shows, submissions, artist accounts, the KB and the blog all live in one Postgres
+database. There is no separate database project to create and no migrations to run
+in order — `db/schema.sql` is the single, current source of truth for the schema
+(see `RAILWAY.md` for how the earlier Supabase setup was consolidated into it).
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. In **SQL Editor**, run the migration:  
-   `supabase/migrations/001_create_shows.sql`  
-   (creates the `shows` table and RLS for public read of published shows).
-3. In the project root, add to `.env` or `.env.local`:
+1. Provision a Postgres instance (on Railway: **New** → **Database** → **PostgreSQL**,
+   which gives you a `DATABASE_URL` automatically).
+2. Load the schema:
    ```bash
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key
+   psql "$DATABASE_URL" -f db/schema.sql
    ```
-   (Project Settings → API in Supabase.)
-4. Restart the frontend. The app will fetch shows from Supabase; if the table is empty or the request fails, it falls back to mock shows.
+3. In `server/.env`, set:
+   ```bash
+   DATABASE_URL=postgresql://user:password@host:5432/railway
+   UPLOAD_DIR=./uploads   # on Railway: the path your volume is mounted at, e.g. /data
+   ```
+4. Restart the backend. The frontend always talks to the Express API (`services/showsService.ts`), never to Postgres directly; if a request fails it falls back to mock shows.
 
-To add shows: use the Supabase Table Editor or the API. Columns match the `Show` type (snake_case in DB: `short_id`, `artist_name`, `photo_urls` jsonb, etc.).
+To add shows: use the admin panel (below) or write directly to the `shows` table.
+Columns match the `Show` type (snake_case in DB: `short_id`, `artist_name`,
+`photo_urls` jsonb, etc.).
+
+Full deploy instructions, including the required volume for uploaded photos, are in
+`RAILWAY.md`.
 
 ## Artist Submissions (EPIC 2)
 
-1. Run migrations `002_create_show_submissions.sql` and optionally `003_storage_submissions_media.sql` in Supabase SQL Editor.
-2. Add to `server/.env`:
-   ```bash
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-   ```
-3. The backend creates the `submissions-media` storage bucket on startup (if missing).
-4. Artists complete the /join flow; data is saved to `show_submissions` with `status='PENDING_REVIEW'`.
-5. Spam protection: rate limit (5 per 15 min), honeypot field.
+1. Already covered by `db/schema.sql` — no separate step needed.
+2. Uploaded photos are written to `UPLOAD_DIR` (see above) and served from `/media`
+   via `lib/storage.js`.
+3. Artists complete the /join flow; data is saved to `show_submissions` with `status='PENDING_REVIEW'`.
+4. Spam protection: rate limit (5 per 15 min), honeypot field.
 
 ## Admin (EPIC 4)
 
@@ -98,11 +103,9 @@ To add shows: use the Supabase Table Editor or the API. Columns match the `Show`
    ```bash
    ADMIN_PASSWORD=your-secret-password
    ```
-2. Run migration `006_admin_original_submission_id.sql` in Supabase SQL Editor (optional; adds `original_submission_id` to shows).
-3. Run migration `010_artist_email_and_notified_at.sql` in Supabase SQL Editor (adds `artist_email`, `artist_notified_at`). Run migration `011_show_visible_on_approved_only.sql` so shows are visible on catalog as soon as Approved (status=PUBLISHED).
-4. Open `/#/admin` in the browser and log in with the password.
-5. List submissions (filter by status), open a submission, and approve (publish to shows) or reject/request changes. Once approved, the show appears on the catalog immediately.
-6. **Shows** (`/#/admin/shows`): list all published shows; edit any show (text and one or more pictures). Optionally use “Send email to artist” when saving to notify the artist of changes.
+2. Open `/#/admin` in the browser and log in with the password.
+3. List submissions (filter by status), open a submission, and approve (publish to shows) or reject/request changes. Once approved, the show appears on the catalog immediately.
+4. **Shows** (`/#/admin/shows`): list all published shows; edit any show (text and one or more pictures). Optionally use “Send email to artist” when saving to notify the artist of changes.
 
 ### Artist notification email (optional)
 
@@ -121,9 +124,8 @@ Visibility on the catalog does not depend on email; shows are visible as soon as
 
 ## Knowledge Base (EPIC 5.2)
 
-1. Run migration `007_create_kb_articles.sql` in Supabase SQL Editor.
-2. Optionally run `008_seed_kb_articles.sql` for sample articles.
-3. GET `/api/kb?locale=de&q=booking` returns relevant KB articles. Used in Q&A for platform context.
+1. Already covered by `db/schema.sql` (`kb_articles` table) — no separate step needed.
+2. GET `/api/kb?locale=de&q=booking` returns relevant KB articles. Used in Q&A for platform context.
 
 ## AI Endpoints
 
